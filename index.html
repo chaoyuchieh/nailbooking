@@ -389,8 +389,7 @@
         // 【LINE LIFF 設定區】
         // 請填入您的 LIFF ID
         // ==========================================
-        const LIFF_ID = 'YOUR_LIFF_ID_HERE'; 
-
+        const LIFF_ID = '2008815005-LCjqLuy4'; 
         let supabaseClient = null;
         if (typeof supabase !== 'undefined' && SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
              supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -889,6 +888,18 @@
                 let userName = "Guest";
                 if(userProfile) userName = userProfile.displayName;
                 currentBooked.push({ time: selectedTime, user: userName });
+
+                // NEW: Send message to LINE Chat if in LIFF
+                if (typeof liff !== 'undefined' && liff.isInClient()) {
+                    try {
+                        await liff.sendMessages([{
+                            type: 'text',
+                            text: `【預約成功通知】\n\n您好 ${userName}，\n您的預約已確認！\n\n📅 日期：${selectedDate}\n⏰ 時間：${selectedTime}\n💰 預估金額：$${calculateTotal()}\n\n請記得準時出席喔！`
+                        }]);
+                    } catch (error) {
+                        console.error("LINE Message sending failed", error);
+                    }
+                }
 
                 const { error } = await supabaseClient.from('calendar_slots').upsert({ 
                     date_id: dateId, booked_slots: currentBooked, status: 'available'
