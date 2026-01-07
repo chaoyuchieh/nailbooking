@@ -268,7 +268,7 @@
         const SUPABASE_URL = 'https://alkuncpbqslksxeorndz.supabase.co'; 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsa3VuY3BicXNsa3N4ZW9ybmR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczMzg0MjIsImV4cCI6MjA4MjkxNDQyMn0.Q-HxirPEavixO-tW6hRp6Rz6fFLrWMqfCU3kEKcrRAg';
         const LIFF_ID = '2008815005-LCjqLuy4'; 
-        const LINE_OFFICIAL_ID = '@your_line_id'; // ⭐ 請改成您的 LINE 官方帳號 ID（例如：@123abcde）
+        const LINE_OFFICIAL_ID = '@229lgsmd'; 
 
         let supabaseClient = null;
         if (typeof supabase !== 'undefined' && SUPABASE_URL.startsWith('http')) {
@@ -347,7 +347,7 @@
         }
 
         window.addFriend = function() {
-            if (LINE_OFFICIAL_ID && LINE_OFFICIAL_ID !== '@your_line_id') {
+            if (LINE_OFFICIAL_ID && LINE_OFFICIAL_ID !== '@229lgsmd') {
                 // 開啟加好友頁面
                 window.open(`https://line.me/R/ti/p/${LINE_OFFICIAL_ID}`, '_blank');
             } else {
@@ -1121,4 +1121,5 @@ Nail Collector 收藏家`;
 
     </script>
 </body>
+
 </html>
