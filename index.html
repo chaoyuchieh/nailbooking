@@ -977,64 +977,23 @@ Nail Collector 收藏家`;
         window.selectAdminDate(index);
     }
 }
-        window.rejectBooking = async function(index, time) {
-    const slots = calendarData[index].bookedSlots;
-    const slot = slots.find(s => s.time === time);
-    
-    if(!confirm(`確定要拒絕 ${slot?.user || '此'} 的預約嗎？`)) return;
-    
-    const idx = slots.findIndex(s => s.time === time);
-    if (idx < 0) return;
-    
-    const userName = slots[idx].user || '客人';
-    const userId = slots[idx].userId;
-    const dateStr = `${currentMonth+1}/${calendarData[index].date}`;
-    
-    // 先刪除預約
-    slots.splice(idx, 1);
-    await window.saveDateToDB(index);
-    
-    // 如果有 userId，自動發送通知
-    if (userId) {
-        const msg = `【預約通知】
-
-Hi ${userName}，
-
-很抱歉，您的預約申請未能通過審核。
-
-📅 原申請日期：${dateStr}
-⏰ 原申請時間：${time}
-
-如有疑問或需要改約其他時段，
-歡迎隨時與我們聯繫！
-
----
-Nail Collector 收藏家`;
-        
-        window.showLoading(true);
-        try {
-            const response = await fetch('/api/send-line-message', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userId: userId,
-                    message: msg
-                })
-            });
-            
-            if (response.ok) {
-                alert("✅ 預約已取消，通知已自動發送給客人");
-            } else {
-                alert("⚠️ 預約已取消，但訊息發送失敗");
+        window.saveDateToDB = async function(index) {
+            if (!supabaseClient) return;
+            window.showLoading(true);
+            const item = calendarData[index];
+            try {
+                const { error } = await supabaseClient.from('calendar_slots').upsert({ 
+                    date_id: `${currentYear}-${currentMonth}-${item.date}`, 
+                    status: item.status, 
+                    booked_slots: item.bookedSlots 
+                });
+                if(error) throw error;
+            } catch(e) { 
+                alert("更新失敗: " + e.message); 
+            } finally { 
+                window.showLoading(false); 
             }
-        } catch (error) {
-            alert("⚠️ 預約已取消，但發送通知時發生錯誤");
-        } finally {
-            window.showLoading(false);
         }
-    } else {
-        alert("⚠️ 預約已取消，但無法發送通知（缺少用戶 ID）");
-    }
     
     window.selectAdminDate(index);
 }
@@ -1191,6 +1150,7 @@ Nail Collector 收藏家`;
 </body>
 
 </html>
+
 
 
 
