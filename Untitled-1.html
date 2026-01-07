@@ -480,7 +480,7 @@
             
             let errors = [];
             if (!userProfile || !userProfile.userId) errors.push("需 LINE 登入");
-            else if (!isFriend) errors.push("需加入官方帳號");
+            //else if (!isFriend) errors.push("需加入官方帳號");
             if (total <= 0) errors.push("未選項目");
             if (!selectedDate) errors.push("未選日期");
             if (!selectedTime) errors.push("未選時間");
@@ -508,7 +508,7 @@
                 window.showLoginScreen();
                 return;
             }
-            
+            /*
             // 檢查是否為好友
             if (!isFriend) {
                 const recheck = await window.checkFriendship();
@@ -521,7 +521,8 @@
                     return;
                 }
             }
-            
+
+            */
             if (total <= 0) { alert("❌ 您尚未選擇任何服務項目！\n請選擇造型或卸甲服務。"); return; }
             if (!selectedDate) { alert("❌ 請選擇預約日期"); return; }
             if (!selectedTime) { alert("❌ 請選擇預約時段"); return; }
@@ -541,12 +542,12 @@
                 window.showLoginScreen();
                 return;
             }
-            
-            if (!isFriend) {
-                alert("❌ 請先加入 LINE 官方帳號為好友\n\n這樣才能收到預約通知喔！");
-                return;
-            }
-            
+           /*
+if (!isFriend) {
+    alert("❌ 請先加入 LINE 官方帳號為好友\n\n這樣才能收到預約通知喔！");
+    return;
+}
+*/
             if (!supabaseClient) { 
                 alert("❌ 資料庫未連線\n\n請確認網路連線後重試。"); 
                 return; 
@@ -1123,4 +1124,5 @@ Nail Collector 收藏家`;
 </body>
 
 </html>
+
 
