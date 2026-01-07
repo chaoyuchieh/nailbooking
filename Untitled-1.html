@@ -797,17 +797,23 @@ Nail Collector 收藏家`;
             window.selectAdminDate(index);
         }
 
-        window.approveBooking = async function(index, time) {
-            // 免訂金，直接確認
-            const slots = calendarData[index].bookedSlots;
-            const slot = slots.find(s => s.time === time);
-            if (slot) { 
-                slot.status = 'confirmed';
-                // 不設定 paymentDeadline，表示免訂金
-                await window.saveDateToDB(index);
-                
-                const dateStr = `${currentMonth+1}/${calendarData[index].date}`;
-                const msg = `【預約確認通知】
+       window.approveBooking = async function(index, time) {
+    const slots = calendarData[index].bookedSlots;
+    const slot = slots.find(s => s.time === time);
+    if (!slot) return;
+    
+    // 確認有 userId
+    if (!slot.userId) {
+        alert("❌ 無法發送訊息：缺少用戶 ID");
+        return;
+    }
+    
+    // 更新狀態
+    slot.status = 'confirmed';
+    await window.saveDateToDB(index);
+    
+    const dateStr = `${currentMonth+1}/${calendarData[index].date}`;
+    const msg = `【預約確認通知】
 
 Hi ${slot.user}，
 您的預約已確認！
@@ -820,36 +826,54 @@ Hi ${slot.user}，
 
 ---
 Nail Collector 收藏家`;
-                
-                // 先更新畫面
-                window.selectAdminDate(index);
-                
-                // 延遲 500ms 後開啟 LINE（避免畫面更新衝突）
-                setTimeout(() => {
-                    if(confirm("✅ 審核通過（免訂金）\n\n點擊確定將開啟 LINE 通知客人")) {
-                        window.location.href = 'https://line.me/R/msg/text/?' + encodeURIComponent(msg);
-                    }
-                }, 500);
-            }
+    
+    // 🎯 呼叫 API 自動發送訊息
+    window.showLoading(true);
+    try {
+        const response = await fetch('/api/send-line-message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: slot.userId,
+                message: msg
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            alert("✅ 預約已確認，訊息已自動發送給客人！");
+        } else {
+            alert("⚠️ 預約已確認，但訊息發送失敗：" + (result.error || '未知錯誤'));
         }
-
-        window.approveBookingWithPayment = async function(index, time) {
-            // 需付訂金
-            const slots = calendarData[index].bookedSlots;
-            const slot = slots.find(s => s.time === time);
-            if (slot) { 
-                // 設定付款期限為 24 小時後（用於標記需要付款）
-                const paymentDeadline = new Date();
-                paymentDeadline.setHours(paymentDeadline.getHours() + 24);
-                
-                slot.status = 'pending_payment';
-                slot.paymentDeadline = paymentDeadline.toISOString();
-                
-                await window.saveDateToDB(index);
-                
-                const dateStr = `${currentMonth+1}/${calendarData[index].date}`;
-                
-                const msg = `【預約審核通過】
+    } catch (error) {
+        alert("❌ 發送訊息時發生錯誤：" + error.message);
+    } finally {
+        window.showLoading(false);
+        window.selectAdminDate(index);
+    }
+}
+       window.approveBookingWithPayment = async function(index, time) {
+    const slots = calendarData[index].bookedSlots;
+    const slot = slots.find(s => s.time === time);
+    if (!slot) return;
+    
+    if (!slot.userId) {
+        alert("❌ 無法發送訊息：缺少用戶 ID");
+        return;
+    }
+    
+    // 設定付款期限
+    const paymentDeadline = new Date();
+    paymentDeadline.setHours(paymentDeadline.getHours() + 24);
+    
+    slot.status = 'pending_payment';
+    slot.paymentDeadline = paymentDeadline.toISOString();
+    
+    await window.saveDateToDB(index);
+    
+    const dateStr = `${currentMonth+1}/${calendarData[index].date}`;
+    const msg = `【預約審核通過】
 
 Hi ${slot.user}，
 您的預約已通過審核！
@@ -867,32 +891,53 @@ Hi ${slot.user}，
 
 ---
 Nail Collector 收藏家`;
-                
-                // 先更新畫面
-                window.selectAdminDate(index);
-                
-                // 延遲 500ms 後開啟 LINE
-                setTimeout(() => {
-                    if(confirm("✅ 審核通過（需付訂金）\n\n點擊確定將開啟 LINE 通知客人匯款資訊")) {
-                        window.location.href = 'https://line.me/R/msg/text/?' + encodeURIComponent(msg);
-                    }
-                }, 500);
-            }
+    
+    // 🎯 呼叫 API 自動發送訊息
+    window.showLoading(true);
+    try {
+        const response = await fetch('/api/send-line-message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: slot.userId,
+                message: msg
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            alert("✅ 審核通過，付款通知已自動發送給客人！");
+        } else {
+            alert("⚠️ 審核通過，但訊息發送失敗：" + (result.error || '未知錯誤'));
         }
+    } catch (error) {
+        alert("❌ 發送訊息時發生錯誤：" + error.message);
+    } finally {
+        window.showLoading(false);
+        window.selectAdminDate(index);
+    }
+}
 
-        window.confirmPayment = async function(index, time) {
-            if(!confirm("確定已收到客人的 $500 訂金嗎？")) return;
-            
-            const slots = calendarData[index].bookedSlots;
-            const slot = slots.find(s => s.time === time);
-            if (slot) { 
-                slot.status = 'confirmed';
-                slot.paidAt = new Date().toISOString();
-                
-                await window.saveDateToDB(index);
-                
-                const dateStr = `${currentMonth+1}/${calendarData[index].date}`;
-                const msg = `【訂金確認】
+       window.confirmPayment = async function(index, time) {
+    if(!confirm("確定已收到客人的 $500 訂金嗎？")) return;
+    
+    const slots = calendarData[index].bookedSlots;
+    const slot = slots.find(s => s.time === time);
+    if (!slot) return;
+    
+    if (!slot.userId) {
+        alert("❌ 無法發送訊息：缺少用戶 ID");
+        return;
+    }
+    
+    slot.status = 'confirmed';
+    slot.paidAt = new Date().toISOString();
+    
+    await window.saveDateToDB(index);
+    
+    const dateStr = `${currentMonth+1}/${calendarData[index].date}`;
+    const msg = `【訂金確認】
 
 Hi ${slot.user}，
 我們已確認收到您的訂金 $500！
@@ -905,34 +950,53 @@ Hi ${slot.user}，
 
 ---
 Nail Collector 收藏家`;
-                
-                // 先更新畫面
-                window.selectAdminDate(index);
-                
-                // 延遲 500ms 後開啟 LINE
-                setTimeout(() => {
-                    if(confirm("✅ 已確認收款！\n\n點擊確定將開啟 LINE 通知客人")) {
-                        window.location.href = 'https://line.me/R/msg/text/?' + encodeURIComponent(msg);
-                    }
-                }, 500);
-            }
+    
+    // 🎯 呼叫 API 自動發送訊息
+    window.showLoading(true);
+    try {
+        const response = await fetch('/api/send-line-message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: slot.userId,
+                message: msg
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            alert("✅ 收款確認，通知已自動發送給客人！");
+        } else {
+            alert("⚠️ 收款確認，但訊息發送失敗：" + (result.error || '未知錯誤'));
         }
-
+    } catch (error) {
+        alert("❌ 發送訊息時發生錯誤：" + error.message);
+    } finally {
+        window.showLoading(false);
+        window.selectAdminDate(index);
+    }
+}
         window.rejectBooking = async function(index, time) {
-            const slots = calendarData[index].bookedSlots;
-            const slot = slots.find(s => s.time === time);
-            
-            if(!confirm(`確定要拒絕 ${slot?.user || '此'} 的預約嗎？`)) return;
-            
-            const idx = slots.findIndex(s => s.time === time);
-            if (idx >= 0) { 
-                const userName = slots[idx].user || '客人';
-                const dateStr = `${currentMonth+1}/${calendarData[index].date}`;
-                
-                slots.splice(idx, 1); 
-                await window.saveDateToDB(index); 
-                
-                const msg = `【預約通知】
+    const slots = calendarData[index].bookedSlots;
+    const slot = slots.find(s => s.time === time);
+    
+    if(!confirm(`確定要拒絕 ${slot?.user || '此'} 的預約嗎？`)) return;
+    
+    const idx = slots.findIndex(s => s.time === time);
+    if (idx < 0) return;
+    
+    const userName = slots[idx].user || '客人';
+    const userId = slots[idx].userId;
+    const dateStr = `${currentMonth+1}/${calendarData[index].date}`;
+    
+    // 先刪除預約
+    slots.splice(idx, 1);
+    await window.saveDateToDB(index);
+    
+    // 如果有 userId，自動發送通知
+    if (userId) {
+        const msg = `【預約通知】
 
 Hi ${userName}，
 
@@ -946,31 +1010,34 @@ Hi ${userName}，
 
 ---
 Nail Collector 收藏家`;
-                
-                // 先更新畫面
-                window.selectAdminDate(index);
-                
-                // 延遲 500ms 後詢問是否通知
-                setTimeout(() => {
-                    if(confirm("預約已取消\n\n是否開啟 LINE 通知客人？\n（點取消則不通知）")) {
-                        window.location.href = 'https://line.me/R/msg/text/?' + encodeURIComponent(msg);
-                    }
-                }, 500);
+        
+        window.showLoading(true);
+        try {
+            const response = await fetch('/api/send-line-message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: userId,
+                    message: msg
+                })
+            });
+            
+            if (response.ok) {
+                alert("✅ 預約已取消，通知已自動發送給客人");
+            } else {
+                alert("⚠️ 預約已取消，但訊息發送失敗");
             }
+        } catch (error) {
+            alert("⚠️ 預約已取消，但發送通知時發生錯誤");
+        } finally {
+            window.showLoading(false);
         }
-
-        window.saveDateToDB = async function(index) {
-            if (!supabaseClient) return;
-            window.showLoading(true);
-            const item = calendarData[index];
-            try {
-                const { error } = await supabaseClient.from('calendar_slots').upsert({ 
-                    date_id: `${currentYear}-${currentMonth}-${item.date}`, status: item.status, booked_slots: item.bookedSlots 
-                });
-                if(error) throw error;
-            } catch(e) { alert("更新失敗: " + e.message); }
-            finally { window.showLoading(false); }
-        }
+    } else {
+        alert("⚠️ 預約已取消，但無法發送通知（缺少用戶 ID）");
+    }
+    
+    window.selectAdminDate(index);
+}
 
         // Init Data Load
         window.fetchCalendarData = async function() {
@@ -1124,5 +1191,6 @@ Nail Collector 收藏家`;
 </body>
 
 </html>
+
 
 
