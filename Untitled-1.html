@@ -347,13 +347,13 @@
         }
 
         window.addFriend = function() {
-            if (LINE_OFFICIAL_ID && LINE_OFFICIAL_ID !== '@229lgsmd') {
-                // 開啟加好友頁面
-                window.open(`https://line.me/R/ti/p/${LINE_OFFICIAL_ID}`, '_blank');
-            } else {
-                alert("請先設定 LINE_OFFICIAL_ID\n\n在代碼第 282 行修改為您的官方帳號 ID");
-            }
-        }
+    if (LINE_OFFICIAL_ID && LINE_OFFICIAL_ID !== '@your_line_id') {
+        // 開啟加好友頁面
+        window.open(`https://line.me/R/ti/p/${LINE_OFFICIAL_ID}`, '_blank');
+    } else {
+        alert("請先設定 LINE_OFFICIAL_ID\n\n在代碼第 282 行修改為您的官方帳號 ID");
+    }
+}
 
         window.recheckFriendship = async function() {
             window.showLoading(true);
@@ -1123,3 +1123,4 @@ Nail Collector 收藏家`;
 </body>
 
 </html>
+
