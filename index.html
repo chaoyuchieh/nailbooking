@@ -136,31 +136,45 @@
         <section class="mb-10">
             <h2 class="text-xs font-bold text-gray-400 mb-4 tracking-tighter uppercase flex items-center"><span class="w-4 h-[1px] bg-gray-300 mr-2"></span> 01 / Design 造型</h2>
             <div class="grid grid-cols-2 gap-2 mb-2">
-                <button onclick="selectSingleOption(this, 1000, 'design')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">透明 $1000</button>
-                <button onclick="selectSingleOption(this, 1200, 'design')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">單色 $1200</button>
-                <button onclick="selectSingleOption(this, 1300, 'design')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">貓眼 $1300</button>
-                <button onclick="selectSingleOption(this, 1400, 'design')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">漸層 $1400</button>
-                <button onclick="selectSingleOption(this, 1400, 'design')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">鏡面 $1400</button>
-                <button onclick="selectSingleOption(this, 100, 'design')" class="btn-toggle p-4 text-xs rounded-custom" data-group="design">無限跳純色 +$100</button>
+                <button onclick="selectSingleOption(this, 1000, 'design', '透明')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">透明 $1000</button>
+                <button onclick="selectSingleOption(this, 1200, 'design', '單色')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">單色 $1200</button>
+                <button onclick="selectSingleOption(this, 1300, 'design', '貓眼')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">貓眼 $1300</button>
+                <button onclick="selectSingleOption(this, 1400, 'design', '漸層')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">漸層 $1400</button>
+                <button onclick="selectSingleOption(this, 1400, 'design', '鏡面')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">鏡面 $1400</button>
             </div>
-            <button onclick="selectSingleOption(this, 1550, 'design'); toggleDesignRule('rule-5', this)" class="btn-toggle w-full mb-2 p-4 text-sm rounded-custom flex justify-between" data-group="design"><span>五指造型</span><span>$1550 up</span></button>
+            <button onclick="selectSingleOption(this, 1550, 'design', '五指造型'); toggleDesignRule('rule-5', this)" class="btn-toggle w-full mb-2 p-4 text-sm rounded-custom flex justify-between" data-group="design"><span>五指造型</span><span>$1550 up</span></button>
             <div id="rule-5" class="hidden rule-box mb-2">4-6指造型 + 單色</div>
-            <button onclick="selectSingleOption(this, 1650, 'design'); toggleDesignRule('rule-10', this)" class="btn-toggle w-full mb-2 p-4 text-sm rounded-custom flex justify-between" data-group="design"><span>十指造型</span><span>$1650 up</span></button>
+            <button onclick="selectSingleOption(this, 1650, 'design', '十指造型'); toggleDesignRule('rule-10', this)" class="btn-toggle w-full mb-2 p-4 text-sm rounded-custom flex justify-between" data-group="design"><span>十指造型</span><span>$1650 up</span></button>
             <div id="rule-10" class="hidden rule-box mb-2">10指皆造型</div>
-            <button onclick="selectSingleOption(this, 1450, 'design'); toggleDesignRule('rule-any', this)" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="design"><span>✨ 任我做</span><span>$1450</span></button>
-            <div id="rule-any" class="hidden rule-box bg-gray-800 text-gray-100">給我2個關鍵字任我發揮</div>
+            <button onclick="selectSingleOption(this, 1450, 'design', '任我做'); toggleDesignRule('rule-any', this)" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="design"><span>✨ 任我做</span><span>$1450</span></button>
+            <div id="rule-any" class="hidden rule-box bg-gray-800 text-gray-100">
+                <p class="text-xs mb-2">給我2個關鍵字任我發揮</p>
+                <div class="flex gap-2">
+                    <input id="keyword1" type="text" placeholder="關鍵字 1" maxlength="10" oninput="window.validate()" class="flex-1 bg-gray-700 text-white px-3 py-2 rounded text-sm outline-none border border-gray-600 focus:border-gray-400">
+                    <input id="keyword2" type="text" placeholder="關鍵字 2" maxlength="10" oninput="window.validate()" class="flex-1 bg-gray-700 text-white px-3 py-2 rounded text-sm outline-none border border-gray-600 focus:border-gray-400">
+                </div>
+            </div>
         </section>
 
         <section class="mb-10">
             <h2 class="text-xs font-bold text-gray-400 mb-4 tracking-tighter uppercase">02 / Removal 卸甲</h2>
             <div class="space-y-2">
-                <button onclick="selectSingleOption(this, 0, 'removal')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="removal"><span>無須卸甲</span><span>$0</span></button>
-                <button onclick="selectSingleOption(this, 200, 'removal')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="removal"><span>本店卸甲續作</span><span>$200</span></button>
-                <button onclick="selectSingleOption(this, 400, 'removal')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="removal"><span>他店卸甲續作</span><span>$400</span></button>
-                <button onclick="selectSingleOption(this, 500, 'removal')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="removal"><span>純卸甲</span><span>$500</span></button>
+                <button onclick="selectSingleOption(this, 0, 'removal', '無須卸甲')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="removal"><span>無須卸甲</span><span>$0</span></button>
+                <button onclick="selectSingleOption(this, 100, 'removal', '本店4周內卸甲半價')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="removal"><span>本店4周內卸甲半價 🎉</span><span>$100</span></button>
+                <button onclick="selectSingleOption(this, 200, 'removal', '本店卸甲續作')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="removal"><span>本店卸甲續作</span><span>$200</span></button>
+                <button onclick="selectSingleOption(this, 400, 'removal', '他店卸甲續作')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="removal"><span>他店卸甲續作</span><span>$400</span></button>
+                <button onclick="selectSingleOption(this, 500, 'removal', '純卸甲')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="removal"><span>純卸甲</span><span>$500</span></button>
             </div>
-            <div class="mt-4 bg-gray-50 p-4 rounded-custom">
-                <div class="flex justify-between items-center mb-3">
+            <div class="mt-4 bg-gray-50 p-4 rounded-custom space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold">無限跳純色 ($100/次)</span>
+                    <div class="flex items-center gap-3">
+                        <button onclick="updateUnlimitedJumpCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button>
+                        <span id="unlimited-jump-count" class="text-sm font-bold w-4 text-center">0</span>
+                        <button onclick="updateUnlimitedJumpCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
                     <span class="text-xs font-bold">大鑽/凹凸 ($50/指)</span>
                     <div class="flex items-center gap-3">
                         <button onclick="updateDiamondCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button>
@@ -168,13 +182,13 @@
                         <button onclick="updateDiamondCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button>
                     </div>
                 </div>
-                <button onclick="toggleService(this, 50)" class="btn-toggle w-full p-3 text-xs rounded-custom text-left">卸指甲油 +$50</button>
+                <button onclick="toggleService(this, 50, '卸指甲油')" class="btn-toggle w-full p-3 text-xs rounded-custom text-left">卸指甲油 +$50</button>
             </div>
         </section>
 
         <section class="mb-10">
             <h2 class="text-xs font-bold text-gray-400 mb-4 tracking-tighter uppercase">03 / Care 保養</h2>
-            <button onclick="toggleService(this, 400)" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between mb-3"><span>基礎保養</span><span>$400</span></button>
+            <button onclick="toggleService(this, 400, '基礎保養')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between mb-3"><span>基礎保養</span><span>$400</span></button>
             <div class="bg-gray-50 p-4 rounded-custom space-y-3">
                 <div class="flex justify-between items-center"><span class="text-xs font-bold">延甲 ($150/指)</span><div class="flex items-center gap-3"><button onclick="updateExtensionCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button><span id="ext-count" class="text-sm font-bold w-4 text-center">0</span><button onclick="updateExtensionCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button></div></div>
                 <div class="flex justify-between items-center"><span class="text-xs font-bold">補甲 ($50/指)</span><div class="flex items-center gap-3"><button onclick="updateRepairCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button><span id="repair-count" class="text-sm font-bold w-4 text-center">0</span><button onclick="updateRepairCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button></div></div>
@@ -232,8 +246,18 @@
         let adminSelectedIndex = null;
         
         let priceState = { design: 0, removal: 0, extras: 0 };
-        let diamondCount = 0; let extensionCount = 0; let repairCount = 0;
-        let selectedDate = null; let selectedTime = null; let userProfile = null;
+        let bookingDetails = { 
+            design: { name: '', price: 0, keywords: [] },
+            removal: { name: '', price: 0 },
+            extras: []
+        };
+        let diamondCount = 0; 
+        let extensionCount = 0; 
+        let repairCount = 0;
+        let unlimitedJumpCount = 0;
+        let selectedDate = null; 
+        let selectedTime = null; 
+        let userProfile = null;
         let liffInitialized = false;
         let isFriend = false;
 
@@ -362,17 +386,36 @@
             location.reload();
         }
 
-        window.selectSingleOption = function(el, price, group) {
+        window.selectSingleOption = function(el, price, group, name) {
             document.querySelectorAll(`button[data-group="${group}"]`).forEach(b => b.classList.remove('active'));
-            if (group === 'design') document.querySelectorAll('.rule-box').forEach(b => b.classList.add('hidden'));
+            if (group === 'design') {
+                document.querySelectorAll('.rule-box').forEach(b => b.classList.add('hidden'));
+                document.getElementById('keyword1').value = '';
+                document.getElementById('keyword2').value = '';
+            }
             el.classList.add('active');
             priceState[group] = price;
+            
+            if (group === 'design') {
+                bookingDetails.design = { name: name || '', price: price, keywords: [] };
+            } else if (group === 'removal') {
+                bookingDetails.removal = { name: name || '', price: price };
+            }
+            
             window.updateUI();
         }
 
-        window.toggleService = function(el, price) {
-            if (el.classList.contains('active')) { el.classList.remove('active'); priceState.extras -= price; }
-            else { el.classList.add('active'); priceState.extras += price; }
+        window.toggleService = function(el, price, name) {
+            if (el.classList.contains('active')) { 
+                el.classList.remove('active'); 
+                priceState.extras -= price;
+                bookingDetails.extras = bookingDetails.extras.filter(e => e.name !== name);
+            }
+            else { 
+                el.classList.add('active'); 
+                priceState.extras += price;
+                bookingDetails.extras.push({ name: name || '加購項目', price: price });
+            }
             window.updateUI();
         }
 
@@ -391,10 +434,17 @@
         window.updateRepairCount = function(n) {
             if (repairCount + n >= 0) { repairCount += n; document.getElementById('repair-count').innerText = repairCount; window.updateUI(); }
         }
+        window.updateUnlimitedJumpCount = function(n) {
+            if (unlimitedJumpCount + n >= 0) { 
+                unlimitedJumpCount += n; 
+                document.getElementById('unlimited-jump-count').innerText = unlimitedJumpCount; 
+                window.updateUI(); 
+            }
+        }
 
         window.calculateTotal = function() {
             return priceState.design + priceState.removal + priceState.extras + 
-                   (diamondCount * 50) + (extensionCount * 150) + (repairCount * 50);
+                   (unlimitedJumpCount * 100) + (diamondCount * 50) + (extensionCount * 150) + (repairCount * 50);
         }
 
         window.updateUI = function() {
@@ -413,7 +463,16 @@
             
             let errors = [];
             if (!userProfile || !userProfile.userId) errors.push("需 LINE 登入");
+            if (!isFriend) errors.push("需加入官方帳號");
             if (total <= 0) errors.push("未選項目");
+            
+            // 檢查任我做是否有填關鍵字
+            if (bookingDetails.design.name === '任我做') {
+                const k1 = document.getElementById('keyword1').value.trim();
+                const k2 = document.getElementById('keyword2').value.trim();
+                if (!k1 || !k2) errors.push("任我做需填關鍵字");
+            }
+            
             if (!selectedDate) errors.push("未選日期");
             if (!selectedTime) errors.push("未選時間");
             if (!check) errors.push("未勾選同意");
@@ -439,7 +498,26 @@
                 window.showLoginScreen();
                 return;
             }
+            
+            if (!isFriend) {
+                alert("❌ 請先加入我們的 LINE 官方帳號！\n\n為了確保能收到預約通知，必須先加入官方帳號為好友。\n\n請點擊上方綠色區塊的「立即加入官方帳號」按鈕。");
+                document.getElementById('friend-warning').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+            
             if (total <= 0) { alert("❌ 您尚未選擇任何服務項目！\n請選擇造型或卸甲服務。"); return; }
+            
+            // 檢查任我做的關鍵字
+            if (bookingDetails.design.name === '任我做') {
+                const k1 = document.getElementById('keyword1').value.trim();
+                const k2 = document.getElementById('keyword2').value.trim();
+                if (!k1 || !k2) {
+                    alert("❌ 任我做需要填寫兩個關鍵字！\n\n請在任我做區塊填入您想要的兩個設計關鍵字。");
+                    document.getElementById('keyword1').focus();
+                    return;
+                }
+            }
+            
             if (!selectedDate) { alert("❌ 請選擇預約日期"); return; }
             if (!selectedTime) { alert("❌ 請選擇預約時段"); return; }
             if (!check) { alert("❌ 請先勾選同意規範"); return; }
@@ -477,15 +555,56 @@
                 let userName = userProfile.displayName;
                 let userId = userProfile.userId;
                 
+                // 準備詳細預約資料
+                let details = {
+                    design: { ...bookingDetails.design },
+                    removal: { ...bookingDetails.removal },
+                    extras: [...bookingDetails.extras]
+                };
+                
+                // 任我做的關鍵字
+                if (bookingDetails.design.name === '任我做') {
+                    details.design.keywords = [
+                        document.getElementById('keyword1').value.trim(),
+                        document.getElementById('keyword2').value.trim()
+                    ];
+                }
+                
+                // 加入計數項目
+                if (unlimitedJumpCount > 0) details.extras.push({ name: '無限跳純色', count: unlimitedJumpCount, price: unlimitedJumpCount * 100 });
+                if (diamondCount > 0) details.extras.push({ name: '大鑽/凹凸', count: diamondCount, price: diamondCount * 50 });
+                if (extensionCount > 0) details.extras.push({ name: '延甲', count: extensionCount, price: extensionCount * 150 });
+                if (repairCount > 0) details.extras.push({ name: '補甲', count: repairCount, price: repairCount * 50 });
+                
                 booked.push({
                     time: selectedTime,
                     user: userName,
                     userId: userId,
-                    status: 'pending'
+                    status: 'pending',
+                    bookingDetails: details,
+                    totalPrice: window.calculateTotal()
                 });
 
                 const { error } = await supabaseClient.from('calendar_slots').upsert({ date_id: dateId, booked_slots: booked, status: 'available' });
                 if (error) throw error;
+                
+                // 建立詳細訊息
+                let detailMsg = '';
+                if (details.design.name) {
+                    detailMsg += `\n🎨 造型：${details.design.name}`;
+                    if (details.design.keywords && details.design.keywords.length > 0) {
+                        detailMsg += ` (${details.design.keywords.join(', ')})`;
+                    }
+                }
+                if (details.removal.name) {
+                    detailMsg += `\n💅 卸甲：${details.removal.name}`;
+                }
+                if (details.extras.length > 0) {
+                    detailMsg += `\n✨ 加購：${details.extras.map(e => {
+                        if (e.count) return `${e.name} x${e.count}`;
+                        return e.name;
+                    }).join(', ')}`;
+                }
                 
                 const successMsg = `【預約已送出】
 
@@ -493,8 +612,8 @@
 我們已收到您的預約申請！
 
 📅 日期：${selectedDate}
-⏰ 時間：${selectedTime}
-💰 預估金額：${window.calculateTotal()}
+⏰ 時間：${selectedTime}${detailMsg}
+💰 預估金額：$${window.calculateTotal()}
 
 ⏳ 請等待管理員審核
 審核通過後我們會立即通知您。
@@ -614,11 +733,15 @@ Nail Collector 收藏家`;
                     let userName = 'Admin';
                     let status = 'approved';
                     let paymentDeadline = null;
+                    let bookingDetails = null;
+                    let totalPrice = 0;
 
                     if (booking && typeof booking === 'object') {
                         userName = booking.user;
                         status = booking.status || 'approved';
                         paymentDeadline = booking.paymentDeadline;
+                        bookingDetails = booking.bookingDetails;
+                        totalPrice = booking.totalPrice || 0;
                     } else if (booking && typeof booking === 'string') {
                         userName = 'Admin/Legacy';
                         status = 'approved';
@@ -627,6 +750,30 @@ Nail Collector 收藏家`;
                     const row = document.createElement('div');
                     row.className = 'schedule-item shadow-sm';
                     let contentHtml = '';
+                    
+                    // 預約詳情顯示
+                    let detailsHtml = '';
+                    if (bookingDetails) {
+                        detailsHtml = '<div class="text-xs text-gray-600 bg-gray-50 p-2 rounded mb-2">';
+                        if (bookingDetails.design && bookingDetails.design.name) {
+                            detailsHtml += `<div class="mb-1"><span class="font-bold">造型：</span>${bookingDetails.design.name}`;
+                            if (bookingDetails.design.keywords && bookingDetails.design.keywords.length > 0) {
+                                detailsHtml += ` (${bookingDetails.design.keywords.join(', ')})`;
+                            }
+                            detailsHtml += `</div>`;
+                        }
+                        if (bookingDetails.removal && bookingDetails.removal.name) {
+                            detailsHtml += `<div class="mb-1"><span class="font-bold">卸甲：</span>${bookingDetails.removal.name}</div>`;
+                        }
+                        if (bookingDetails.extras && bookingDetails.extras.length > 0) {
+                            detailsHtml += `<div><span class="font-bold">加購：</span>${bookingDetails.extras.map(e => {
+                                if (e.count) return `${e.name} x${e.count}`;
+                                return e.name;
+                            }).join(', ')}</div>`;
+                        }
+                        detailsHtml += `<div class="mt-1 font-bold text-gray-800">總計：$${totalPrice}</div>`;
+                        detailsHtml += '</div>';
+                    }
 
                     if (!isBooked) {
                         contentHtml = `
@@ -636,7 +783,8 @@ Nail Collector 收藏家`;
                         if (status === 'pending') {
                             contentHtml = `
                                 <div class="schedule-header"><span class="font-bold text-gray-800">${time}</span><span class="tag tag-pending">待審核</span></div>
-                                <div class="text-sm mb-3 text-gray-600">預約人：<span class="font-bold">${userName}</span></div>
+                                <div class="text-sm mb-2 text-gray-600">預約人：<span class="font-bold">${userName}</span></div>
+                                ${detailsHtml}
                                 <div class="flex flex-col gap-2 mb-2">
                                     <button onclick="approveBooking(${index}, '${time}')" class="w-full text-xs bg-green-600 text-white px-3 py-2 rounded font-bold shadow hover:bg-green-700">✅ 確認預約（免訂金）</button>
                                     <button onclick="approveBookingWithPayment(${index}, '${time}')" class="w-full text-xs bg-blue-600 text-white px-3 py-2 rounded font-bold shadow hover:bg-blue-700">💰 確認（需付訂金 $500）</button>
@@ -648,6 +796,7 @@ Nail Collector 收藏家`;
                             contentHtml = `
                                 <div class="schedule-header"><span class="font-bold text-gray-800">${time}</span><span class="tag tag-pending-payment">待付款</span></div>
                                 <div class="text-sm mb-2 text-gray-600">預約人：<span class="font-bold">${userName}</span></div>
+                                ${detailsHtml}
                                 <div class="text-xs text-orange-700 mb-3 bg-orange-50 p-2 rounded">💰 等待客人匯款訂金 $500</div>
                                 <div class="schedule-actions">
                                     <button onclick="rejectBooking(${index}, '${time}')" class="text-xs bg-red-100 text-red-600 px-3 py-1 rounded font-bold hover:bg-red-200">取消預約</button>
@@ -663,12 +812,14 @@ Nail Collector 收藏家`;
                             contentHtml = `
                                 <div class="schedule-header"><span class="font-bold text-gray-800">${time}</span><span class="tag tag-confirmed">已確認</span></div>
                                 <div class="text-sm mb-2 text-gray-600">預約人：${userName}</div>
+                                ${detailsHtml}
                                 ${paymentInfo}
                                 <div class="schedule-actions"><button onclick="toggleAdminSlot(${index}, '${time}')" class="text-xs border border-red-200 text-red-500 px-3 py-1 rounded hover:bg-red-50">取消預約</button></div>`;
                         } else {
                             contentHtml = `
                                 <div class="schedule-header"><span class="font-bold text-gray-800">${time}</span><span class="tag tag-confirmed">已預約</span></div>
                                 <div class="text-sm mb-2 text-gray-600">預約人：${userName}</div>
+                                ${detailsHtml}
                                 <div class="schedule-actions"><button onclick="toggleAdminSlot(${index}, '${time}')" class="text-xs border border-red-200 text-red-500 px-3 py-1 rounded hover:bg-red-50">取消預約</button></div>`;
                         }
                     }
@@ -708,13 +859,36 @@ Nail Collector 收藏家`;
             await window.saveDateToDB(index);
             
             const dateStr = `${currentMonth+1}/${calendarData[index].date}`;
+            
+            // 建立詳細訊息
+            let detailMsg = '';
+            if (slot.bookingDetails) {
+                const bd = slot.bookingDetails;
+                if (bd.design && bd.design.name) {
+                    detailMsg += `\n🎨 造型：${bd.design.name}`;
+                    if (bd.design.keywords && bd.design.keywords.length > 0) {
+                        detailMsg += ` (${bd.design.keywords.join(', ')})`;
+                    }
+                }
+                if (bd.removal && bd.removal.name) {
+                    detailMsg += `\n💅 卸甲：${bd.removal.name}`;
+                }
+                if (bd.extras && bd.extras.length > 0) {
+                    detailMsg += `\n✨ 加購：${bd.extras.map(e => {
+                        if (e.count) return `${e.name} x${e.count}`;
+                        return e.name;
+                    }).join(', ')}`;
+                }
+            }
+            
             const msg = `【預約確認通知】
 
 Hi ${slot.user}，
 您的預約已確認！
 
 📅 日期：${dateStr}
-⏰ 時間：${slot.time}
+⏰ 時間：${slot.time}${detailMsg}
+💰 預估金額：$${slot.totalPrice || 0}
 
 ✅ 預約完成
 期待您的光臨！
@@ -767,13 +941,36 @@ Nail Collector 收藏家`;
             await window.saveDateToDB(index);
             
             const dateStr = `${currentMonth+1}/${calendarData[index].date}`;
+            
+            // 建立詳細訊息
+            let detailMsg = '';
+            if (slot.bookingDetails) {
+                const bd = slot.bookingDetails;
+                if (bd.design && bd.design.name) {
+                    detailMsg += `\n🎨 造型：${bd.design.name}`;
+                    if (bd.design.keywords && bd.design.keywords.length > 0) {
+                        detailMsg += ` (${bd.design.keywords.join(', ')})`;
+                    }
+                }
+                if (bd.removal && bd.removal.name) {
+                    detailMsg += `\n💅 卸甲：${bd.removal.name}`;
+                }
+                if (bd.extras && bd.extras.length > 0) {
+                    detailMsg += `\n✨ 加購：${bd.extras.map(e => {
+                        if (e.count) return `${e.name} x${e.count}`;
+                        return e.name;
+                    }).join(', ')}`;
+                }
+            }
+            
             const msg = `【預約審核通過】
 
 Hi ${slot.user}，
 您的預約已通過審核！
 
 📅 日期：${dateStr}
-⏰ 時間：${slot.time}
+⏰ 時間：${slot.time}${detailMsg}
+💰 預估金額：$${slot.totalPrice || 0}
 
 💰 請匯款訂金 $500
 匯款後請截圖通知我們確認。
@@ -830,13 +1027,36 @@ Nail Collector 收藏家`;
             await window.saveDateToDB(index);
             
             const dateStr = `${currentMonth+1}/${calendarData[index].date}`;
+            
+            // 建立詳細訊息
+            let detailMsg = '';
+            if (slot.bookingDetails) {
+                const bd = slot.bookingDetails;
+                if (bd.design && bd.design.name) {
+                    detailMsg += `\n🎨 造型：${bd.design.name}`;
+                    if (bd.design.keywords && bd.design.keywords.length > 0) {
+                        detailMsg += ` (${bd.design.keywords.join(', ')})`;
+                    }
+                }
+                if (bd.removal && bd.removal.name) {
+                    detailMsg += `\n💅 卸甲：${bd.removal.name}`;
+                }
+                if (bd.extras && bd.extras.length > 0) {
+                    detailMsg += `\n✨ 加購：${bd.extras.map(e => {
+                        if (e.count) return `${e.name} x${e.count}`;
+                        return e.name;
+                    }).join(', ')}`;
+                }
+            }
+            
             const msg = `【訂金確認】
 
 Hi ${slot.user}，
 我們已確認收到您的訂金 $500！
 
 📅 預約日期：${dateStr}
-⏰ 預約時間：${slot.time}
+⏰ 預約時間：${slot.time}${detailMsg}
+💰 預估金額：$${slot.totalPrice || 0}
 
 ✅ 預約確認完成
 期待您的光臨！
@@ -883,6 +1103,27 @@ Nail Collector 收藏家`;
             const userId = slots[idx].userId;
             const dateStr = `${currentMonth+1}/${calendarData[index].date}`;
             
+            // 建立詳細訊息
+            let detailMsg = '';
+            if (slots[idx].bookingDetails) {
+                const bd = slots[idx].bookingDetails;
+                if (bd.design && bd.design.name) {
+                    detailMsg += `\n🎨 造型：${bd.design.name}`;
+                    if (bd.design.keywords && bd.design.keywords.length > 0) {
+                        detailMsg += ` (${bd.design.keywords.join(', ')})`;
+                    }
+                }
+                if (bd.removal && bd.removal.name) {
+                    detailMsg += `\n💅 卸甲：${bd.removal.name}`;
+                }
+                if (bd.extras && bd.extras.length > 0) {
+                    detailMsg += `\n✨ 加購：${bd.extras.map(e => {
+                        if (e.count) return `${e.name} x${e.count}`;
+                        return e.name;
+                    }).join(', ')}`;
+                }
+            }
+            
             slots.splice(idx, 1);
             await window.saveDateToDB(index);
             
@@ -894,7 +1135,7 @@ Hi ${userName}，
 很抱歉，您的預約申請未能通過審核。
 
 📅 原申請日期：${dateStr}
-⏰ 原申請時間：${time}
+⏰ 原申請時間：${time}${detailMsg}
 
 如有疑問或需要改約其他時段，
 歡迎隨時與我們聯繫！
