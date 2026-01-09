@@ -17,6 +17,9 @@
         .calendar-day { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 50%; font-size: 0.8rem; position: relative; background: #fff; }
         .calendar-day.selected { background-color: #374151; color: #fff; }
         .calendar-day.booked { background-color: #f3f4f6; color: #d1d5db; }
+        .calendar-day.not-open { background-color: #e5e7eb; color: #9ca3af; cursor: not-allowed; position: relative; }
+        .calendar-day.not-open::after { content: '未開放'; position: absolute; bottom: 2px; font-size: 7px; color: #6b7280; }
+        .calendar-day.closed { background-color: #fee2e2; color: #dc2626; cursor: not-allowed; text-decoration: line-through; }
         .admin-day { min-height: 80px; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; cursor: pointer; border-radius: 8px; font-size: 0.75rem; border: 1px solid #eee; background-color: #fff; position: relative; padding: 4px; overflow: hidden; }
         .admin-day.selected { border: 2px solid #333; background-color: #fafafa; }
         .admin-day.status-off { background-color: #f3f4f6; color: #9ca3af; }
@@ -86,10 +89,14 @@
                     <div id="admin-calendar-grid" class="grid grid-cols-7 gap-1"></div>
                 </div>
                 <div id="admin-edit-area" class="hidden fade-in">
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-3">
                         <div class="flex justify-between items-center mb-3">
                             <div><p class="text-[10px] text-gray-400 uppercase">編輯日期</p><h3 id="admin-edit-date-title" class="text-lg font-bold text-gray-800"></h3></div>
                             <button id="admin-status-toggle" onclick="toggleAdminDateStatus()" class="px-3 py-1.5 rounded-full text-xs font-bold transition-colors shadow-sm bg-gray-100">狀態切換</button>
+                        </div>
+                        <div class="mb-3">
+                            <button id="admin-close-date-btn" onclick="toggleDateClosed()" class="w-full px-3 py-2 rounded-lg text-xs font-bold transition-colors border-2">手動關閉此日期</button>
+                            <p class="text-[9px] text-gray-400 mt-1 text-center">關閉後客人將無法預約此日期</p>
                         </div>
                         <hr class="border-gray-100 mb-3"><p class="text-[10px] text-gray-400 mb-2">當日預約清單：</p>
                         <div id="admin-schedule-list" class="space-y-2"></div>
@@ -228,7 +235,7 @@
     <script>
         const SUPABASE_URL = 'https://alkuncpbqslksxeorndz.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsa3VuY3BicXNsa3N4ZW9ybmR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczMzg0MjIsImV4cCI6MjA4MjkxNDQyMn0.Q-HxirPEavixO-tW6hRp6Rz6fFLrWMqfCU3kEKcrRAg';
-        const LIFF_ID = '2008815005-LCjqLuy4';
+        const LIFF_ID = '2008856015-4bLaPE5n';
         const LINE_OFFICIAL_ID = '@229lgsmd';
 
         let supabaseClient = null;
@@ -244,6 +251,8 @@
         
         let calendarData = [];
         let adminSelectedIndex = null;
+        let closedDates = []; // 手動關閉的日期列表
+        let bookingOpenRanges = { start: null, end: null }; // 可預約範圍
         
         let priceState = { design: 0, removal: 0, extras: 0 };
         let bookingDetails = { 
@@ -281,7 +290,7 @@
             } else if (!isFriend) {
                 warningEl.classList.add('hidden');
                 friendWarningEl.classList.remove('hidden');
-                statusEl.innerText = '⚠️ 請加入 LINE 官方帳號';
+                statusEl.innerText = '⚠️ 建議加入 LINE 官方帳號';
                 statusEl.classList.add('text-orange-500', 'font-bold');
                 statusEl.classList.remove('text-green-600', 'text-red-500');
                 userNameEl.innerText = userProfile.displayName;
@@ -297,8 +306,9 @@
 
         window.checkFriendship = async function() {
             if (!liffInitialized || !liff.isLoggedIn()) {
-                isFriend = false;
-                return false;
+                console.warn("⚠️ LIFF 未初始化或未登入，跳過好友檢查");
+                isFriend = true; // 臨時允許繼續使用
+                return true;
             }
             
             try {
@@ -307,9 +317,11 @@
                 console.log(isFriend ? "✅ 用戶已加為好友" : "❌ 用戶尚未加為好友");
                 return isFriend;
             } catch (e) {
-                console.error("無法檢查好友狀態", e);
-                isFriend = false;
-                return false;
+                console.error("⚠️ 無法檢查好友狀態（可能是 LIFF 設定問題）", e);
+                console.warn("⚠️ 暫時允許繼續使用，但建議檢查 LINE Developers Console 設定");
+                // 臨時允許繼續，避免阻擋功能
+                isFriend = true;
+                return true;
             }
         }
 
@@ -463,7 +475,8 @@
             
             let errors = [];
             if (!userProfile || !userProfile.userId) errors.push("需 LINE 登入");
-            if (!isFriend) errors.push("需加入官方帳號");
+            // 移除強制好友檢查，改為建議
+            // if (!isFriend) errors.push("需加入官方帳號");
             if (total <= 0) errors.push("未選項目");
             
             // 檢查任我做是否有填關鍵字
@@ -499,10 +512,13 @@
                 return;
             }
             
+            // 移除強制好友檢查，改為提醒
             if (!isFriend) {
-                alert("❌ 請先加入我們的 LINE 官方帳號！\n\n為了確保能收到預約通知，必須先加入官方帳號為好友。\n\n請點擊上方綠色區塊的「立即加入官方帳號」按鈕。");
-                document.getElementById('friend-warning').scrollIntoView({ behavior: 'smooth', block: 'center' });
-                return;
+                const confirmBooking = confirm("⚠️ 建議加入 LINE 官方帳號\n\n雖然可以繼續預約，但加入官方帳號後才能收到預約通知。\n\n是否仍要繼續預約？");
+                if (!confirmBooking) {
+                    document.getElementById('friend-warning').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return;
+                }
             }
             
             if (total <= 0) { alert("❌ 您尚未選擇任何服務項目！\n請選擇造型或卸甲服務。"); return; }
@@ -829,10 +845,83 @@ Nail Collector 收藏家`;
             }
         }
 
-        window.toggleAdminDateStatus = function() {
+        window.toggleDateClosed = function() {
+            if (adminSelectedIndex === null) return;
+            
+            const item = calendarData[adminSelectedIndex];
+            const dateStr = `${currentYear}-${currentMonth}-${item.date}`;
+            const displayDate = `${currentMonth+1}/${item.date}`;
+            const idx = closedDates.indexOf(dateStr);
+            const btn = document.getElementById('admin-close-date-btn');
+            
+            if (idx >= 0) {
+                // 目前已關閉，要重新開放
+                if (!confirm(`確定要重新開放 ${displayDate} 嗎？\n\n開放後客人將可以預約此日期。`)) {
+                    return;
+                }
+                closedDates.splice(idx, 1);
+                btn.classList.remove('bg-red-50', 'border-red-300', 'text-red-700');
+                btn.classList.add('border-gray-300', 'text-gray-600');
+                btn.innerText = '手動關閉此日期';
+                alert('✅ 日期已重新開放');
+            } else {
+                // 目前開放中，要關閉
+                const bookingCount = item.bookedSlots ? item.bookedSlots.length : 0;
+                let confirmMsg = `⚠️ 確定要關閉 ${displayDate} 嗎？\n\n關閉後：\n• 客人無法預約此日期\n• 已預約者不受影響\n`;
+                
+                if (bookingCount > 0) {
+                    confirmMsg += `\n目前有 ${bookingCount} 個預約會保留。`;
+                }
+                
+                if (!confirm(confirmMsg)) {
+                    return;
+                }
+                closedDates.push(dateStr);
+                btn.classList.remove('border-gray-300', 'text-gray-600');
+                btn.classList.add('bg-red-50', 'border-red-300', 'text-red-700');
+                btn.innerText = '✓ 此日期已關閉';
+                alert('✅ 日期已關閉\n\n記得點擊下方「儲存變更」按鈕！');
+            }
+        }
+
+        window.updateCloseDateButton = function() {
             if (adminSelectedIndex === null) return;
             const item = calendarData[adminSelectedIndex];
-            item.status = (item.status === 'available') ? 'booked' : 'available';
+            const dateStr = `${currentYear}-${currentMonth}-${item.date}`;
+            const btn = document.getElementById('admin-close-date-btn');
+            
+            if (closedDates.includes(dateStr)) {
+                btn.classList.remove('border-gray-300', 'text-gray-600');
+                btn.classList.add('bg-red-50', 'border-red-300', 'text-red-700');
+                btn.innerText = '✓ 此日期已關閉（點擊重新開放）';
+            } else {
+                btn.classList.remove('bg-red-50', 'border-red-300', 'text-red-700');
+                btn.classList.add('border-gray-300', 'text-gray-600');
+                btn.innerText = '手動關閉此日期';
+            }
+        }
+            if (adminSelectedIndex === null) return;
+            const item = calendarData[adminSelectedIndex];
+            const dateStr = `${currentMonth+1}/${item.date}`;
+            const newStatus = (item.status === 'available') ? 'booked' : 'available';
+            
+            let confirmMsg = '';
+            if (newStatus === 'booked') {
+                const bookingCount = item.bookedSlots ? item.bookedSlots.length : 0;
+                if (bookingCount > 0) {
+                    confirmMsg = `⚠️ 確定要將此日設為公休嗎？\n\n日期：${dateStr}\n目前有 ${bookingCount} 個預約\n\n設為公休後，所有預約將被刪除！`;
+                } else {
+                    confirmMsg = `確定要將 ${dateStr} 設為公休嗎？`;
+                }
+            } else {
+                confirmMsg = `確定要將 ${dateStr} 重新開放預約嗎？`;
+            }
+            
+            if (!confirm(confirmMsg)) {
+                return; // 取消操作
+            }
+            
+            item.status = newStatus;
             if(item.status === 'booked') item.bookedSlots = [];
             window.selectAdminDate(adminSelectedIndex);
         }
@@ -840,8 +929,20 @@ Nail Collector 收藏家`;
         window.toggleAdminSlot = function(index, time) {
             const slots = calendarData[index].bookedSlots;
             const idx = slots.findIndex(s => (typeof s === 'string' ? s : s.time) === time);
-            if (idx >= 0) slots.splice(idx, 1);
-            else slots.push({ time: time, user: 'Admin', status: 'approved' });
+            
+            if (idx >= 0) {
+                // 刪除預約 - 需要確認
+                const slot = slots[idx];
+                const userName = (typeof slot === 'object') ? slot.user : 'Admin';
+                const dateStr = `${currentMonth+1}/${calendarData[index].date}`;
+                
+                if (!confirm(`⚠️ 確定要刪除此預約嗎？\n\n日期：${dateStr}\n時間：${time}\n預約人：${userName}\n\n此操作無法復原！`)) {
+                    return; // 取消操作
+                }
+                slots.splice(idx, 1);
+            } else {
+                slots.push({ time: time, user: 'Admin', status: 'approved' });
+            }
             window.selectAdminDate(index);
         }
 
@@ -1192,8 +1293,13 @@ Nail Collector 收藏家`;
         window.fetchCalendarData = async function() {
             window.showLoading(true);
             try {
+                // 載入行事曆資料
                 const { data, error } = await supabaseClient.from('calendar_slots').select('*');
                 if (error) throw error;
+                
+                // 載入關閉日期設定
+                await window.loadClosedDates();
+                
                 window.initMockData(true);
                 data.forEach(row => {
                     const parts = row.date_id.split('-');
@@ -1205,7 +1311,10 @@ Nail Collector 收藏家`;
                         }
                     }
                 });
-            } catch (err) { window.initMockData(); }
+            } catch (err) { 
+                console.log('⚠️ 無法載入資料，使用預設資料:', err.message);
+                window.initMockData(); 
+            }
             finally { window.showLoading(false); }
         }
 
@@ -1219,16 +1328,151 @@ Nail Collector 收藏家`;
             }
         }
 
+        window.calculateBookingRange = function() {
+            const now = new Date();
+            const currentDay = now.getDate();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            
+            let targetMonth, targetYear;
+            let rangeStart, rangeEnd;
+            
+            // 判斷現在是否已經過了開放時間
+            if (currentDay >= 25) {
+                // 已過25號 → 可預約下個月全月 (1-15 + 16-月底)
+                targetMonth = currentMonth + 1;
+                targetYear = currentYear;
+                if (targetMonth > 11) { targetMonth = 0; targetYear++; }
+                rangeStart = new Date(targetYear, targetMonth, 1);
+                rangeEnd = new Date(targetYear, targetMonth + 1, 0);
+            } else if (currentDay >= 15) {
+                // 15-24號 → 可預約下個月 1-15
+                targetMonth = currentMonth + 1;
+                targetYear = currentYear;
+                if (targetMonth > 11) { targetMonth = 0; targetYear++; }
+                rangeStart = new Date(targetYear, targetMonth, 1);
+                rangeEnd = new Date(targetYear, targetMonth, 15);
+            } else {
+                // 1-14號 → 可預約本月 16-月底 和 下個月 1-15
+                // 本月下半月
+                rangeStart = new Date(currentYear, currentMonth, 16);
+                targetMonth = currentMonth + 1;
+                targetYear = currentYear;
+                if (targetMonth > 11) { targetMonth = 0; targetYear++; }
+                rangeEnd = new Date(targetYear, targetMonth, 15);
+            }
+            
+            bookingOpenRanges = { start: rangeStart, end: rangeEnd };
+            console.log('📅 可預約範圍:', rangeStart.toLocaleDateString(), '-', rangeEnd.toLocaleDateString());
+            return bookingOpenRanges;
+        }
+
         window.showLoading = function(show) { document.getElementById('global-loading').style.display = show ? 'flex' : 'none'; }
 
+        window.loadClosedDates = async function() {
+            if (!supabaseClient) return;
+            try {
+                const { data, error } = await supabaseClient
+                    .from('booking_settings')
+                    .select('setting_value')
+                    .eq('setting_key', 'closed_dates')
+                    .single();
+                
+                if (data && data.setting_value && data.setting_value.dates) {
+                    closedDates = data.setting_value.dates;
+                    console.log('📅 已載入關閉日期:', closedDates);
+                }
+            } catch(e) {
+                console.log('⚠️ 無法載入關閉日期設定:', e.message);
+            }
+        }
+
+        window.saveClosedDates = async function() {
+            if (!supabaseClient) return;
+            try {
+                const { error } = await supabaseClient
+                    .from('booking_settings')
+                    .upsert({
+                        setting_key: 'closed_dates',
+                        setting_value: { dates: closedDates }
+                    });
+                
+                if (error) throw error;
+                console.log('✅ 關閉日期已儲存');
+            } catch(e) {
+                console.error('❌ 儲存關閉日期失敗:', e.message);
+            }
+        }
+            const checkDate = new Date(year, month, day);
+            const dateStr = `${year}-${month}-${day}`;
+            
+            // 檢查是否手動關閉
+            if (closedDates.includes(dateStr)) {
+                return { bookable: false, reason: 'closed' };
+            }
+            
+            // 檢查是否在開放範圍內
+            if (!bookingOpenRanges.start || !bookingOpenRanges.end) {
+                window.calculateBookingRange();
+            }
+            
+            if (checkDate < bookingOpenRanges.start || checkDate > bookingOpenRanges.end) {
+                return { bookable: false, reason: 'not-open' };
+            }
+            
+            // 檢查是否已過期
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (checkDate < today) {
+                return { bookable: false, reason: 'past' };
+            }
+            
+            return { bookable: true, reason: 'available' };
+        }
+
         window.renderCalendar = function() {
-            const grid = document.getElementById('calendar-grid'); grid.innerHTML = '';
+            const grid = document.getElementById('calendar-grid'); 
+            grid.innerHTML = '';
             const first = new Date(currentYear, currentMonth, 1).getDay();
+            
+            // 計算可預約範圍
+            window.calculateBookingRange();
+            
             for(let i=0; i<first; i++) grid.appendChild(document.createElement('div'));
+            
             calendarData.forEach(item => {
                 const div = document.createElement('div');
-                div.className = `calendar-day ${item.status}`; div.innerText = item.date;
-                if(item.status === 'available') div.onclick = () => window.selectDate(div, item.date, item.bookedSlots);
+                div.innerText = item.date;
+                
+                // 檢查日期狀態
+                const dateCheck = window.isDateBookable(currentYear, currentMonth, item.date);
+                
+                let className = 'calendar-day';
+                let clickable = false;
+                
+                if (dateCheck.reason === 'closed') {
+                    className += ' closed';
+                    div.title = '此日期已關閉';
+                } else if (dateCheck.reason === 'not-open') {
+                    className += ' not-open';
+                    div.title = '尚未開放預約';
+                } else if (dateCheck.reason === 'past' || item.status === 'past') {
+                    className += ' booked';
+                    div.title = '已過期';
+                } else if (item.status === 'booked') {
+                    className += ' booked';
+                    div.title = '本日公休';
+                } else if (dateCheck.bookable && item.status === 'available') {
+                    clickable = true;
+                    div.title = '點擊預約';
+                }
+                
+                div.className = className;
+                
+                if(clickable) {
+                    div.onclick = () => window.selectDate(div, item.date, item.bookedSlots);
+                }
+                
                 grid.appendChild(div);
             });
         }
