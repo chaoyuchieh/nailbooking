@@ -206,14 +206,7 @@
                         <button onclick="window.updateUnlimitedJumpCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button>
                     </div>
                 </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-xs font-bold">大鑽/凹凸 ($50/指)</span>
-                    <div class="flex items-center gap-3">
-                        <button onclick="window.updateDiamondCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button>
-                        <span id="diamond-count" class="text-sm font-bold w-4 text-center">0</span>
-                        <button onclick="window.updateDiamondCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button>
-                    </div>
-                </div>
+                <button onclick="window.toggleService(this, 50, '大鑽/凹凸')" class="btn-toggle w-full p-3 text-xs rounded-custom text-left">大鑽/凹凸 +$50</button>
                 <button onclick="window.toggleService(this, 50, '卸指甲油')" class="btn-toggle w-full p-3 text-xs rounded-custom text-left">卸指甲油 +$50</button>
             </div>
         </section>
@@ -288,7 +281,6 @@
             removal: { name: '', price: 0 },
             extras: []
         };
-        let diamondCount = 0; 
         let extensionCount = 0; 
         let repairCount = 0;
         let unlimitedJumpCount = 0;
@@ -469,9 +461,6 @@
             else rule.classList.add('hidden');
         }
 
-        window.updateDiamondCount = function(n) {
-            if (diamondCount + n >= 0) { diamondCount += n; document.getElementById('diamond-count').innerText = diamondCount; window.updateUI(); }
-        }
         window.updateExtensionCount = function(n) {
             if (extensionCount + n >= 0) { extensionCount += n; document.getElementById('ext-count').innerText = extensionCount; window.updateUI(); }
         }
@@ -488,7 +477,7 @@
 
         window.calculateTotal = function() {
             return priceState.design + priceState.removal + priceState.extras + 
-                   (unlimitedJumpCount * 100) + (diamondCount * 50) + (extensionCount * 150) + (repairCount * 50);
+                   (unlimitedJumpCount * 100) + (extensionCount * 150) + (repairCount * 50);
         }
 
         window.updateUI = function() {
@@ -612,7 +601,6 @@
                 }
                 
                 if (unlimitedJumpCount > 0) details.extras.push({ name: '無限跳純色', count: unlimitedJumpCount, price: unlimitedJumpCount * 100 });
-                if (diamondCount > 0) details.extras.push({ name: '大鑽/凹凸', count: diamondCount, price: diamondCount * 50 });
                 if (extensionCount > 0) details.extras.push({ name: '延甲', count: extensionCount, price: extensionCount * 150 });
                 if (repairCount > 0) details.extras.push({ name: '補甲', count: repairCount, price: repairCount * 50 });
                 
@@ -669,17 +657,35 @@ Nail Collector 收藏家`;
                             text: successMsg
                         }]);
                         alert("✅ 預約申請已送出！\n\n已在 LINE 發送確認訊息。");
+                        
+                        // 關閉 LIFF 視窗
+                        setTimeout(() => {
+                            liff.closeWindow();
+                        }, 1500);
                     } else {
                         alert(`✅ 預約申請已送出！\n\n${successMsg}`);
+                        
+                        // 瀏覽器環境，3秒後重新整理或關閉
+                        setTimeout(() => {
+                            window.close(); // 嘗試關閉視窗
+                            // 如果無法關閉，則重新整理
+                            if (!window.closed) {
+                                window.location.reload();
+                            }
+                        }, 3000);
                     }
                 } catch (e) {
                     console.warn("LINE message failed", e);
                     alert(`✅ 預約申請已送出！\n\n${successMsg}`);
+                    
+                    setTimeout(() => {
+                        if (liffInitialized && liff.isInClient()) {
+                            liff.closeWindow();
+                        } else {
+                            window.location.reload();
+                        }
+                    }, 2000);
                 }
-                
-                setTimeout(() => {
-                    window.location.reload();
-                }, 2000);
 
             } catch (e) {
                 alert("❌ 預約失敗：" + e.message);
@@ -1387,31 +1393,70 @@ Nail Collector 收藏家`;
             const currentMonth = now.getMonth();
             const currentYear = now.getFullYear();
             
-            let targetMonth, targetYear;
-            let rangeStart, rangeEnd;
+            // 計算所有已開放的日期範圍
+            let openRanges = [];
             
-            if (currentDay >= 25) {
-                targetMonth = currentMonth + 1;
-                targetYear = currentYear;
-                if (targetMonth > 11) { targetMonth = 0; targetYear++; }
-                rangeStart = new Date(targetYear, targetMonth, 1);
-                rangeEnd = new Date(targetYear, targetMonth + 1, 0);
-            } else if (currentDay >= 15) {
-                targetMonth = currentMonth + 1;
-                targetYear = currentYear;
-                if (targetMonth > 11) { targetMonth = 0; targetYear++; }
-                rangeStart = new Date(targetYear, targetMonth, 1);
-                rangeEnd = new Date(targetYear, targetMonth, 15);
-            } else {
-                rangeStart = new Date(currentYear, currentMonth, 16);
-                targetMonth = currentMonth + 1;
-                targetYear = currentYear;
-                if (targetMonth > 11) { targetMonth = 0; targetYear++; }
-                rangeEnd = new Date(targetYear, targetMonth, 15);
+            // 檢查上個月的開放設定
+            let lastMonth = currentMonth - 1;
+            let lastYear = currentYear;
+            if (lastMonth < 0) { lastMonth = 11; lastYear--; }
+            
+            // 上個月 15 號開放的本月 1-15
+            const lastMonth15th = new Date(lastYear, lastMonth, 15);
+            if (now >= lastMonth15th) {
+                openRanges.push({
+                    start: new Date(currentYear, currentMonth, 1),
+                    end: new Date(currentYear, currentMonth, 15, 23, 59, 59)
+                });
             }
             
-            bookingOpenRanges = { start: rangeStart, end: rangeEnd };
-            console.log('📅 可預約範圍:', rangeStart.toLocaleDateString(), '-', rangeEnd.toLocaleDateString());
+            // 上個月 25 號開放的本月 16-月底
+            const lastMonth25th = new Date(lastYear, lastMonth, 25);
+            if (now >= lastMonth25th) {
+                openRanges.push({
+                    start: new Date(currentYear, currentMonth, 16),
+                    end: new Date(currentYear, currentMonth + 1, 0, 23, 59, 59) // 本月最後一天
+                });
+            }
+            
+            // 本月 15 號開放的下個月 1-15
+            const thisMonth15th = new Date(currentYear, currentMonth, 15);
+            if (now >= thisMonth15th) {
+                let nextMonth = currentMonth + 1;
+                let nextYear = currentYear;
+                if (nextMonth > 11) { nextMonth = 0; nextYear++; }
+                openRanges.push({
+                    start: new Date(nextYear, nextMonth, 1),
+                    end: new Date(nextYear, nextMonth, 15, 23, 59, 59)
+                });
+            }
+            
+            // 本月 25 號開放的下個月 16-月底
+            const thisMonth25th = new Date(currentYear, currentMonth, 25);
+            if (now >= thisMonth25th) {
+                let nextMonth = currentMonth + 1;
+                let nextYear = currentYear;
+                if (nextMonth > 11) { nextMonth = 0; nextYear++; }
+                openRanges.push({
+                    start: new Date(nextYear, nextMonth, 16),
+                    end: new Date(nextYear, nextMonth + 1, 0, 23, 59, 59)
+                });
+            }
+            
+            // 合併所有範圍找出最小開始日期和最大結束日期
+            if (openRanges.length > 0) {
+                const allStarts = openRanges.map(r => r.start);
+                const allEnds = openRanges.map(r => r.end);
+                bookingOpenRanges = {
+                    start: new Date(Math.min(...allStarts)),
+                    end: new Date(Math.max(...allEnds)),
+                    ranges: openRanges // 保存所有範圍供詳細檢查
+                };
+            } else {
+                bookingOpenRanges = { start: null, end: null, ranges: [] };
+            }
+            
+            console.log('📅 可預約範圍:', bookingOpenRanges);
             return bookingOpenRanges;
         }
 
@@ -1454,27 +1499,41 @@ Nail Collector 收藏家`;
 
         window.isDateBookable = function(year, month, day) {
             const checkDate = new Date(year, month, day);
+            checkDate.setHours(0, 0, 0, 0);
             const dateStr = `${year}-${month}-${day}`;
             
+            // 檢查是否手動關閉
             if (closedDates.includes(dateStr)) {
                 return { bookable: false, reason: 'closed' };
             }
             
-            if (!bookingOpenRanges.start || !bookingOpenRanges.end) {
-                window.calculateBookingRange();
-            }
-            
-            if (checkDate < bookingOpenRanges.start || checkDate > bookingOpenRanges.end) {
-                return { bookable: false, reason: 'not-open' };
-            }
-            
+            // 檢查是否已過期
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             if (checkDate < today) {
                 return { bookable: false, reason: 'past' };
             }
             
-            return { bookable: true, reason: 'available' };
+            // 計算開放範圍
+            if (!bookingOpenRanges.start || !bookingOpenRanges.ranges) {
+                window.calculateBookingRange();
+            }
+            
+            // 檢查是否在任一開放範圍內
+            if (bookingOpenRanges.ranges && bookingOpenRanges.ranges.length > 0) {
+                const checkTime = checkDate.getTime();
+                const isInRange = bookingOpenRanges.ranges.some(range => {
+                    return checkTime >= range.start.getTime() && checkTime <= range.end.getTime();
+                });
+                
+                if (isInRange) {
+                    return { bookable: true, reason: 'available' };
+                } else {
+                    return { bookable: false, reason: 'not-open' };
+                }
+            }
+            
+            return { bookable: false, reason: 'not-open' };
         }
 
         window.renderCalendar = function() {
