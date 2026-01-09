@@ -63,16 +63,16 @@
             <div class="flex items-center gap-2 text-blue-800 text-sm"><i class="fas fa-info-circle"></i><span>正在自動登入...</span></div>
         </div>
         <div id="login-customer-view" class="w-full max-w-xs flex flex-col items-center gap-4 fade-in">
-            <button id="btn-line-login" onclick="loginWithLine()" class="w-full bg-[#06C755] text-white py-4 rounded-custom font-bold flex items-center justify-center gap-3 shadow-md hover:bg-[#05b54d] transition"><i class="fab fa-line text-xl"></i> 使用 LINE 登入預約</button>
+            <button id="btn-line-login" onclick="window.loginWithLine()" class="w-full bg-[#06C755] text-white py-4 rounded-custom font-bold flex items-center justify-center gap-3 shadow-md hover:bg-[#05b54d] transition"><i class="fab fa-line text-xl"></i> 使用 LINE 登入預約</button>
             <div class="mt-8"></div>
-            <button onclick="toggleAdminLogin(true)" class="text-xs text-gray-400 border-b border-gray-200 pb-1">管理員後台登入</button>
+            <button onclick="window.toggleAdminLogin(true)" class="text-xs text-gray-400 border-b border-gray-200 pb-1">管理員後台登入</button>
         </div>
         <div id="login-admin-view" class="w-full max-w-xs flex flex-col items-center gap-3 hidden fade-in">
             <h2 class="text-gray-800 font-bold mb-2">後台登入</h2>
             <input id="admin-id" type="text" placeholder="帳號 (admin)" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-sm outline-none">
             <input id="admin-pwd" type="password" placeholder="密碼 (1234)" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-sm outline-none">
-            <button onclick="doAdminLogin()" class="w-full bg-gray-800 text-white py-3 rounded-lg font-bold shadow-md mt-2">登入系統</button>
-            <button onclick="toggleAdminLogin(false)" class="text-xs text-gray-400 mt-2">返回顧客入口</button>
+            <button onclick="window.doAdminLogin()" class="w-full bg-gray-800 text-white py-3 rounded-lg font-bold shadow-md mt-2">登入系統</button>
+            <button onclick="window.toggleAdminLogin(false)" class="text-xs text-gray-400 mt-2">返回顧客入口</button>
         </div>
         <p class="text-[10px] text-gray-300 mt-12 text-center absolute bottom-10">System by Nail Collector</p>
     </div>
@@ -81,9 +81,34 @@
         <div class="w-full max-w-md bg-gray-50 h-full shadow-2xl flex flex-col relative">
             <div class="bg-white p-5 shadow-sm flex justify-between items-center border-b border-gray-100 flex-none z-10">
                 <div><h2 class="text-base font-bold text-gray-800">📅 後台審核管理</h2><p id="admin-month-title" class="text-[10px] text-gray-400"></p></div>
-                <button onclick="logout()" class="text-xs text-red-500 border border-red-200 px-3 py-1 rounded-full">登出</button>
+                <button onclick="window.logout()" class="text-xs text-red-500 border border-red-200 px-3 py-1 rounded-full">登出</button>
             </div>
             <div class="flex-1 overflow-y-auto p-4">
+                <div class="bg-white p-3 rounded-xl shadow-sm mb-3 border border-gray-100">
+                    <h3 class="text-sm font-bold text-gray-700 mb-2">📅 開放設定</h3>
+                    <div class="text-[10px] text-gray-600 space-y-1">
+                        <div class="flex justify-between items-center py-1 border-b border-gray-100">
+                            <span>第一次開放：</span>
+                            <span class="font-bold text-blue-600">每月 15 號 12:00</span>
+                        </div>
+                        <div class="flex justify-between items-center py-1 border-b border-gray-100">
+                            <span>開放範圍：</span>
+                            <span class="font-bold">下個月 1-15 號</span>
+                        </div>
+                        <div class="flex justify-between items-center py-1 border-b border-gray-100">
+                            <span>第二次開放：</span>
+                            <span class="font-bold text-blue-600">每月 25 號 12:00</span>
+                        </div>
+                        <div class="flex justify-between items-center py-1">
+                            <span>開放範圍：</span>
+                            <span class="font-bold">下個月 16-月底</span>
+                        </div>
+                    </div>
+                    <div id="closed-dates-list" class="mt-3 pt-3 border-t border-gray-100">
+                        <p class="text-[10px] text-gray-500 mb-1">🚫 已關閉日期：</p>
+                        <div id="closed-dates-items" class="text-[10px] text-red-600"></div>
+                    </div>
+                </div>
                 <div class="bg-white p-3 rounded-xl shadow-sm mb-4 border border-gray-100">
                     <div class="grid grid-cols-7 gap-1 mb-2 text-center"><div class="text-[10px] text-red-400 font-bold">日</div><div class="text-[10px] text-gray-400">一</div><div class="text-[10px] text-gray-400">二</div><div class="text-[10px] text-gray-400">三</div><div class="text-[10px] text-gray-400">四</div><div class="text-[10px] text-gray-400">五</div><div class="text-[10px] text-blue-400 font-bold">六</div></div>
                     <div id="admin-calendar-grid" class="grid grid-cols-7 gap-1"></div>
@@ -92,10 +117,10 @@
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-3">
                         <div class="flex justify-between items-center mb-3">
                             <div><p class="text-[10px] text-gray-400 uppercase">編輯日期</p><h3 id="admin-edit-date-title" class="text-lg font-bold text-gray-800"></h3></div>
-                            <button id="admin-status-toggle" onclick="toggleAdminDateStatus()" class="px-3 py-1.5 rounded-full text-xs font-bold transition-colors shadow-sm bg-gray-100">狀態切換</button>
+                            <button id="admin-status-toggle" onclick="window.toggleAdminDateStatus()" class="px-3 py-1.5 rounded-full text-xs font-bold transition-colors shadow-sm bg-gray-100">狀態切換</button>
                         </div>
                         <div class="mb-3">
-                            <button id="admin-close-date-btn" onclick="toggleDateClosed()" class="w-full px-3 py-2 rounded-lg text-xs font-bold transition-colors border-2">手動關閉此日期</button>
+                            <button id="admin-close-date-btn" onclick="window.toggleDateClosed()" class="w-full px-3 py-2 rounded-lg text-xs font-bold transition-colors border-2">手動關閉此日期</button>
                             <p class="text-[9px] text-gray-400 mt-1 text-center">關閉後客人將無法預約此日期</p>
                         </div>
                         <hr class="border-gray-100 mb-3"><p class="text-[10px] text-gray-400 mb-2">當日預約清單：</p>
@@ -104,7 +129,7 @@
                 </div>
             </div>
             <div class="bg-white p-4 border-t border-gray-100 flex-none z-10">
-                <button onclick="saveAdminSettings()" class="w-full bg-gray-800 text-white py-3 rounded-xl font-bold shadow-lg text-sm hover:bg-gray-700 transition">儲存變更 (必須點擊)</button>
+                <button onclick="window.saveAdminSettings()" class="w-full bg-gray-800 text-white py-3 rounded-xl font-bold shadow-lg text-sm hover:bg-gray-700 transition">儲存變更 (必須點擊)</button>
             </div>
         </div>
     </div>
@@ -116,7 +141,7 @@
                 <h2 id="user-name" class="text-lg font-bold text-gray-800">收藏家 Guest</h2>
                 <p id="user-status" class="text-[10px] text-gray-500 mt-1"></p>
             </div>
-            <button onclick="logout()" class="text-xs text-gray-400 underline">登出</button>
+            <button onclick="window.logout()" class="text-xs text-gray-400 underline">登出</button>
         </header>
         <div id="friend-warning" class="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 rounded-lg hidden">
             <div class="flex items-start gap-3">
@@ -124,8 +149,8 @@
                 <div class="flex-1">
                     <p class="text-sm font-bold text-green-800 mb-1">📱 請先加入 LINE 官方帳號</p>
                     <p class="text-xs text-green-700 mb-3">為確保能即時收到預約通知，請先加入我們為好友！</p>
-                    <button id="add-friend-btn" onclick="addFriend()" class="text-xs bg-green-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-700 transition shadow-sm"><i class="fab fa-line mr-1"></i> 立即加入官方帳號</button>
-                    <button onclick="recheckFriendship()" class="ml-2 text-xs text-green-600 underline">我已加入，重新檢查</button>
+                    <button id="add-friend-btn" onclick="window.addFriend()" class="text-xs bg-green-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-700 transition shadow-sm"><i class="fab fa-line mr-1"></i> 立即加入官方帳號</button>
+                    <button onclick="window.recheckFriendship()" class="ml-2 text-xs text-green-600 underline">我已加入，重新檢查</button>
                 </div>
             </div>
         </div>
@@ -135,7 +160,7 @@
                 <div class="flex-1">
                     <p class="text-sm font-bold text-yellow-800 mb-1">尚未使用 LINE 登入</p>
                     <p class="text-xs text-yellow-700 mb-3">您目前無法送出預約，請先使用 LINE 帳號登入。</p>
-                    <button onclick="showLoginScreen()" class="text-xs bg-yellow-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-yellow-700 transition"><i class="fab fa-line mr-1"></i> 前往 LINE 登入</button>
+                    <button onclick="window.showLoginScreen()" class="text-xs bg-yellow-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-yellow-700 transition"><i class="fab fa-line mr-1"></i> 前往 LINE 登入</button>
                 </div>
             </div>
         </div>
@@ -143,17 +168,17 @@
         <section class="mb-10">
             <h2 class="text-xs font-bold text-gray-400 mb-4 tracking-tighter uppercase flex items-center"><span class="w-4 h-[1px] bg-gray-300 mr-2"></span> 01 / Design 造型</h2>
             <div class="grid grid-cols-2 gap-2 mb-2">
-                <button onclick="selectSingleOption(this, 1000, 'design', '透明')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">透明 $1000</button>
-                <button onclick="selectSingleOption(this, 1200, 'design', '單色')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">單色 $1200</button>
-                <button onclick="selectSingleOption(this, 1300, 'design', '貓眼')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">貓眼 $1300</button>
-                <button onclick="selectSingleOption(this, 1400, 'design', '漸層')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">漸層 $1400</button>
-                <button onclick="selectSingleOption(this, 1400, 'design', '鏡面')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">鏡面 $1400</button>
+                <button onclick="window.selectSingleOption(this, 1000, 'design', '透明')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">透明 $1000</button>
+                <button onclick="window.selectSingleOption(this, 1200, 'design', '單色')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">單色 $1200</button>
+                <button onclick="window.selectSingleOption(this, 1300, 'design', '貓眼')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">貓眼 $1300</button>
+                <button onclick="window.selectSingleOption(this, 1400, 'design', '漸層')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">漸層 $1400</button>
+                <button onclick="window.selectSingleOption(this, 1400, 'design', '鏡面')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">鏡面 $1400</button>
             </div>
-            <button onclick="selectSingleOption(this, 1550, 'design', '五指造型'); toggleDesignRule('rule-5', this)" class="btn-toggle w-full mb-2 p-4 text-sm rounded-custom flex justify-between" data-group="design"><span>五指造型</span><span>$1550 up</span></button>
+            <button onclick="window.selectSingleOption(this, 1550, 'design', '五指造型'); window.toggleDesignRule('rule-5', this)" class="btn-toggle w-full mb-2 p-4 text-sm rounded-custom flex justify-between" data-group="design"><span>五指造型</span><span>$1550 up</span></button>
             <div id="rule-5" class="hidden rule-box mb-2">4-6指造型 + 單色</div>
-            <button onclick="selectSingleOption(this, 1650, 'design', '十指造型'); toggleDesignRule('rule-10', this)" class="btn-toggle w-full mb-2 p-4 text-sm rounded-custom flex justify-between" data-group="design"><span>十指造型</span><span>$1650 up</span></button>
+            <button onclick="window.selectSingleOption(this, 1650, 'design', '十指造型'); window.toggleDesignRule('rule-10', this)" class="btn-toggle w-full mb-2 p-4 text-sm rounded-custom flex justify-between" data-group="design"><span>十指造型</span><span>$1650 up</span></button>
             <div id="rule-10" class="hidden rule-box mb-2">10指皆造型</div>
-            <button onclick="selectSingleOption(this, 1450, 'design', '任我做'); toggleDesignRule('rule-any', this)" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="design"><span>✨ 任我做</span><span>$1450</span></button>
+            <button onclick="window.selectSingleOption(this, 1450, 'design', '任我做'); window.toggleDesignRule('rule-any', this)" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="design"><span>✨ 任我做</span><span>$1450</span></button>
             <div id="rule-any" class="hidden rule-box bg-gray-800 text-gray-100">
                 <p class="text-xs mb-2">給我2個關鍵字任我發揮</p>
                 <div class="flex gap-2">
@@ -166,39 +191,39 @@
         <section class="mb-10">
             <h2 class="text-xs font-bold text-gray-400 mb-4 tracking-tighter uppercase">02 / Removal 卸甲</h2>
             <div class="space-y-2">
-                <button onclick="selectSingleOption(this, 0, 'removal', '無須卸甲')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="removal"><span>無須卸甲</span><span>$0</span></button>
-                <button onclick="selectSingleOption(this, 100, 'removal', '本店4周內卸甲半價')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="removal"><span>本店4周內卸甲半價 🎉</span><span>$100</span></button>
-                <button onclick="selectSingleOption(this, 200, 'removal', '本店卸甲續作')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="removal"><span>本店卸甲續作</span><span>$200</span></button>
-                <button onclick="selectSingleOption(this, 400, 'removal', '他店卸甲續作')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="removal"><span>他店卸甲續作</span><span>$400</span></button>
-                <button onclick="selectSingleOption(this, 500, 'removal', '純卸甲')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="removal"><span>純卸甲</span><span>$500</span></button>
+                <button onclick="window.selectSingleOption(this, 0, 'removal', '無須卸甲')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="removal"><span>無須卸甲</span><span>$0</span></button>
+                <button onclick="window.selectSingleOption(this, 100, 'removal', '本店4周內卸甲半價')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="removal"><span>本店4周內卸甲半價 🎉</span><span>$100</span></button>
+                <button onclick="window.selectSingleOption(this, 200, 'removal', '本店卸甲續作')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="removal"><span>本店卸甲續作</span><span>$200</span></button>
+                <button onclick="window.selectSingleOption(this, 400, 'removal', '他店卸甲續作')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="removal"><span>他店卸甲續作</span><span>$400</span></button>
+                <button onclick="window.selectSingleOption(this, 500, 'removal', '純卸甲')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="removal"><span>純卸甲</span><span>$500</span></button>
             </div>
             <div class="mt-4 bg-gray-50 p-4 rounded-custom space-y-3">
                 <div class="flex justify-between items-center">
                     <span class="text-xs font-bold">無限跳純色 ($100/次)</span>
                     <div class="flex items-center gap-3">
-                        <button onclick="updateUnlimitedJumpCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button>
+                        <button onclick="window.updateUnlimitedJumpCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button>
                         <span id="unlimited-jump-count" class="text-sm font-bold w-4 text-center">0</span>
-                        <button onclick="updateUnlimitedJumpCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button>
+                        <button onclick="window.updateUnlimitedJumpCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button>
                     </div>
                 </div>
                 <div class="flex justify-between items-center">
                     <span class="text-xs font-bold">大鑽/凹凸 ($50/指)</span>
                     <div class="flex items-center gap-3">
-                        <button onclick="updateDiamondCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button>
+                        <button onclick="window.updateDiamondCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button>
                         <span id="diamond-count" class="text-sm font-bold w-4 text-center">0</span>
-                        <button onclick="updateDiamondCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button>
+                        <button onclick="window.updateDiamondCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button>
                     </div>
                 </div>
-                <button onclick="toggleService(this, 50, '卸指甲油')" class="btn-toggle w-full p-3 text-xs rounded-custom text-left">卸指甲油 +$50</button>
+                <button onclick="window.toggleService(this, 50, '卸指甲油')" class="btn-toggle w-full p-3 text-xs rounded-custom text-left">卸指甲油 +$50</button>
             </div>
         </section>
 
         <section class="mb-10">
             <h2 class="text-xs font-bold text-gray-400 mb-4 tracking-tighter uppercase">03 / Care 保養</h2>
-            <button onclick="toggleService(this, 400, '基礎保養')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between mb-3"><span>基礎保養</span><span>$400</span></button>
+            <button onclick="window.toggleService(this, 400, '基礎保養')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between mb-3"><span>基礎保養</span><span>$400</span></button>
             <div class="bg-gray-50 p-4 rounded-custom space-y-3">
-                <div class="flex justify-between items-center"><span class="text-xs font-bold">延甲 ($150/指)</span><div class="flex items-center gap-3"><button onclick="updateExtensionCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button><span id="ext-count" class="text-sm font-bold w-4 text-center">0</span><button onclick="updateExtensionCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button></div></div>
-                <div class="flex justify-between items-center"><span class="text-xs font-bold">補甲 ($50/指)</span><div class="flex items-center gap-3"><button onclick="updateRepairCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button><span id="repair-count" class="text-sm font-bold w-4 text-center">0</span><button onclick="updateRepairCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button></div></div>
+                <div class="flex justify-between items-center"><span class="text-xs font-bold">延甲 ($150/指)</span><div class="flex items-center gap-3"><button onclick="window.updateExtensionCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button><span id="ext-count" class="text-sm font-bold w-4 text-center">0</span><button onclick="window.updateExtensionCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button></div></div>
+                <div class="flex justify-between items-center"><span class="text-xs font-bold">補甲 ($50/指)</span><div class="flex items-center gap-3"><button onclick="window.updateRepairCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button><span id="repair-count" class="text-sm font-bold w-4 text-center">0</span><button onclick="window.updateRepairCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button></div></div>
             </div>
         </section>
 
@@ -217,7 +242,7 @@
 
         <section class="bg-gray-50 p-6 rounded-custom mb-24 text-xs text-gray-600">
             <p class="mb-4">首次預約需匯款 <span class="font-bold text-black">$500</span> 保留。</p>
-            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="term-check" onchange="validate()" class="accent-gray-800"><span>我已閱讀並同意規範</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="term-check" onchange="window.validate()" class="accent-gray-800"><span>我已閱讀並同意規範</span></label>
         </section>
 
         <footer class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur border-t border-gray-100 p-4 z-40">
@@ -227,7 +252,7 @@
                     <p class="text-xl font-bold text-gray-800">$<span id="price-display">0</span></p>
                     <p id="validation-msg" class="text-[9px] text-red-500 font-bold"></p>
                 </div>
-                <button id="submit-btn" onclick="checkAndSubmit()" class="bg-gray-900 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition opacity-50 flex items-center gap-2"><span>送出預約</span></button>
+                <button id="submit-btn" onclick="window.checkAndSubmit()" class="bg-gray-900 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition opacity-50 flex items-center gap-2"><span>送出預約</span></button>
             </div>
         </footer>
     </main>
@@ -668,15 +693,50 @@ Nail Collector 收藏家`;
 
         window.saveAdminSettings = async function() {
             if (!supabaseClient) { alert("離線模式無法儲存"); logout(); return; }
+            
+            if (!confirm('確定要儲存所有變更嗎？\n\n包括：\n• 預約狀態變更\n• 關閉日期設定\n• 時段鎖定/解鎖')) {
+                return;
+            }
+            
             window.showLoading(true);
             try {
+                // 儲存行事曆資料
                 const updates = calendarData.map(item => ({
-                    date_id: `${currentYear}-${currentMonth}-${item.date}`, status: item.status, booked_slots: item.bookedSlots
+                    date_id: `${currentYear}-${currentMonth}-${item.date}`, 
+                    status: item.status, 
+                    booked_slots: item.bookedSlots
                 }));
-                const { error } = await supabaseClient.from('calendar_slots').upsert(updates);
-                if (error) throw error;
-                alert("儲存成功！"); window.logout();
-            } catch (e) { alert(e.message); window.showLoading(false); }
+                const { error: calError } = await supabaseClient.from('calendar_slots').upsert(updates);
+                if (calError) throw calError;
+                
+                // 儲存關閉日期
+                await window.saveClosedDates();
+                
+                alert("✅ 儲存成功！"); 
+                window.logout();
+            } catch (e) { 
+                alert("❌ 儲存失敗：" + e.message); 
+                window.showLoading(false); 
+            }
+        }
+
+        window.updateClosedDatesList = function() {
+            const container = document.getElementById('closed-dates-items');
+            if (!container) return;
+            
+            if (closedDates.length === 0) {
+                container.innerHTML = '<p class="text-gray-400">無關閉日期</p>';
+                return;
+            }
+            
+            const sortedDates = [...closedDates].sort();
+            const html = sortedDates.map(dateStr => {
+                const parts = dateStr.split('-');
+                const displayDate = `${parseInt(parts[1])+1}/${parts[2]}`;
+                return `<span class="inline-block bg-red-50 text-red-700 px-2 py-0.5 rounded mr-1 mb-1 text-[9px] font-bold">${displayDate}</span>`;
+            }).join('');
+            
+            container.innerHTML = html;
         }
 
         window.renderAdminCalendar = function() {
@@ -728,6 +788,9 @@ Nail Collector 收藏家`;
                 }
                 grid.appendChild(div);
             });
+            
+            // 更新關閉日期列表
+            window.updateClosedDatesList();
         }
 
         window.selectAdminDate = function(index) {
@@ -736,6 +799,9 @@ Nail Collector 收藏家`;
             const item = calendarData[index];
             document.getElementById('admin-edit-area').classList.remove('hidden');
             document.getElementById('admin-edit-date-title').innerText = `${currentMonth+1} / ${item.date}`;
+            
+            // 更新關閉日期按鈕狀態
+            window.updateCloseDateButton();
 
             const listContainer = document.getElementById('admin-schedule-list');
             listContainer.innerHTML = '';
@@ -802,11 +868,11 @@ Nail Collector 收藏家`;
                                 <div class="text-sm mb-2 text-gray-600">預約人：<span class="font-bold">${userName}</span></div>
                                 ${detailsHtml}
                                 <div class="flex flex-col gap-2 mb-2">
-                                    <button onclick="approveBooking(${index}, '${time}')" class="w-full text-xs bg-green-600 text-white px-3 py-2 rounded font-bold shadow hover:bg-green-700">✅ 確認預約（免訂金）</button>
-                                    <button onclick="approveBookingWithPayment(${index}, '${time}')" class="w-full text-xs bg-blue-600 text-white px-3 py-2 rounded font-bold shadow hover:bg-blue-700">💰 確認（需付訂金 $500）</button>
+                                    <button onclick="window.approveBooking(${index}, '${time}')" class="w-full text-xs bg-green-600 text-white px-3 py-2 rounded font-bold shadow hover:bg-green-700">✅ 確認預約（免訂金）</button>
+                                    <button onclick="window.approveBookingWithPayment(${index}, '${time}')" class="w-full text-xs bg-blue-600 text-white px-3 py-2 rounded font-bold shadow hover:bg-blue-700">💰 確認（需付訂金 $500）</button>
                                 </div>
                                 <div class="schedule-actions">
-                                    <button onclick="rejectBooking(${index}, '${time}')" class="text-xs bg-red-100 text-red-600 px-3 py-1 rounded font-bold hover:bg-red-200">❌ 拒絕</button>
+                                    <button onclick="window.rejectBooking(${index}, '${time}')" class="text-xs bg-red-100 text-red-600 px-3 py-1 rounded font-bold hover:bg-red-200">❌ 拒絕</button>
                                 </div>`;
                         } else if (status === 'pending_payment') {
                             contentHtml = `
@@ -863,6 +929,7 @@ Nail Collector 收藏家`;
                 btn.classList.remove('bg-red-50', 'border-red-300', 'text-red-700');
                 btn.classList.add('border-gray-300', 'text-gray-600');
                 btn.innerText = '手動關閉此日期';
+                window.updateClosedDatesList();
                 alert('✅ 日期已重新開放');
             } else {
                 // 目前開放中，要關閉
@@ -880,6 +947,7 @@ Nail Collector 收藏家`;
                 btn.classList.remove('border-gray-300', 'text-gray-600');
                 btn.classList.add('bg-red-50', 'border-red-300', 'text-red-700');
                 btn.innerText = '✓ 此日期已關閉';
+                window.updateClosedDatesList();
                 alert('✅ 日期已關閉\n\n記得點擊下方「儲存變更」按鈕！');
             }
         }
