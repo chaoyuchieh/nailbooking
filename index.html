@@ -16,9 +16,9 @@
         .btn-toggle.active { background-color: #374151; color: #fff; border-color: #374151; }
         .calendar-day { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 50%; font-size: 0.8rem; position: relative; background: #fff; }
         .calendar-day.selected { background-color: #374151; color: #fff; }
-        .calendar-day.booked { background-color: #f3f4f6; color: #d1d5db; }
-        .calendar-day.not-open { background-color: #e5e7eb; color: #9ca3af; cursor: not-allowed; position: relative; }
-        .calendar-day.not-open::after { content: '未開放'; position: absolute; bottom: 2px; font-size: 7px; color: #6b7280; }
+        .calendar-day.booked { background-color: #d1d5db; color: #6b7280; }
+        .calendar-day.not-open { background-color: #d1d5db; color: #6b7280; cursor: not-allowed; position: relative; }
+        .calendar-day.not-open::after { content: '未開放'; position: absolute; bottom: 2px; font-size: 7px; color: #4b5563; }
         .calendar-day.closed { background-color: #fee2e2; color: #dc2626; cursor: not-allowed; text-decoration: line-through; }
         .admin-day { min-height: 80px; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; cursor: pointer; border-radius: 8px; font-size: 0.75rem; border: 1px solid #eee; background-color: #fff; position: relative; padding: 4px; overflow: hidden; }
         .admin-day.selected { border: 2px solid #333; background-color: #fafafa; }
@@ -30,7 +30,7 @@
         .bar-pending { background-color: #fef3c7; color: #92400e; }
         .bar-pending-payment { background-color: #fed7aa; color: #9a3412; }
         .indicator-dot { width: 6px; height: 6px; border-radius: 50%; position: absolute; top: 6px; right: 6px; }
-        .rule-box { background-color: #f9fafb; border-radius: 16px; padding: 12px; font-size: 0.75rem; color: #666; margin-top: 8px; line-height: 1.6; }
+        .rule-box { background-color: #e5e7eb; border-radius: 16px; padding: 12px; font-size: 0.75rem; color: #666; margin-top: 8px; line-height: 1.6; }
         .counter-btn { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background-color: #e5e7eb; color: #4b5563; font-size: 12px; }
         .counter-btn:active { background-color: #d1d5db; }
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
@@ -190,14 +190,47 @@
 
         <section class="mb-10">
             <h2 class="text-xs font-bold text-gray-400 mb-4 tracking-tighter uppercase">02 / Removal 卸甲</h2>
-            <div class="space-y-2">
-                <button onclick="window.selectSingleOption(this, 0, 'removal', '無須卸甲')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="removal"><span>無須卸甲</span><span>$0</span></button>
-                <button onclick="window.selectSingleOption(this, 100, 'removal', '本店4周內卸甲半價')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="removal"><span>本店4周內卸甲半價 🎉</span><span>$100</span></button>
-                <button onclick="window.selectSingleOption(this, 200, 'removal', '本店卸甲續作')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="removal"><span>本店卸甲續作</span><span>$200</span></button>
-                <button onclick="window.selectSingleOption(this, 400, 'removal', '他店卸甲續作')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="removal"><span>他店卸甲續作</span><span>$400</span></button>
-                <button onclick="window.selectSingleOption(this, 500, 'removal', '純卸甲')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="removal"><span>純卸甲</span><span>$500</span></button>
+            <div class="mb-3">
+                <label class="block text-sm text-gray-600 mb-2">是否需要卸甲？</label>
+                <div class="grid grid-cols-2 gap-2 mb-3">
+                    <button onclick="window.toggleRemovalNeed(true, this)" id="need-removal-yes" class="btn-toggle p-3 text-sm rounded-custom" data-group="removal-need">需要卸甲</button>
+                    <button onclick="window.toggleRemovalNeed(false, this)" id="need-removal-no" class="btn-toggle p-3 text-sm rounded-custom active" data-group="removal-need">不需要</button>
+                </div>
+            </div>
+            <div id="removal-options" class="hidden space-y-2">
+                <label class="block text-xs text-gray-500 mb-1">選擇卸甲方式：</label>
+                <select id="removal-select" onchange="window.updateRemovalSelection()" class="w-full bg-white border border-gray-200 p-3 rounded-custom text-sm outline-none">
+                    <option value="">請選擇...</option>
+                    <option value="100|本店4周內卸甲半價">本店4周內卸甲半價 🎉 - $100</option>
+                    <option value="200|本店卸甲續作">本店卸甲續作 - $200</option>
+                    <option value="400|他店卸甲續作">他店卸甲續作 - $400</option>
+                    <option value="500|純卸甲">純卸甲 - $500</option>
+                </select>
             </div>
             <div class="mt-4 bg-gray-50 p-4 rounded-custom space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold">大鑽/凹凸 ($50/指)</span>
+                    <div class="flex items-center gap-3">
+                        <button onclick="window.updateBigDiamondCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button>
+                        <span id="big-diamond-count" class="text-sm font-bold w-4 text-center">0</span>
+                        <button onclick="window.updateBigDiamondCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold">卸指甲油 ($50/指)</span>
+                    <div class="flex items-center gap-3">
+                        <button onclick="window.updateNailPolishRemovalCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button>
+                        <span id="nail-polish-removal-count" class="text-sm font-bold w-4 text-center">0</span>
+                        <button onclick="window.updateNailPolishRemovalCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-10">
+            <h2 class="text-xs font-bold text-gray-400 mb-4 tracking-tighter uppercase">03 / Care 保養 / 其他</h2>
+            <button onclick="window.toggleService(this, 400, '基礎保養')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between mb-3"><span>基礎保養</span><span>$400</span></button>
+            <div class="bg-gray-50 p-4 rounded-custom space-y-3">
                 <div class="flex justify-between items-center">
                     <span class="text-xs font-bold">無限跳純色 ($100/次)</span>
                     <div class="flex items-center gap-3">
@@ -206,15 +239,6 @@
                         <button onclick="window.updateUnlimitedJumpCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button>
                     </div>
                 </div>
-                <button onclick="window.toggleService(this, 50, '大鑽/凹凸')" class="btn-toggle w-full p-3 text-xs rounded-custom text-left">大鑽/凹凸 +$50</button>
-                <button onclick="window.toggleService(this, 50, '卸指甲油')" class="btn-toggle w-full p-3 text-xs rounded-custom text-left">卸指甲油 +$50</button>
-            </div>
-        </section>
-
-        <section class="mb-10">
-            <h2 class="text-xs font-bold text-gray-400 mb-4 tracking-tighter uppercase">03 / Care 保養</h2>
-            <button onclick="window.toggleService(this, 400, '基礎保養')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between mb-3"><span>基礎保養</span><span>$400</span></button>
-            <div class="bg-gray-50 p-4 rounded-custom space-y-3">
                 <div class="flex justify-between items-center"><span class="text-xs font-bold">延甲 ($150/指)</span><div class="flex items-center gap-3"><button onclick="window.updateExtensionCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button><span id="ext-count" class="text-sm font-bold w-4 text-center">0</span><button onclick="window.updateExtensionCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button></div></div>
                 <div class="flex justify-between items-center"><span class="text-xs font-bold">補甲 ($50/指)</span><div class="flex items-center gap-3"><button onclick="window.updateRepairCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button><span id="repair-count" class="text-sm font-bold w-4 text-center">0</span><button onclick="window.updateRepairCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button></div></div>
             </div>
@@ -284,6 +308,8 @@
         let extensionCount = 0; 
         let repairCount = 0;
         let unlimitedJumpCount = 0;
+        let bigDiamondCount = 0;
+        let nailPolishRemovalCount = 0;
         let selectedDate = null; 
         let selectedTime = null; 
         let userProfile = null;
@@ -441,6 +467,56 @@
             window.updateUI();
         }
 
+        window.toggleRemovalNeed = function(need, el) {
+            document.querySelectorAll(`button[data-group="removal-need"]`).forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            
+            const removalOptions = document.getElementById('removal-options');
+            const removalSelect = document.getElementById('removal-select');
+            
+            if (need) {
+                removalOptions.classList.remove('hidden');
+            } else {
+                removalOptions.classList.add('hidden');
+                removalSelect.value = '';
+                priceState.removal = 0;
+                bookingDetails.removal = { name: '無須卸甲', price: 0 };
+                window.updateUI();
+            }
+        }
+
+        window.updateRemovalSelection = function() {
+            const select = document.getElementById('removal-select');
+            const value = select.value;
+            
+            if (!value) {
+                priceState.removal = 0;
+                bookingDetails.removal = { name: '', price: 0 };
+            } else {
+                const [price, name] = value.split('|');
+                priceState.removal = parseInt(price);
+                bookingDetails.removal = { name: name || '', price: parseInt(price) };
+            }
+            
+            window.updateUI();
+        }
+
+        window.updateBigDiamondCount = function(n) {
+            if (bigDiamondCount + n >= 0) { 
+                bigDiamondCount += n; 
+                document.getElementById('big-diamond-count').innerText = bigDiamondCount; 
+                window.updateUI(); 
+            }
+        }
+
+        window.updateNailPolishRemovalCount = function(n) {
+            if (nailPolishRemovalCount + n >= 0) { 
+                nailPolishRemovalCount += n; 
+                document.getElementById('nail-polish-removal-count').innerText = nailPolishRemovalCount; 
+                window.updateUI(); 
+            }
+        }
+
         window.toggleService = function(el, price, name) {
             if (el.classList.contains('active')) { 
                 el.classList.remove('active'); 
@@ -477,7 +553,8 @@
 
         window.calculateTotal = function() {
             return priceState.design + priceState.removal + priceState.extras + 
-                   (unlimitedJumpCount * 100) + (extensionCount * 150) + (repairCount * 50);
+                   (unlimitedJumpCount * 100) + (extensionCount * 150) + (repairCount * 50) +
+                   (bigDiamondCount * 50) + (nailPolishRemovalCount * 50);
         }
 
         window.updateUI = function() {
@@ -603,6 +680,8 @@
                 if (unlimitedJumpCount > 0) details.extras.push({ name: '無限跳純色', count: unlimitedJumpCount, price: unlimitedJumpCount * 100 });
                 if (extensionCount > 0) details.extras.push({ name: '延甲', count: extensionCount, price: extensionCount * 150 });
                 if (repairCount > 0) details.extras.push({ name: '補甲', count: repairCount, price: repairCount * 50 });
+                if (bigDiamondCount > 0) details.extras.push({ name: '大鑽/凹凸', count: bigDiamondCount, price: bigDiamondCount * 50 });
+                if (nailPolishRemovalCount > 0) details.extras.push({ name: '卸指甲油', count: nailPolishRemovalCount, price: nailPolishRemovalCount * 50 });
                 
                 booked.push({
                     time: selectedTime,
@@ -658,17 +737,14 @@ Nail Collector 收藏家`;
                         }]);
                         alert("✅ 預約申請已送出！\n\n已在 LINE 發送確認訊息。");
                         
-                        // 關閉 LIFF 視窗
                         setTimeout(() => {
                             liff.closeWindow();
                         }, 1500);
                     } else {
                         alert(`✅ 預約申請已送出！\n\n${successMsg}`);
                         
-                        // 瀏覽器環境，3秒後重新整理或關閉
                         setTimeout(() => {
-                            window.close(); // 嘗試關閉視窗
-                            // 如果無法關閉，則重新整理
+                            window.close();
                             if (!window.closed) {
                                 window.location.reload();
                             }
@@ -1393,15 +1469,12 @@ Nail Collector 收藏家`;
             const currentMonth = now.getMonth();
             const currentYear = now.getFullYear();
             
-            // 計算所有已開放的日期範圍
             let openRanges = [];
             
-            // 檢查上個月的開放設定
             let lastMonth = currentMonth - 1;
             let lastYear = currentYear;
             if (lastMonth < 0) { lastMonth = 11; lastYear--; }
             
-            // 上個月 15 號開放的本月 1-15
             const lastMonth15th = new Date(lastYear, lastMonth, 15);
             if (now >= lastMonth15th) {
                 openRanges.push({
@@ -1410,16 +1483,14 @@ Nail Collector 收藏家`;
                 });
             }
             
-            // 上個月 25 號開放的本月 16-月底
             const lastMonth25th = new Date(lastYear, lastMonth, 25);
             if (now >= lastMonth25th) {
                 openRanges.push({
                     start: new Date(currentYear, currentMonth, 16),
-                    end: new Date(currentYear, currentMonth + 1, 0, 23, 59, 59) // 本月最後一天
+                    end: new Date(currentYear, currentMonth + 1, 0, 23, 59, 59)
                 });
             }
             
-            // 本月 15 號開放的下個月 1-15
             const thisMonth15th = new Date(currentYear, currentMonth, 15);
             if (now >= thisMonth15th) {
                 let nextMonth = currentMonth + 1;
@@ -1431,7 +1502,6 @@ Nail Collector 收藏家`;
                 });
             }
             
-            // 本月 25 號開放的下個月 16-月底
             const thisMonth25th = new Date(currentYear, currentMonth, 25);
             if (now >= thisMonth25th) {
                 let nextMonth = currentMonth + 1;
@@ -1443,14 +1513,13 @@ Nail Collector 收藏家`;
                 });
             }
             
-            // 合併所有範圍找出最小開始日期和最大結束日期
             if (openRanges.length > 0) {
                 const allStarts = openRanges.map(r => r.start);
                 const allEnds = openRanges.map(r => r.end);
                 bookingOpenRanges = {
                     start: new Date(Math.min(...allStarts)),
                     end: new Date(Math.max(...allEnds)),
-                    ranges: openRanges // 保存所有範圍供詳細檢查
+                    ranges: openRanges
                 };
             } else {
                 bookingOpenRanges = { start: null, end: null, ranges: [] };
@@ -1502,24 +1571,20 @@ Nail Collector 收藏家`;
             checkDate.setHours(0, 0, 0, 0);
             const dateStr = `${year}-${month}-${day}`;
             
-            // 檢查是否手動關閉
             if (closedDates.includes(dateStr)) {
                 return { bookable: false, reason: 'closed' };
             }
             
-            // 檢查是否已過期
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             if (checkDate < today) {
                 return { bookable: false, reason: 'past' };
             }
             
-            // 計算開放範圍
             if (!bookingOpenRanges.start || !bookingOpenRanges.ranges) {
                 window.calculateBookingRange();
             }
             
-            // 檢查是否在任一開放範圍內
             if (bookingOpenRanges.ranges && bookingOpenRanges.ranges.length > 0) {
                 const checkTime = checkDate.getTime();
                 const isInRange = bookingOpenRanges.ranges.some(range => {
