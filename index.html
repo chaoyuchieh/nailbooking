@@ -249,8 +249,29 @@
                 <div class="grid grid-cols-7 gap-2 mb-2 text-center text-xs text-gray-400 font-bold"><div class="text-red-400">日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div class="text-blue-400">六</div></div>
                 <div id="calendar-grid" class="grid grid-cols-7 gap-2 mb-6"></div>
                 <div id="time-slots-container" class="hidden pt-4 border-t border-gray-100 fade-in">
-                    <p class="text-center text-xs text-gray-400 mb-3">選擇時段 (約2.5小時)</p>
-                    <div id="time-slots-grid" class="grid grid-cols-2 gap-2"></div>
+                    <p class="text-center text-xs text-gray-400 mb-3">選擇預約時間 (營業時間 10:00-19:00)</p>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="flex items-center justify-center gap-4">
+                            <button onclick="window.adjustTime(-10)" class="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition">
+                                <i class="fas fa-minus text-gray-700"></i>
+                            </button>
+                            <div class="text-center">
+                                <div id="selected-time-display" class="text-3xl font-bold text-gray-800 mb-1">10:00</div>
+                                <div class="text-xs text-gray-500">每次調整 10 分鐘</div>
+                            </div>
+                            <button onclick="window.adjustTime(10)" class="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition">
+                                <i class="fas fa-plus text-gray-700"></i>
+                            </button>
+                        </div>
+                        <div class="mt-4 flex justify-center">
+                            <button onclick="window.confirmTime()" class="bg-gray-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-gray-700 transition">
+                                確認此時間
+                            </button>
+                        </div>
+                        <div id="time-conflict-warning" class="hidden mt-3 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-600 text-center">
+                            此時段已被預約
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -290,7 +311,10 @@
         const currentYear = today.getFullYear();
         const currentMonth = today.getMonth();
         const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        const allTimeSlots = ['09:30', '12:00', '14:30', '17:00', '19:30'];
+        const BUSINESS_HOURS = {
+            start: { hour: 10, minute: 0 },
+            end: { hour: 19, minute: 0 }
+        };
         
         let calendarData = [];
         let adminSelectedIndex = null;
@@ -309,7 +333,10 @@
         let bigDiamondCount = 0;
         let nailPolishRemovalCount = 0;
         let selectedDate = null; 
-        let selectedTime = null; 
+        let selectedTime = null;
+        let currentTimeHour = 10;
+        let currentTimeMinute = 0;
+        let currentDateBookedTimes = [];
         let userProfile = null;
         let liffInitialized = false;
         let isFriend = false;
@@ -912,58 +939,49 @@ Nail Collector 收藏家`;
             if (item.status === 'booked') {
                 listContainer.innerHTML = `<div class="text-center p-4 bg-gray-100 rounded text-gray-500">🚫 本日已設為公休</div>`;
             } else {
-                allTimeSlots.forEach(time => {
-                    const booking = item.bookedSlots.find(s => (typeof s === 'string' ? s : s.time) === time);
-                    let isBooked = !!booking;
-                    let userName = 'Admin';
-                    let status = 'approved';
-                    let paymentDeadline = null;
-                    let bookingDetails = null;
-                    let totalPrice = 0;
-
-                    if (booking && typeof booking === 'object') {
-                        userName = booking.user;
-                        status = booking.status || 'approved';
-                        paymentDeadline = booking.paymentDeadline;
-                        bookingDetails = booking.bookingDetails;
-                        totalPrice = booking.totalPrice || 0;
-                    } else if (booking && typeof booking === 'string') {
-                        userName = 'Admin/Legacy';
-                        status = 'approved';
-                    }
-
-                    const row = document.createElement('div');
-                    row.className = 'schedule-item shadow-sm';
-                    let contentHtml = '';
+                // 顯示所有預約（自由時間）
+                if (item.bookedSlots && item.bookedSlots.length > 0) {
+                    const sortedBookings = [...item.bookedSlots].sort((a,b) => {
+                        const ta = (typeof a==='string'?a:a.time);
+                        const tb = (typeof b==='string'?b:b.time);
+                        return ta.localeCompare(tb);
+                    });
                     
-                    let detailsHtml = '';
-                    if (bookingDetails) {
-                        detailsHtml = '<div class="text-xs text-gray-600 bg-gray-50 p-2 rounded mb-2">';
-                        if (bookingDetails.design && bookingDetails.design.name) {
-                            detailsHtml += `<div class="mb-1"><span class="font-bold">造型：</span>${bookingDetails.design.name}`;
-                            if (bookingDetails.design.keywords && bookingDetails.design.keywords.length > 0) {
-                                detailsHtml += ` (${bookingDetails.design.keywords.join(', ')})`;
-                            }
-                            detailsHtml += `</div>`;
-                        }
-                        if (bookingDetails.removal && bookingDetails.removal.name) {
-                            detailsHtml += `<div class="mb-1"><span class="font-bold">卸甲：</span>${bookingDetails.removal.name}</div>`;
-                        }
-                        if (bookingDetails.extras && bookingDetails.extras.length > 0) {
-                            detailsHtml += `<div><span class="font-bold">加購：</span>${bookingDetails.extras.map(e => {
-                                if (e.count) return `${e.name} x${e.count}`;
-                                return e.name;
-                            }).join(', ')}</div>`;
-                        }
-                        detailsHtml += `<div class="mt-1 font-bold text-gray-800">總計：$${totalPrice}</div>`;
-                        detailsHtml += '</div>';
-                    }
+                    sortedBookings.forEach(booking => {
+                        const time = typeof booking === 'string' ? booking : booking.time;
+                        const userName = typeof booking === 'object' ? booking.user : 'Admin';
+                        const status = typeof booking === 'object' ? (booking.status || 'approved') : 'approved';
+                        const paymentDeadline = typeof booking === 'object' ? booking.paymentDeadline : null;
+                        const bookingDetails = typeof booking === 'object' ? booking.bookingDetails : null;
+                        const totalPrice = typeof booking === 'object' ? (booking.totalPrice || 0) : 0;
 
-                    if (!isBooked) {
-                        contentHtml = `
-                            <div class="schedule-header"><span class="font-bold text-gray-700">${time}</span><span class="tag tag-open">開放中</span></div>
-                            <div class="schedule-actions"><button onclick="toggleAdminSlot(${index}, '${time}')" class="text-xs border border-gray-300 px-3 py-1 rounded hover:bg-gray-100">鎖定</button></div>`;
-                    } else {
+                        const row = document.createElement('div');
+                        row.className = 'schedule-item shadow-sm';
+                        let contentHtml = '';
+                        
+                        let detailsHtml = '';
+                        if (bookingDetails) {
+                            detailsHtml = '<div class="text-xs text-gray-600 bg-gray-50 p-2 rounded mb-2">';
+                            if (bookingDetails.design && bookingDetails.design.name) {
+                                detailsHtml += `<div class="mb-1"><span class="font-bold">造型：</span>${bookingDetails.design.name}`;
+                                if (bookingDetails.design.keywords && bookingDetails.design.keywords.length > 0) {
+                                    detailsHtml += ` (${bookingDetails.design.keywords.join(', ')})`;
+                                }
+                                detailsHtml += `</div>`;
+                            }
+                            if (bookingDetails.removal && bookingDetails.removal.name) {
+                                detailsHtml += `<div class="mb-1"><span class="font-bold">卸甲：</span>${bookingDetails.removal.name}</div>`;
+                            }
+                            if (bookingDetails.extras && bookingDetails.extras.length > 0) {
+                                detailsHtml += `<div><span class="font-bold">加購：</span>${bookingDetails.extras.map(e => {
+                                    if (e.count) return `${e.name} x${e.count}`;
+                                    return e.name;
+                                }).join(', ')}</div>`;
+                            }
+                            detailsHtml += `<div class="mt-1 font-bold text-gray-800">總計：${totalPrice}</div>`;
+                            detailsHtml += '</div>';
+                        }
+
                         if (status === 'pending') {
                             contentHtml = `
                                 <div class="schedule-header"><span class="font-bold text-gray-800">${time}</span><span class="tag tag-pending">待審核</span></div>
@@ -1006,10 +1024,13 @@ Nail Collector 收藏家`;
                                 ${detailsHtml}
                                 <div class="schedule-actions"><button onclick="toggleAdminSlot(${index}, '${time}')" class="text-xs border border-red-200 text-red-500 px-3 py-1 rounded hover:bg-red-50">取消預約</button></div>`;
                         }
-                    }
-                    row.innerHTML = contentHtml;
-                    listContainer.appendChild(row);
-                });
+                        
+                        row.innerHTML = contentHtml;
+                        listContainer.appendChild(row);
+                    });
+                } else {
+                    listContainer.innerHTML = `<div class="text-center p-4 bg-gray-50 rounded text-gray-400 text-sm">📅 本日尚無預約</div>`;
+                }
             }
         }
 
@@ -1676,25 +1697,103 @@ Nail Collector 收藏家`;
 
         window.selectDate = function(el, date, slots) {
             document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
-            el.classList.add('selected'); selectedDate = `${currentMonth+1}/${date}`;
+            el.classList.add('selected'); 
+            selectedDate = `${currentMonth+1}/${date}`;
             selectedTime = null;
-            window.renderTimeSlots(slots); window.validate();
+            
+            // 重置時間選擇器
+            currentTimeHour = 10;
+            currentTimeMinute = 0;
+            currentDateBookedTimes = slots.map(s => typeof s === 'string' ? s : s.time);
+            
+            window.renderTimeSelector(); 
+            window.validate();
+        }
+
+        window.renderTimeSelector = function() {
+            const container = document.getElementById('time-slots-container'); 
+            container.classList.remove('hidden');
+            
+            // 更新時間顯示
+            const timeDisplay = document.getElementById('selected-time-display');
+            timeDisplay.innerText = window.formatTime(currentTimeHour, currentTimeMinute);
+            
+            // 檢查當前時間是否已被預約
+            window.checkTimeConflict();
+        }
+
+        window.formatTime = function(hour, minute) {
+            return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+        }
+
+        window.adjustTime = function(minutes) {
+            let totalMinutes = currentTimeHour * 60 + currentTimeMinute + minutes;
+            
+            // 計算新的小時和分鐘
+            let newHour = Math.floor(totalMinutes / 60);
+            let newMinute = totalMinutes % 60;
+            
+            // 檢查是否超出營業時間
+            const startMinutes = BUSINESS_HOURS.start.hour * 60 + BUSINESS_HOURS.start.minute;
+            const endMinutes = BUSINESS_HOURS.end.hour * 60 + BUSINESS_HOURS.end.minute;
+            
+            if (totalMinutes < startMinutes) {
+                // 不能早於營業開始時間
+                currentTimeHour = BUSINESS_HOURS.start.hour;
+                currentTimeMinute = BUSINESS_HOURS.start.minute;
+            } else if (totalMinutes > endMinutes) {
+                // 不能晚於營業結束時間
+                currentTimeHour = BUSINESS_HOURS.end.hour;
+                currentTimeMinute = BUSINESS_HOURS.end.minute;
+            } else {
+                currentTimeHour = newHour;
+                currentTimeMinute = newMinute;
+            }
+            
+            // 更新顯示
+            const timeDisplay = document.getElementById('selected-time-display');
+            timeDisplay.innerText = window.formatTime(currentTimeHour, currentTimeMinute);
+            
+            // 檢查時間衝突
+            window.checkTimeConflict();
+        }
+
+        window.checkTimeConflict = function() {
+            const currentTimeStr = window.formatTime(currentTimeHour, currentTimeMinute);
+            const warning = document.getElementById('time-conflict-warning');
+            
+            if (currentDateBookedTimes.includes(currentTimeStr)) {
+                warning.classList.remove('hidden');
+            } else {
+                warning.classList.add('hidden');
+            }
+        }
+
+        window.confirmTime = function() {
+            const timeStr = window.formatTime(currentTimeHour, currentTimeMinute);
+            
+            // 檢查是否已被預約
+            if (currentDateBookedTimes.includes(timeStr)) {
+                alert("❌ 此時段已被預約，請選擇其他時間");
+                return;
+            }
+            
+            selectedTime = timeStr;
+            
+            // 視覺反饋
+            const timeDisplay = document.getElementById('selected-time-display');
+            timeDisplay.classList.add('text-green-600');
+            setTimeout(() => {
+                timeDisplay.classList.remove('text-green-600');
+            }, 500);
+            
+            alert(`✅ 已選擇時間：${timeStr}`);
+            window.validate();
         }
 
         window.renderTimeSlots = function(booked) {
-            const container = document.getElementById('time-slots-container'); container.classList.remove('hidden');
-            const grid = document.getElementById('time-slots-grid'); grid.innerHTML = '';
-            const available = allTimeSlots.filter(t => !booked.some(b => (typeof b === 'string' ? b : b.time) === t));
-            if (available.length === 0) { grid.innerHTML = '<p class="col-span-2 text-center text-gray-300 text-sm py-2">本日已額滿</p>'; return; }
-            available.forEach(time => {
-                const btn = document.createElement('button');
-                btn.className = 'btn-toggle p-3 text-sm rounded-custom'; btn.innerText = time;
-                btn.onclick = () => {
-                    document.querySelectorAll('#time-slots-grid button').forEach(b => b.classList.remove('active', 'bg-gray-800', 'text-white'));
-                    btn.classList.add('active', 'bg-gray-800', 'text-white'); selectedTime = time; window.validate();
-                };
-                grid.appendChild(btn);
-            });
+            // 這個函數現在被 renderTimeSelector 取代，但保留以防萬一
+            window.renderTimeSelector();
         }
 
         window.validate();
