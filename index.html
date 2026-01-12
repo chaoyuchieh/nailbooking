@@ -20,12 +20,12 @@
         .calendar-day.not-open { background-color: #d1d5db; color: #6b7280; cursor: not-allowed; position: relative; }
         .calendar-day.not-open::after { content: '未開放'; position: absolute; bottom: 2px; font-size: 7px; color: #4b5563; }
         .calendar-day.closed { background-color: #fee2e2; color: #dc2626; cursor: not-allowed; text-decoration: line-through; }
-        .admin-day { min-height: 80px; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; cursor: pointer; border-radius: 8px; font-size: 0.75rem; border: 1px solid #eee; background-color: #fff; position: relative; padding: 4px; overflow: hidden; }
+        .admin-day { min-height: 90px; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; cursor: pointer; border-radius: 8px; font-size: 0.75rem; border: 1px solid #eee; background-color: #fff; position: relative; padding: 6px 4px; overflow: hidden; }
         .admin-day.selected { border: 2px solid #333; background-color: #fafafa; }
         .admin-day.status-off { background-color: #4b5563; color: #d1d5db; border-color: #6b7280; }
         .admin-day.status-past { opacity: 0.5; background-color: #f9fafb; }
         .admin-day.has-pending { border: 2px solid #fbbf24; background-color: #fffbeb; }
-        .booking-bar { width: 100%; margin-top: 2px; padding: 2px 3px; border-radius: 3px; font-size: 8px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+        .booking-bar { width: 100%; margin-top: 1px; padding: 3px 4px; border-radius: 3px; font-size: 8.5px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; display: block; }
         .bar-confirmed { background-color: #dcfce7; color: #15803d; }
         .bar-pending { background-color: #fef3c7; color: #92400e; }
         .bar-pending-payment { background-color: #fed7aa; color: #9a3412; }
@@ -890,11 +890,11 @@ Nail Collector 收藏家`;
                 const dateColor = isHoliday ? 'text-gray-300' : 'text-gray-700';
                 
                 // 顯示日期數字
-                let dayText = `<div class="text-xs font-bold mb-1 ${dateColor}">${item.date}</div>`;
+                let dayText = `<div class="text-[11px] font-bold mb-1 ${dateColor}">${item.date}</div>`;
                 
                 // 如果是公休日，顯示公休標記
                 if (isHoliday) {
-                    dayText += `<div class="text-[9px] text-gray-400 text-center">🚫 公休</div>`;
+                    dayText += `<div class="text-[9px] text-gray-400 text-center mt-2">🚫 公休</div>`;
                 } else if (item.bookedSlots && item.bookedSlots.length > 0) {
                     // 顯示預約資訊（時間 + 客戶名字）
                      const sorted = [...item.bookedSlots].sort((a,b) => {
@@ -902,25 +902,37 @@ Nail Collector 收藏家`;
                          const tb = (typeof b==='string'?b:b.time);
                          return ta.localeCompare(tb);
                      });
-                     dayText += `<div class="w-full flex flex-col gap-0.5 overflow-hidden">`;
-                     sorted.forEach(s => {
-                         const t = (typeof s==='string'?s:s.time);
-                         const u = (typeof s==='string'?'Admin':s.user);
-                         const status = (typeof s==='object' && s.status) ? s.status : 'approved';
+                     
+                     dayText += `<div class="w-full flex flex-col gap-[2px] overflow-hidden">`;
+                     
+                     sorted.forEach(booking => {
+                         const time = (typeof booking === 'string') ? booking : booking.time;
+                         const user = (typeof booking === 'object' && booking.user) ? booking.user : 'Admin';
+                         const status = (typeof booking === 'object' && booking.status) ? booking.status : 'approved';
                          
                          let barClass = 'bar-confirmed';
-                         if (status === 'pending') barClass = 'bar-pending';
-                         else if (status === 'pending_payment') barClass = 'bar-pending-payment';
-                         else if (status === 'confirmed' || status === 'approved') barClass = 'bar-confirmed';
-                         
-                         let displayUser = u.length > 4 ? u.substring(0,3)+'…' : u;
                          let statusIcon = '';
-                         if (status === 'pending') statusIcon = '⏳';
-                         else if (status === 'pending_payment') statusIcon = '💰';
-                         else if (status === 'confirmed') statusIcon = '✓';
                          
-                         dayText += `<div class="booking-bar ${barClass}">${statusIcon}${t} ${displayUser}</div>`;
+                         if (status === 'pending') {
+                             barClass = 'bar-pending';
+                             statusIcon = '⏳';
+                         } else if (status === 'pending_payment') {
+                             barClass = 'bar-pending-payment';
+                             statusIcon = '💰';
+                         } else if (status === 'confirmed' || status === 'approved') {
+                             barClass = 'bar-confirmed';
+                             statusIcon = '✓';
+                         }
+                         
+                         // 名字處理：最多顯示3個字
+                         let displayUser = user;
+                         if (user.length > 3) {
+                             displayUser = user.substring(0, 3) + '…';
+                         }
+                         
+                         dayText += `<div class="booking-bar ${barClass}" title="${time} ${user}">${statusIcon}${time} ${displayUser}</div>`;
                      });
+                     
                      dayText += `</div>`;
                 }
 
@@ -958,9 +970,9 @@ Nail Collector 收藏家`;
                 const rangeTexts = bookingOpenRanges.ranges.map(range => {
                     const startDate = range.start;
                     const endDate = range.end;
-                    return `${startDate.getMonth()+1}/${startDate.getDate()} - ${endDate.getMonth()+1}/${endDate.getDate()}`;
+                    return `${startDate.getMonth()+1}/${startDate.getDate()}-${endDate.getMonth()+1}/${endDate.getDate()}`;
                 });
-                rangeEl.innerHTML = rangeTexts.join('<br>');
+                rangeEl.innerHTML = rangeTexts.join(' &nbsp; '); // 水平顯示，用空格分隔
             } else {
                 rangeEl.innerHTML = '目前無開放時段';
             }
