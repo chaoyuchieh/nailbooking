@@ -34,6 +34,7 @@
         .counter-btn { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background-color: #e5e7eb; color: #4b5563; font-size: 12px; }
         .counter-btn:active { background-color: #d1d5db; }
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        .scale-110 { transform: scale(1.1); transition: transform 0.2s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
         .schedule-item { display: flex; flex-direction: column; padding: 12px; background: white; border-radius: 12px; border: 1px solid #eee; margin-bottom: 8px; }
         .schedule-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
@@ -48,6 +49,8 @@
         .admin-slot.locked { background-color: #fee2e2; color: #ef4444; border-color: #fecaca; }
         .admin-slot.open { background-color: #fff; color: #333; border-color: #ddd; }
         #global-loading { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.95); z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; transition: opacity 0.3s; }
+        #selected-time-display { transition: all 0.2s ease-in-out; }
+        #confirm-time-btn { transition: all 0.3s ease-in-out; }
     </style>
 </head>
 <body class="bg-white pb-40">
@@ -249,27 +252,36 @@
                 <div class="grid grid-cols-7 gap-2 mb-2 text-center text-xs text-gray-400 font-bold"><div class="text-red-400">日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div class="text-blue-400">六</div></div>
                 <div id="calendar-grid" class="grid grid-cols-7 gap-2 mb-6"></div>
                 <div id="time-slots-container" class="hidden pt-4 border-t border-gray-100 fade-in">
-                    <p class="text-center text-xs text-gray-400 mb-3">選擇預約時間 (營業時間 10:00-19:00)</p>
+                    <p class="text-center text-xs text-gray-400 mb-3">選擇預約時間 (營業時間 10:00-19:00，每次服務約 2.5 小時)</p>
+                    
+                    <!-- 快速選擇時段 -->
+                    <div class="mb-4">
+                        <p class="text-xs text-gray-500 mb-2 text-center">快速選擇</p>
+                        <div id="quick-time-slots" class="grid grid-cols-3 gap-2"></div>
+                    </div>
+                    
+                    <!-- 微調時間 -->
                     <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-xs text-gray-500 mb-3 text-center">精確調整 (±10分鐘)</p>
                         <div class="flex items-center justify-center gap-4">
                             <button onclick="window.adjustTime(-10)" class="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition">
                                 <i class="fas fa-minus text-gray-700"></i>
                             </button>
                             <div class="text-center">
-                                <div id="selected-time-display" class="text-3xl font-bold text-gray-800 mb-1">10:00</div>
-                                <div class="text-xs text-gray-500">每次調整 10 分鐘</div>
+                                <div id="selected-time-display" class="text-3xl font-bold text-gray-800">10:00</div>
+                                <div id="service-end-time" class="text-xs text-gray-500 mt-1">服務至 12:30</div>
                             </div>
                             <button onclick="window.adjustTime(10)" class="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition">
                                 <i class="fas fa-plus text-gray-700"></i>
                             </button>
                         </div>
                         <div class="mt-4 flex justify-center">
-                            <button onclick="window.confirmTime()" class="bg-gray-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-gray-700 transition">
-                                確認此時間
+                            <button onclick="window.confirmTime()" id="confirm-time-btn" class="bg-gray-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-gray-700 transition">
+                                ✓ 確認此時間
                             </button>
                         </div>
-                        <div id="time-conflict-warning" class="hidden mt-3 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-600 text-center">
-                            此時段已被預約
+                        <div id="time-conflict-warning" class="hidden mt-3 p-3 bg-blue-50 border border-blue-300 rounded text-xs text-blue-700 text-center">
+                            ⏰ 建議選擇時間
                         </div>
                     </div>
                 </div>
@@ -315,6 +327,7 @@
             start: { hour: 10, minute: 0 },
             end: { hour: 19, minute: 0 }
         };
+        const SERVICE_DURATION_MINUTES = 150; // 2.5 小時 = 150 分鐘
         
         let calendarData = [];
         let adminSelectedIndex = null;
@@ -1706,7 +1719,8 @@ Nail Collector 收藏家`;
             currentTimeMinute = 0;
             currentDateBookedTimes = slots.map(s => typeof s === 'string' ? s : s.time);
             
-            window.renderTimeSelector(); 
+            window.renderTimeSelector();
+            window.updateServiceEndTime();
             window.validate();
         }
 
@@ -1714,16 +1728,124 @@ Nail Collector 收藏家`;
             const container = document.getElementById('time-slots-container'); 
             container.classList.remove('hidden');
             
-            // 更新時間顯示
+            // 生成快速選擇時段
+            const quickSlotsGrid = document.getElementById('quick-time-slots');
+            quickSlotsGrid.innerHTML = '';
+            
+            // 常用時段：10:00 - 18:00 每小時一個
+            const quickSlots = [];
+            for (let hour = 10; hour <= 18; hour++) {
+                quickSlots.push({ hour: hour, minute: 0 });
+            }
+            
+            quickSlots.forEach(slot => {
+                const timeStr = window.formatTime(slot.hour, slot.minute);
+                const timeMinutes = slot.hour * 60 + slot.minute;
+                const isConflict = window.isTimeConflict(timeMinutes);
+                
+                const btn = document.createElement('button');
+                btn.className = 'btn-toggle p-3 text-sm rounded-custom transition';
+                btn.innerText = timeStr;
+                
+                if (isConflict) {
+                    btn.className += ' opacity-50 cursor-not-allowed';
+                    btn.disabled = true;
+                    btn.title = '此時段與現有預約衝突';
+                } else {
+                    btn.onclick = () => window.quickSelectTime(slot.hour, slot.minute);
+                }
+                
+                quickSlotsGrid.appendChild(btn);
+            });
+            
+            // 更新當前選擇的時間顯示
             const timeDisplay = document.getElementById('selected-time-display');
             timeDisplay.innerText = window.formatTime(currentTimeHour, currentTimeMinute);
+            
+            // 更新服務結束時間
+            window.updateServiceEndTime();
             
             // 檢查當前時間是否已被預約
             window.checkTimeConflict();
         }
 
+        window.quickSelectTime = function(hour, minute) {
+            currentTimeHour = hour;
+            currentTimeMinute = minute;
+            
+            // 高亮選中的按鈕
+            document.querySelectorAll('#quick-time-slots button').forEach(btn => {
+                btn.classList.remove('active', 'bg-gray-800', 'text-white');
+            });
+            event.target.classList.add('active', 'bg-gray-800', 'text-white');
+            
+            // 更新顯示
+            const timeDisplay = document.getElementById('selected-time-display');
+            timeDisplay.innerText = window.formatTime(currentTimeHour, currentTimeMinute);
+            
+            // 更新服務結束時間
+            window.updateServiceEndTime();
+            
+            // 檢查衝突
+            window.checkTimeConflict();
+            
+            // 視覺反饋
+            timeDisplay.classList.add('scale-110');
+            setTimeout(() => {
+                timeDisplay.classList.remove('scale-110');
+            }, 200);
+        }
+
+        window.updateServiceEndTime = function() {
+            const currentTimeMinutes = currentTimeHour * 60 + currentTimeMinute;
+            const endTimeMinutes = currentTimeMinutes + SERVICE_DURATION_MINUTES;
+            const endTime = window.minutesToTime(endTimeMinutes);
+            const endTimeStr = window.formatTime(endTime.hour, endTime.minute);
+            
+            const serviceEndDisplay = document.getElementById('service-end-time');
+            if (serviceEndDisplay) {
+                serviceEndDisplay.innerText = `服務至 ${endTimeStr}`;
+            }
+        }
+
         window.formatTime = function(hour, minute) {
             return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+        }
+
+        window.timeToMinutes = function(timeStr) {
+            const [hour, minute] = timeStr.split(':').map(Number);
+            return hour * 60 + minute;
+        }
+
+        window.minutesToTime = function(totalMinutes) {
+            const hour = Math.floor(totalMinutes / 60);
+            const minute = totalMinutes % 60;
+            return { hour, minute };
+        }
+
+        window.checkTimeOverlap = function(start1, end1, start2, end2) {
+            // 檢查兩個時間段是否重疊
+            // start1/end1: 第一個時間段（分鐘）
+            // start2/end2: 第二個時間段（分鐘）
+            return start1 < end2 && start2 < end1;
+        }
+
+        window.isTimeConflict = function(selectedTimeMinutes) {
+            // 選擇的時間段：從 selectedTime 到 selectedTime + 2.5小時
+            const selectedStart = selectedTimeMinutes;
+            const selectedEnd = selectedTimeMinutes + SERVICE_DURATION_MINUTES;
+            
+            // 檢查與所有已預約時段是否衝突
+            for (let bookedTimeStr of currentDateBookedTimes) {
+                const bookedStart = window.timeToMinutes(bookedTimeStr);
+                const bookedEnd = bookedStart + SERVICE_DURATION_MINUTES;
+                
+                if (window.checkTimeOverlap(selectedStart, selectedEnd, bookedStart, bookedEnd)) {
+                    return true; // 有衝突
+                }
+            }
+            
+            return false; // 無衝突
         }
 
         window.adjustTime = function(minutes) {
@@ -1750,44 +1872,128 @@ Nail Collector 收藏家`;
                 currentTimeMinute = newMinute;
             }
             
+            // 取消快速選擇按鈕的高亮（因為現在是微調後的時間）
+            document.querySelectorAll('#quick-time-slots button').forEach(btn => {
+                const btnTime = btn.innerText;
+                const currentTime = window.formatTime(currentTimeHour, currentTimeMinute);
+                if (btnTime === currentTime) {
+                    btn.classList.add('active', 'bg-gray-800', 'text-white');
+                } else {
+                    btn.classList.remove('active', 'bg-gray-800', 'text-white');
+                }
+            });
+            
             // 更新顯示
             const timeDisplay = document.getElementById('selected-time-display');
             timeDisplay.innerText = window.formatTime(currentTimeHour, currentTimeMinute);
+            
+            // 更新服務結束時間
+            window.updateServiceEndTime();
             
             // 檢查時間衝突
             window.checkTimeConflict();
         }
 
         window.checkTimeConflict = function() {
-            const currentTimeStr = window.formatTime(currentTimeHour, currentTimeMinute);
-            const warning = document.getElementById('time-conflict-warning');
+            const currentTimeMinutes = currentTimeHour * 60 + currentTimeMinute;
+            const hasConflict = window.isTimeConflict(currentTimeMinutes);
             
-            if (currentDateBookedTimes.includes(currentTimeStr)) {
+            const warning = document.getElementById('time-conflict-warning');
+            const confirmBtn = document.getElementById('confirm-time-btn');
+            
+            if (hasConflict) {
+                // 找出下一個可用的時間
+                const nextAvailableTime = window.findNextAvailableTime(currentTimeMinutes);
+                
+                if (nextAvailableTime) {
+                    const availTime = window.minutesToTime(nextAvailableTime);
+                    const availTimeStr = window.formatTime(availTime.hour, availTime.minute);
+                    warning.innerHTML = `⏰ 建議選擇：<strong>${availTimeStr}</strong> 或之後的時間`;
+                } else {
+                    warning.innerHTML = `⚠️ 今日已無可用時段`;
+                }
+                
                 warning.classList.remove('hidden');
+                confirmBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                confirmBtn.disabled = true;
             } else {
                 warning.classList.add('hidden');
+                confirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                confirmBtn.disabled = false;
             }
+        }
+
+        window.findNextAvailableTime = function(fromTimeMinutes) {
+            // 找出所有衝突的時間段，找到最晚結束的那個
+            let latestEndTime = fromTimeMinutes;
+            
+            for (let bookedTimeStr of currentDateBookedTimes) {
+                const bookedStart = window.timeToMinutes(bookedTimeStr);
+                const bookedEnd = bookedStart + SERVICE_DURATION_MINUTES;
+                const selectedStart = fromTimeMinutes;
+                const selectedEnd = fromTimeMinutes + SERVICE_DURATION_MINUTES;
+                
+                // 如果有重疊，更新最晚結束時間
+                if (window.checkTimeOverlap(selectedStart, selectedEnd, bookedStart, bookedEnd)) {
+                    if (bookedEnd > latestEndTime) {
+                        latestEndTime = bookedEnd;
+                    }
+                }
+            }
+            
+            // 如果找到的時間還在營業時間內，返回該時間
+            const businessEndMinutes = BUSINESS_HOURS.end.hour * 60 + BUSINESS_HOURS.end.minute;
+            
+            // 確保建議的時間 + 服務時長不超過營業結束時間
+            if (latestEndTime + SERVICE_DURATION_MINUTES <= businessEndMinutes) {
+                return latestEndTime;
+            }
+            
+            // 否則返回 null（今日無可用時段）
+            return null;
         }
 
         window.confirmTime = function() {
             const timeStr = window.formatTime(currentTimeHour, currentTimeMinute);
+            const currentTimeMinutes = currentTimeHour * 60 + currentTimeMinute;
             
-            // 檢查是否已被預約
-            if (currentDateBookedTimes.includes(timeStr)) {
-                alert("❌ 此時段已被預約，請選擇其他時間");
+            // 檢查是否有衝突
+            if (window.isTimeConflict(currentTimeMinutes)) {
+                const nextAvailableTime = window.findNextAvailableTime(currentTimeMinutes);
+                
+                if (nextAvailableTime) {
+                    const availTime = window.minutesToTime(nextAvailableTime);
+                    const availTimeStr = window.formatTime(availTime.hour, availTime.minute);
+                    alert(`❌ 此時段無法預約\n\n💡 建議選擇：${availTimeStr} 或之後的時間`);
+                } else {
+                    alert("❌ 今日已無可用時段\n\n請選擇其他日期");
+                }
                 return;
             }
             
             selectedTime = timeStr;
             
+            // 計算服務結束時間
+            const endTimeMinutes = currentTimeMinutes + SERVICE_DURATION_MINUTES;
+            const endTime = window.minutesToTime(endTimeMinutes);
+            const endTimeStr = window.formatTime(endTime.hour, endTime.minute);
+            
             // 視覺反饋
             const timeDisplay = document.getElementById('selected-time-display');
+            const confirmBtn = document.getElementById('confirm-time-btn');
+            
             timeDisplay.classList.add('text-green-600');
+            confirmBtn.innerHTML = `✓ 已確認 (${timeStr}-${endTimeStr})`;
+            confirmBtn.classList.add('bg-green-600');
+            confirmBtn.classList.remove('bg-gray-800');
+            
             setTimeout(() => {
                 timeDisplay.classList.remove('text-green-600');
-            }, 500);
+                confirmBtn.innerHTML = '✓ 確認此時間';
+                confirmBtn.classList.remove('bg-green-600');
+                confirmBtn.classList.add('bg-gray-800');
+            }, 2000);
             
-            alert(`✅ 已選擇時間：${timeStr}`);
             window.validate();
         }
 
