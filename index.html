@@ -83,7 +83,28 @@
     <div id="admin-panel" class="hidden fixed inset-0 z-40 bg-gray-50 flex justify-center items-center">
         <div class="w-full max-w-md bg-gray-50 h-full shadow-2xl flex flex-col relative">
             <div class="bg-white p-5 shadow-sm flex justify-between items-center border-b border-gray-100 flex-none z-10">
-                <div><h2 class="text-base font-bold text-gray-800">📅 後台審核管理</h2><p id="admin-month-title" class="text-[10px] text-gray-400"></p></div>
+                <div>
+                    <h2 class="text-base font-bold text-gray-800">📅 後台審核管理</h2>
+                    <div class="flex items-center gap-2 mt-1">
+                        <button onclick="window.changeAdminMonth(-1)" class="text-xs bg-gray-100 px-2 py-1 rounded hover:bg-gray-200">◀</button>
+                        <select id="admin-month-selector" onchange="window.changeAdminMonthDirect()" class="text-xs border border-gray-200 rounded px-2 py-1">
+                            <option value="0">1月</option>
+                            <option value="1">2月</option>
+                            <option value="2">3月</option>
+                            <option value="3">4月</option>
+                            <option value="4">5月</option>
+                            <option value="5">6月</option>
+                            <option value="6">7月</option>
+                            <option value="7">8月</option>
+                            <option value="8">9月</option>
+                            <option value="9">10月</option>
+                            <option value="10">11月</option>
+                            <option value="11">12月</option>
+                        </select>
+                        <select id="admin-year-selector" onchange="window.changeAdminMonthDirect()" class="text-xs border border-gray-200 rounded px-2 py-1"></select>
+                        <button onclick="window.changeAdminMonth(1)" class="text-xs bg-gray-100 px-2 py-1 rounded hover:bg-gray-200">▶</button>
+                    </div>
+                </div>
                 <button onclick="window.logout()" class="text-xs text-red-500 border border-red-200 px-3 py-1 rounded-full">登出</button>
             </div>
             <div class="flex-1 overflow-y-auto p-4">
@@ -242,14 +263,10 @@
                 <div id="calendar-grid" class="grid grid-cols-7 gap-2 mb-6"></div>
                 <div id="time-slots-container" class="hidden pt-4 border-t border-gray-100 fade-in">
                     <p class="text-center text-xs text-gray-400 mb-3">選擇預約時間 (營業時間 10:00-19:00，每次服務約 2.5 小時)</p>
-                    
-                    <!-- 快速選擇時段 -->
                     <div class="mb-4">
                         <p class="text-xs text-gray-500 mb-2 text-center">快速選擇</p>
                         <div id="quick-time-slots" class="grid grid-cols-3 gap-2"></div>
                     </div>
-                    
-                    <!-- 微調時間 -->
                     <div class="bg-gray-50 p-4 rounded-lg">
                         <p class="text-xs text-gray-500 mb-3 text-center">精確調整 (±10分鐘)</p>
                         <div class="flex items-center justify-center gap-4">
@@ -309,14 +326,16 @@
         }
 
         const today = new Date();
-        const currentYear = today.getFullYear();
-        const currentMonth = today.getMonth();
+        let currentYear = today.getFullYear();
+        let currentMonth = today.getMonth();
+        let adminYear = today.getFullYear();
+        let adminMonth = today.getMonth();
         const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         const BUSINESS_HOURS = {
             start: { hour: 10, minute: 0 },
             end: { hour: 19, minute: 0 }
         };
-        const SERVICE_DURATION_MINUTES = 150; // 2.5 小時 = 150 分鐘
+        const SERVICE_DURATION_MINUTES = 150;
         
         let calendarData = [];
         let adminSelectedIndex = null;
@@ -463,13 +482,62 @@
                 document.getElementById('login-overlay').classList.add('hidden');
                 document.getElementById('admin-panel').classList.remove('hidden');
                 document.getElementById('admin-panel').style.display = 'flex';
-                window.fetchCalendarData().then(() => {
+                
+                window.initAdminYearSelector();
+                
+                window.fetchAdminCalendarData().then(() => {
                     window.renderAdminCalendar();
                     window.updateCurrentOpenRange();
                 });
             } else {
                 alert('帳號 admin / 密碼 1234');
             }
+        }
+
+        window.initAdminYearSelector = function() {
+            const yearSelect = document.getElementById('admin-year-selector');
+            const monthSelect = document.getElementById('admin-month-selector');
+            const currentYear = today.getFullYear();
+            
+            yearSelect.innerHTML = '';
+            for (let y = currentYear - 1; y <= currentYear + 2; y++) {
+                const option = document.createElement('option');
+                option.value = y;
+                option.text = `${y}年`;
+                yearSelect.appendChild(option);
+            }
+            
+            yearSelect.value = adminYear;
+            monthSelect.value = adminMonth;
+        }
+
+        window.changeAdminMonth = function(delta) {
+            adminMonth += delta;
+            if (adminMonth > 11) {
+                adminMonth = 0;
+                adminYear++;
+            } else if (adminMonth < 0) {
+                adminMonth = 11;
+                adminYear--;
+            }
+            
+            document.getElementById('admin-year-selector').value = adminYear;
+            document.getElementById('admin-month-selector').value = adminMonth;
+            
+            window.fetchAdminCalendarData().then(() => {
+                window.renderAdminCalendar();
+                window.updateCurrentOpenRange();
+            });
+        }
+
+        window.changeAdminMonthDirect = function() {
+            adminYear = parseInt(document.getElementById('admin-year-selector').value);
+            adminMonth = parseInt(document.getElementById('admin-month-selector').value);
+            
+            window.fetchAdminCalendarData().then(() => {
+                window.renderAdminCalendar();
+                window.updateCurrentOpenRange();
+            });
         }
 
         window.logout = function() {
@@ -511,11 +579,9 @@
             } else {
                 removalOptions.classList.add('hidden');
                 removalExtras.classList.add('hidden');
-                // 清除所有卸甲選項
                 document.querySelectorAll(`button[data-group="removal"]`).forEach(b => b.classList.remove('active'));
                 priceState.removal = 0;
                 bookingDetails.removal = { name: '無須卸甲', price: 0 };
-                // 重置額外項目計數器
                 bigDiamondCount = 0;
                 nailPolishRemovalCount = 0;
                 document.getElementById('big-diamond-count').innerText = '0';
@@ -523,22 +589,6 @@
                 window.updateUI();
             }
             window.validate();
-        }
-
-        window.updateRemovalSelection = function() {
-            const select = document.getElementById('removal-select');
-            const value = select.value;
-            
-            if (!value) {
-                priceState.removal = 0;
-                bookingDetails.removal = { name: '', price: 0 };
-            } else {
-                const [price, name] = value.split('|');
-                priceState.removal = parseInt(price);
-                bookingDetails.removal = { name: name || '', price: parseInt(price) };
-            }
-            
-            window.updateUI();
         }
 
         window.updateBigDiamondCount = function(n) {
@@ -615,7 +665,6 @@
             if (!userProfile || !userProfile.userId) errors.push("需 LINE 登入");
             if (total <= 0) errors.push("未選項目");
             
-            // 檢查是否選擇「需要卸甲」但沒有選擇卸甲方式
             const needRemovalBtn = document.getElementById('need-removal-yes');
             if (needRemovalBtn && needRemovalBtn.classList.contains('active')) {
                 const hasRemovalSelected = Array.from(document.querySelectorAll('button[data-group="removal"]')).some(btn => btn.classList.contains('active'));
@@ -666,7 +715,6 @@
             
             if (total <= 0) { alert("❌ 您尚未選擇任何服務項目！"); return; }
             
-            // 檢查卸甲選項
             const needRemovalBtn = document.getElementById('need-removal-yes');
             if (needRemovalBtn && needRemovalBtn.classList.contains('active')) {
                 const hasRemovalSelected = Array.from(document.querySelectorAll('button[data-group="removal"]')).some(btn => btn.classList.contains('active'));
@@ -840,7 +888,7 @@ Nail Collector 收藏家`;
             window.showLoading(true);
             try {
                 const updates = calendarData.map(item => ({
-                    date_id: `${currentYear}-${currentMonth}-${item.date}`, 
+                    date_id: `${adminYear}-${adminMonth}-${item.date}`, 
                     status: item.status, 
                     booked_slots: item.bookedSlots
                 }));
@@ -879,24 +927,27 @@ Nail Collector 收藏家`;
         window.renderAdminCalendar = function() {
             const grid = document.getElementById('admin-calendar-grid');
             grid.innerHTML = '';
-            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const firstDay = new Date(adminYear, adminMonth, 1).getDay();
             for(let i=0; i<firstDay; i++) grid.appendChild(document.createElement('div'));
+
+            const todayDate = new Date();
+            todayDate.setHours(0, 0, 0, 0);
 
             calendarData.forEach((item, index) => {
                 const div = document.createElement('div');
                 
-                // 根據狀態設定日期顏色
-                const isHoliday = item.status === 'booked';
-                const dateColor = isHoliday ? 'text-gray-300' : 'text-gray-700';
+                const itemDate = new Date(adminYear, adminMonth, item.date);
+                itemDate.setHours(0, 0, 0, 0);
+                const isPastDate = itemDate < todayDate;
                 
-                // 顯示日期數字
+                const isHoliday = item.status === 'booked';
+                const dateColor = isHoliday ? 'text-gray-300' : (isPastDate ? 'text-gray-400' : 'text-gray-700');
+                
                 let dayText = `<div class="text-[11px] font-bold mb-1 ${dateColor}">${item.date}</div>`;
                 
-                // 如果是公休日，顯示公休標記
                 if (isHoliday) {
                     dayText += `<div class="text-[9px] text-gray-400 text-center mt-2">🚫 公休</div>`;
                 } else if (item.bookedSlots && item.bookedSlots.length > 0) {
-                    // 顯示預約資訊（時間 + 客戶名字）
                      const sorted = [...item.bookedSlots].sort((a,b) => {
                          const ta = (typeof a==='string'?a:a.time);
                          const tb = (typeof b==='string'?b:b.time);
@@ -924,7 +975,6 @@ Nail Collector 收藏家`;
                              statusIcon = '✓';
                          }
                          
-                         // 名字處理：最多顯示3個字
                          let displayUser = user;
                          if (user.length > 3) {
                              displayUser = user.substring(0, 3) + '…';
@@ -937,17 +987,15 @@ Nail Collector 收藏家`;
                 }
 
                 div.innerHTML = dayText;
-                div.className = `admin-day ${item.status === 'past' ? 'status-past' : ''} ${index === adminSelectedIndex ? 'selected' : ''}`;
+                div.className = `admin-day ${isPastDate ? 'status-past' : ''} ${index === adminSelectedIndex ? 'selected' : ''}`;
                 
-                // 公休日設為深灰色
                 if (isHoliday) {
                     div.className += ' status-off';
                 }
                 
                 div.onclick = () => window.selectAdminDate(index);
                 
-                // 可預約且無預約的日期顯示綠點
-                if(item.status === 'available' && (!item.bookedSlots || item.bookedSlots.length === 0)) {
+                if(!isPastDate && item.status === 'available' && (!item.bookedSlots || item.bookedSlots.length === 0)) {
                    const dot = document.createElement('div');
                    dot.className = "indicator-dot bg-green-400";
                    div.appendChild(dot);
@@ -967,12 +1015,27 @@ Nail Collector 收藏家`;
             window.calculateBookingRange();
             
             if (bookingOpenRanges.ranges && bookingOpenRanges.ranges.length > 0) {
-                const rangeTexts = bookingOpenRanges.ranges.map(range => {
-                    const startDate = range.start;
-                    const endDate = range.end;
-                    return `${startDate.getMonth()+1}/${startDate.getDate()}-${endDate.getMonth()+1}/${endDate.getDate()}`;
+                const now = new Date();
+                
+                const futureRanges = bookingOpenRanges.ranges.filter(range => {
+                    return range.end >= now;
                 });
-                rangeEl.innerHTML = rangeTexts.join(' &nbsp; '); // 水平顯示，用空格分隔
+                
+                if (futureRanges.length > 0) {
+                    const rangeTexts = futureRanges.map(range => {
+                        const startDate = range.start;
+                        const endDate = range.end;
+                        
+                        if (startDate < now && endDate >= now) {
+                            return `${now.getMonth()+1}/${now.getDate()}-${endDate.getMonth()+1}/${endDate.getDate()}`;
+                        }
+                        
+                        return `${startDate.getMonth()+1}/${startDate.getDate()}-${endDate.getMonth()+1}/${endDate.getDate()}`;
+                    });
+                    rangeEl.innerHTML = rangeTexts.join(' &nbsp; ');
+                } else {
+                    rangeEl.innerHTML = '目前無開放時段';
+                }
             } else {
                 rangeEl.innerHTML = '目前無開放時段';
             }
@@ -983,7 +1046,7 @@ Nail Collector 收藏家`;
             window.renderAdminCalendar();
             const item = calendarData[index];
             document.getElementById('admin-edit-area').classList.remove('hidden');
-            document.getElementById('admin-edit-date-title').innerText = `${currentMonth+1} / ${item.date}`;
+            document.getElementById('admin-edit-date-title').innerText = `${adminMonth+1} / ${item.date}`;
             
             window.updateCloseDateButton();
 
@@ -993,7 +1056,6 @@ Nail Collector 收藏家`;
             if (item.status === 'booked') {
                 listContainer.innerHTML = `<div class="text-center p-4 bg-gray-100 rounded text-gray-500">🚫 本日已設為公休</div>`;
             } else {
-                // 顯示所有預約（自由時間）
                 if (item.bookedSlots && item.bookedSlots.length > 0) {
                     const sortedBookings = [...item.bookedSlots].sort((a,b) => {
                         const ta = (typeof a==='string'?a:a.time);
@@ -1032,7 +1094,7 @@ Nail Collector 收藏家`;
                                     return e.name;
                                 }).join(', ')}</div>`;
                             }
-                            detailsHtml += `<div class="mt-1 font-bold text-gray-800">總計：${totalPrice}</div>`;
+                            detailsHtml += `<div class="mt-1 font-bold text-gray-800">總計：$${totalPrice}</div>`;
                             detailsHtml += '</div>';
                         }
 
@@ -1042,8 +1104,8 @@ Nail Collector 收藏家`;
                                 <div class="text-sm mb-2 text-gray-600">預約人：<span class="font-bold">${userName}</span></div>
                                 ${detailsHtml}
                                 <div class="flex flex-col gap-2 mb-2">
-                                    <button onclick="window.approveBooking(${index}, '${time}')" class="w-full text-xs bg-green-600 text-white px-3 py-2 rounded font-bold shadow hover:bg-green-700">✅ 確認預約（免訂金）</button>
-                                    <button onclick="window.approveBookingWithPayment(${index}, '${time}')" class="w-full text-xs bg-blue-600 text-white px-3 py-2 rounded font-bold shadow hover:bg-blue-700">💰 確認（需付訂金 $500）</button>
+                                    <button onclick="window.approveBooking(${index}, '${time}')" class="w-full text-xs bg-gray-600 text-white px-3 py-2 rounded font-bold shadow hover:bg-gray-700">✅ 確認預約（免訂金）</button>
+                                    <button onclick="window.approveBookingWithPayment(${index}, '${time}')" class="w-full text-xs bg-red-600 text-white px-3 py-2 rounded font-bold shadow hover:bg-red-700">💰 確認（需付訂金 $500）</button>
                                 </div>
                                 <div class="schedule-actions">
                                     <button onclick="window.rejectBooking(${index}, '${time}')" class="text-xs bg-red-100 text-red-600 px-3 py-1 rounded font-bold hover:bg-red-200">❌ 拒絕</button>
@@ -1055,8 +1117,8 @@ Nail Collector 收藏家`;
                                 ${detailsHtml}
                                 <div class="text-xs text-orange-700 mb-3 bg-orange-50 p-2 rounded">💰 等待客人匯款訂金 $500</div>
                                 <div class="schedule-actions">
-                                    <button onclick="rejectBooking(${index}, '${time}')" class="text-xs bg-red-100 text-red-600 px-3 py-1 rounded font-bold hover:bg-red-200">取消預約</button>
-                                    <button onclick="confirmPayment(${index}, '${time}')" class="text-xs bg-green-600 text-white px-3 py-1 rounded font-bold shadow hover:bg-green-700">已收款 ✅</button>
+                                    <button onclick="window.rejectBooking(${index}, '${time}')" class="text-xs bg-red-100 text-red-600 px-3 py-1 rounded font-bold hover:bg-red-200">取消預約</button>
+                                    <button onclick="window.confirmPayment(${index}, '${time}')" class="text-xs bg-green-600 text-white px-3 py-1 rounded font-bold shadow hover:bg-green-700">已收款 ✅</button>
                                 </div>`;
                         } else if (status === 'confirmed') {
                             let paymentInfo = '';
@@ -1070,13 +1132,13 @@ Nail Collector 收藏家`;
                                 <div class="text-sm mb-2 text-gray-600">預約人：${userName}</div>
                                 ${detailsHtml}
                                 ${paymentInfo}
-                                <div class="schedule-actions"><button onclick="toggleAdminSlot(${index}, '${time}')" class="text-xs border border-red-200 text-red-500 px-3 py-1 rounded hover:bg-red-50">取消預約</button></div>`;
+                                <div class="schedule-actions"><button onclick="window.toggleAdminSlot(${index}, '${time}')" class="text-xs border border-red-200 text-red-500 px-3 py-1 rounded hover:bg-red-50">取消預約</button></div>`;
                         } else {
                             contentHtml = `
                                 <div class="schedule-header"><span class="font-bold text-gray-800">${time}</span><span class="tag tag-confirmed">已預約</span></div>
                                 <div class="text-sm mb-2 text-gray-600">預約人：${userName}</div>
                                 ${detailsHtml}
-                                <div class="schedule-actions"><button onclick="toggleAdminSlot(${index}, '${time}')" class="text-xs border border-red-200 text-red-500 px-3 py-1 rounded hover:bg-red-50">取消預約</button></div>`;
+                                <div class="schedule-actions"><button onclick="window.toggleAdminSlot(${index}, '${time}')" class="text-xs border border-red-200 text-red-500 px-3 py-1 rounded hover:bg-red-50">取消預約</button></div>`;
                         }
                         
                         row.innerHTML = contentHtml;
@@ -1092,8 +1154,8 @@ Nail Collector 收藏家`;
             if (adminSelectedIndex === null) return;
             
             const item = calendarData[adminSelectedIndex];
-            const dateStr = `${currentYear}-${currentMonth}-${item.date}`;
-            const displayDate = `${currentMonth+1}/${item.date}`;
+            const dateStr = `${adminYear}-${adminMonth}-${item.date}`;
+            const displayDate = `${adminMonth+1}/${item.date}`;
             const idx = closedDates.indexOf(dateStr);
             const btn = document.getElementById('admin-close-date-btn');
             
@@ -1130,7 +1192,7 @@ Nail Collector 收藏家`;
         window.updateCloseDateButton = function() {
             if (adminSelectedIndex === null) return;
             const item = calendarData[adminSelectedIndex];
-            const dateStr = `${currentYear}-${currentMonth}-${item.date}`;
+            const dateStr = `${adminYear}-${adminMonth}-${item.date}`;
             const btn = document.getElementById('admin-close-date-btn');
             
             if (closedDates.includes(dateStr)) {
@@ -1147,7 +1209,7 @@ Nail Collector 收藏家`;
         window.toggleAdminDateStatus = function() {
             if (adminSelectedIndex === null) return;
             const item = calendarData[adminSelectedIndex];
-            const dateStr = `${currentMonth+1}/${item.date}`;
+            const dateStr = `${adminMonth+1}/${item.date}`;
             const newStatus = (item.status === 'available') ? 'booked' : 'available';
             
             let confirmMsg = '';
@@ -1178,7 +1240,7 @@ Nail Collector 收藏家`;
             if (idx >= 0) {
                 const slot = slots[idx];
                 const userName = (typeof slot === 'object') ? slot.user : 'Admin';
-                const dateStr = `${currentMonth+1}/${calendarData[index].date}`;
+                const dateStr = `${adminMonth+1}/${calendarData[index].date}`;
                 
                 if (!confirm(`⚠️ 確定要刪除此預約嗎？\n\n日期：${dateStr}\n時間：${time}\n預約人：${userName}`)) {
                     return;
@@ -1203,7 +1265,7 @@ Nail Collector 收藏家`;
             slot.status = 'confirmed';
             await window.saveDateToDB(index);
             
-            const dateStr = `${currentMonth+1}/${calendarData[index].date}`;
+            const dateStr = `${adminMonth+1}/${calendarData[index].date}`;
             
             let detailMsg = '';
             if (slot.bookingDetails) {
@@ -1284,7 +1346,7 @@ Nail Collector 收藏家`;
             
             await window.saveDateToDB(index);
             
-            const dateStr = `${currentMonth+1}/${calendarData[index].date}`;
+            const dateStr = `${adminMonth+1}/${calendarData[index].date}`;
             
             let detailMsg = '';
             if (slot.bookingDetails) {
@@ -1369,7 +1431,7 @@ Nail Collector 收藏家`;
             
             await window.saveDateToDB(index);
             
-            const dateStr = `${currentMonth+1}/${calendarData[index].date}`;
+            const dateStr = `${adminMonth+1}/${calendarData[index].date}`;
             
             let detailMsg = '';
             if (slot.bookingDetails) {
@@ -1443,7 +1505,7 @@ Nail Collector 收藏家`;
             
             const userName = slots[idx].user || '客人';
             const userId = slots[idx].userId;
-            const dateStr = `${currentMonth+1}/${calendarData[index].date}`;
+            const dateStr = `${adminMonth+1}/${calendarData[index].date}`;
             
             let detailMsg = '';
             if (slots[idx].bookingDetails) {
@@ -1518,7 +1580,7 @@ Nail Collector 收藏家`;
             const item = calendarData[index];
             try {
                 const { error } = await supabaseClient.from('calendar_slots').upsert({
-                    date_id: `${currentYear}-${currentMonth}-${item.date}`,
+                    date_id: `${adminYear}-${adminMonth}-${item.date}`,
                     status: item.status,
                     booked_slots: item.bookedSlots
                 });
@@ -1530,6 +1592,32 @@ Nail Collector 收藏家`;
             }
         }
 
+        window.fetchAdminCalendarData = async function() {
+            window.showLoading(true);
+            try {
+                const { data, error } = await supabaseClient.from('calendar_slots').select('*');
+                if (error) throw error;
+                
+                await window.loadClosedDates();
+                
+                window.initMockData(true, adminYear, adminMonth);
+                data.forEach(row => {
+                    const parts = row.date_id.split('-');
+                    if (parseInt(parts[0]) === adminYear && parseInt(parts[1]) === adminMonth) {
+                        const d = parseInt(parts[2]);
+                        if (calendarData[d-1]) {
+                            calendarData[d-1].status = row.status;
+                            calendarData[d-1].bookedSlots = row.booked_slots || [];
+                        }
+                    }
+                });
+            } catch (err) { 
+                console.log('⚠️ 無法載入資料，使用預設資料:', err.message);
+                window.initMockData(false, adminYear, adminMonth); 
+            }
+            finally { window.showLoading(false); }
+        }
+
         window.fetchCalendarData = async function() {
             window.showLoading(true);
             try {
@@ -1538,7 +1626,7 @@ Nail Collector 收藏家`;
                 
                 await window.loadClosedDates();
                 
-                window.initMockData(true);
+                window.initMockData(true, currentYear, currentMonth);
                 data.forEach(row => {
                     const parts = row.date_id.split('-');
                     if (parseInt(parts[0]) === currentYear && parseInt(parts[1]) === currentMonth) {
@@ -1551,16 +1639,21 @@ Nail Collector 收藏家`;
                 });
             } catch (err) { 
                 console.log('⚠️ 無法載入資料，使用預設資料:', err.message);
-                window.initMockData(); 
+                window.initMockData(false, currentYear, currentMonth); 
             }
             finally { window.showLoading(false); }
         }
 
-        window.initMockData = function(onlyStructure = false) {
-            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+        window.initMockData = function(onlyStructure = false, year = currentYear, month = currentMonth) {
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const todayDate = new Date();
+            todayDate.setHours(0, 0, 0, 0);
+            
             calendarData = [];
             for (let i = 1; i <= daysInMonth; i++) {
-                let isPast = (currentMonth === today.getMonth() && i < today.getDate());
+                const itemDate = new Date(year, month, i);
+                itemDate.setHours(0, 0, 0, 0);
+                let isPast = itemDate < todayDate;
                 let status = isPast ? 'past' : 'available';
                 calendarData.push({ date: i, status: status, bookedSlots: [] });
             }
@@ -1678,9 +1771,9 @@ Nail Collector 收藏家`;
                 return { bookable: false, reason: 'closed' };
             }
             
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            if (checkDate < today) {
+            const todayDate = new Date();
+            todayDate.setHours(0, 0, 0, 0);
+            if (checkDate < todayDate) {
                 return { bookable: false, reason: 'past' };
             }
             
@@ -1755,7 +1848,6 @@ Nail Collector 收藏家`;
             selectedDate = `${currentMonth+1}/${date}`;
             selectedTime = null;
             
-            // 重置時間選擇器
             currentTimeHour = 10;
             currentTimeMinute = 0;
             currentDateBookedTimes = slots.map(s => typeof s === 'string' ? s : s.time);
@@ -1769,11 +1861,9 @@ Nail Collector 收藏家`;
             const container = document.getElementById('time-slots-container'); 
             container.classList.remove('hidden');
             
-            // 生成快速選擇時段
             const quickSlotsGrid = document.getElementById('quick-time-slots');
             quickSlotsGrid.innerHTML = '';
             
-            // 常用時段：10:00 - 18:00 每小時一個
             const quickSlots = [];
             for (let hour = 10; hour <= 18; hour++) {
                 quickSlots.push({ hour: hour, minute: 0 });
@@ -1799,14 +1889,10 @@ Nail Collector 收藏家`;
                 quickSlotsGrid.appendChild(btn);
             });
             
-            // 更新當前選擇的時間顯示
             const timeDisplay = document.getElementById('selected-time-display');
             timeDisplay.innerText = window.formatTime(currentTimeHour, currentTimeMinute);
             
-            // 更新服務結束時間
             window.updateServiceEndTime();
-            
-            // 檢查當前時間是否已被預約
             window.checkTimeConflict();
         }
 
@@ -1814,23 +1900,17 @@ Nail Collector 收藏家`;
             currentTimeHour = hour;
             currentTimeMinute = minute;
             
-            // 高亮選中的按鈕
             document.querySelectorAll('#quick-time-slots button').forEach(btn => {
                 btn.classList.remove('active', 'bg-gray-800', 'text-white');
             });
             event.target.classList.add('active', 'bg-gray-800', 'text-white');
             
-            // 更新顯示
             const timeDisplay = document.getElementById('selected-time-display');
             timeDisplay.innerText = window.formatTime(currentTimeHour, currentTimeMinute);
             
-            // 更新服務結束時間
             window.updateServiceEndTime();
-            
-            // 檢查衝突
             window.checkTimeConflict();
             
-            // 視覺反饋
             timeDisplay.classList.add('scale-110');
             setTimeout(() => {
                 timeDisplay.classList.remove('scale-110');
@@ -1865,47 +1945,38 @@ Nail Collector 收藏家`;
         }
 
         window.checkTimeOverlap = function(start1, end1, start2, end2) {
-            // 檢查兩個時間段是否重疊
-            // start1/end1: 第一個時間段（分鐘）
-            // start2/end2: 第二個時間段（分鐘）
             return start1 < end2 && start2 < end1;
         }
 
         window.isTimeConflict = function(selectedTimeMinutes) {
-            // 選擇的時間段：從 selectedTime 到 selectedTime + 2.5小時
             const selectedStart = selectedTimeMinutes;
             const selectedEnd = selectedTimeMinutes + SERVICE_DURATION_MINUTES;
             
-            // 檢查與所有已預約時段是否衝突
             for (let bookedTimeStr of currentDateBookedTimes) {
                 const bookedStart = window.timeToMinutes(bookedTimeStr);
                 const bookedEnd = bookedStart + SERVICE_DURATION_MINUTES;
                 
                 if (window.checkTimeOverlap(selectedStart, selectedEnd, bookedStart, bookedEnd)) {
-                    return true; // 有衝突
+                    return true;
                 }
             }
             
-            return false; // 無衝突
+            return false;
         }
 
         window.adjustTime = function(minutes) {
             let totalMinutes = currentTimeHour * 60 + currentTimeMinute + minutes;
             
-            // 計算新的小時和分鐘
             let newHour = Math.floor(totalMinutes / 60);
             let newMinute = totalMinutes % 60;
             
-            // 檢查是否超出營業時間
             const startMinutes = BUSINESS_HOURS.start.hour * 60 + BUSINESS_HOURS.start.minute;
             const endMinutes = BUSINESS_HOURS.end.hour * 60 + BUSINESS_HOURS.end.minute;
             
             if (totalMinutes < startMinutes) {
-                // 不能早於營業開始時間
                 currentTimeHour = BUSINESS_HOURS.start.hour;
                 currentTimeMinute = BUSINESS_HOURS.start.minute;
             } else if (totalMinutes > endMinutes) {
-                // 不能晚於營業結束時間
                 currentTimeHour = BUSINESS_HOURS.end.hour;
                 currentTimeMinute = BUSINESS_HOURS.end.minute;
             } else {
@@ -1913,7 +1984,6 @@ Nail Collector 收藏家`;
                 currentTimeMinute = newMinute;
             }
             
-            // 取消快速選擇按鈕的高亮（因為現在是微調後的時間）
             document.querySelectorAll('#quick-time-slots button').forEach(btn => {
                 const btnTime = btn.innerText;
                 const currentTime = window.formatTime(currentTimeHour, currentTimeMinute);
@@ -1924,14 +1994,10 @@ Nail Collector 收藏家`;
                 }
             });
             
-            // 更新顯示
             const timeDisplay = document.getElementById('selected-time-display');
             timeDisplay.innerText = window.formatTime(currentTimeHour, currentTimeMinute);
             
-            // 更新服務結束時間
             window.updateServiceEndTime();
-            
-            // 檢查時間衝突
             window.checkTimeConflict();
         }
 
@@ -1943,7 +2009,6 @@ Nail Collector 收藏家`;
             const confirmBtn = document.getElementById('confirm-time-btn');
             
             if (hasConflict) {
-                // 找出下一個可用的時間
                 const nextAvailableTime = window.findNextAvailableTime(currentTimeMinutes);
                 
                 if (nextAvailableTime) {
@@ -1965,7 +2030,6 @@ Nail Collector 收藏家`;
         }
 
         window.findNextAvailableTime = function(fromTimeMinutes) {
-            // 找出所有衝突的時間段，找到最晚結束的那個
             let latestEndTime = fromTimeMinutes;
             
             for (let bookedTimeStr of currentDateBookedTimes) {
@@ -1974,7 +2038,6 @@ Nail Collector 收藏家`;
                 const selectedStart = fromTimeMinutes;
                 const selectedEnd = fromTimeMinutes + SERVICE_DURATION_MINUTES;
                 
-                // 如果有重疊，更新最晚結束時間
                 if (window.checkTimeOverlap(selectedStart, selectedEnd, bookedStart, bookedEnd)) {
                     if (bookedEnd > latestEndTime) {
                         latestEndTime = bookedEnd;
@@ -1982,15 +2045,12 @@ Nail Collector 收藏家`;
                 }
             }
             
-            // 如果找到的時間還在營業時間內，返回該時間
             const businessEndMinutes = BUSINESS_HOURS.end.hour * 60 + BUSINESS_HOURS.end.minute;
             
-            // 確保建議的時間 + 服務時長不超過營業結束時間
             if (latestEndTime + SERVICE_DURATION_MINUTES <= businessEndMinutes) {
                 return latestEndTime;
             }
             
-            // 否則返回 null（今日無可用時段）
             return null;
         }
 
@@ -1998,7 +2058,6 @@ Nail Collector 收藏家`;
             const timeStr = window.formatTime(currentTimeHour, currentTimeMinute);
             const currentTimeMinutes = currentTimeHour * 60 + currentTimeMinute;
             
-            // 檢查是否有衝突
             if (window.isTimeConflict(currentTimeMinutes)) {
                 const nextAvailableTime = window.findNextAvailableTime(currentTimeMinutes);
                 
@@ -2014,12 +2073,10 @@ Nail Collector 收藏家`;
             
             selectedTime = timeStr;
             
-            // 計算服務結束時間
             const endTimeMinutes = currentTimeMinutes + SERVICE_DURATION_MINUTES;
             const endTime = window.minutesToTime(endTimeMinutes);
             const endTimeStr = window.formatTime(endTime.hour, endTime.minute);
             
-            // 視覺反饋
             const timeDisplay = document.getElementById('selected-time-display');
             const confirmBtn = document.getElementById('confirm-time-btn');
             
@@ -2036,11 +2093,6 @@ Nail Collector 收藏家`;
             }, 2000);
             
             window.validate();
-        }
-
-        window.renderTimeSlots = function(booked) {
-            // 這個函數現在被 renderTimeSelector 取代，但保留以防萬一
-            window.renderTimeSelector();
         }
 
         window.validate();
@@ -2122,23 +2174,4 @@ Nail Collector 收藏家`;
                                 <p class="mb-2 text-red-600">💡 ${suggestion}</p>
                                 <div class="flex gap-2">
                                     <button onclick="window.location.href='https://developers.line.biz/console/'" 
-                                        class="text-xs bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">
-                                        前往 Console 檢查
-                                    </button>
-                                    <button onclick="window.location.reload()" 
-                                        class="text-xs bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700">
-                                        重新載入
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
-            }
-            console.log('🏁 Init function completed');
-        })();
-
-        console.log('✅ Script fully loaded');
-    </script>
-</body>
-</html>
+                                        class
