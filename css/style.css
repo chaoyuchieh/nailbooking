@@ -1,0 +1,291 @@
+/* ========== 共用樣式 ========== */
+body { 
+    font-family: 'Noto Sans TC', sans-serif; 
+    background-color: #f9fafb; 
+    color: #333; 
+    -webkit-tap-highlight-color: transparent; 
+}
+
+.rounded-custom { border-radius: 24px; }
+
+.btn-toggle { 
+    transition: all 0.2s; 
+    background-color: #fff; 
+    color: #666; 
+    border: 1px solid #e5e7eb; 
+}
+
+.btn-toggle.active { 
+    background-color: #374151; 
+    color: #fff; 
+    border-color: #374151; 
+}
+
+.fade-in { 
+    animation: fadeIn 0.3s ease-in-out; 
+}
+
+.scale-110 { 
+    transform: scale(1.1); 
+    transition: transform 0.2s ease-in-out; 
+}
+
+@keyframes fadeIn { 
+    from { opacity: 0; transform: translateY(-5px); } 
+    to { opacity: 1; transform: translateY(0); } 
+}
+
+#global-loading { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    right: 0; 
+    bottom: 0; 
+    background: rgba(255,255,255,0.95); 
+    z-index: 9999; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    flex-direction: column; 
+    transition: opacity 0.3s; 
+}
+
+/* ========== 顧客端專用樣式 ========== */
+.calendar-day { 
+    aspect-ratio: 1/1; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    cursor: pointer; 
+    border-radius: 50%; 
+    font-size: 0.8rem; 
+    position: relative; 
+    background: #fff; 
+}
+
+.calendar-day.selected { 
+    background-color: #374151; 
+    color: #fff; 
+}
+
+.calendar-day.booked { 
+    background-color: #d1d5db; 
+    color: #6b7280; 
+}
+
+.calendar-day.not-open { 
+    background-color: #d1d5db; 
+    color: #6b7280; 
+    cursor: not-allowed; 
+    position: relative; 
+}
+
+.calendar-day.not-open::after { 
+    content: '未開放'; 
+    position: absolute; 
+    bottom: 2px; 
+    font-size: 7px; 
+    color: #4b5563; 
+}
+
+.calendar-day.closed { 
+    background-color: #d1d5db; 
+    color: #6b7280; 
+    cursor: not-allowed; 
+    text-decoration: line-through; 
+}
+
+.rule-box { 
+    background-color: #e5e7eb; 
+    border-radius: 16px; 
+    padding: 12px; 
+    font-size: 0.75rem; 
+    color: #666; 
+    margin-top: 8px; 
+    line-height: 1.6; 
+}
+
+.counter-btn { 
+    width: 28px; 
+    height: 28px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    border-radius: 50%; 
+    background-color: #e5e7eb; 
+    color: #4b5563; 
+    font-size: 12px; 
+}
+
+.counter-btn:active { 
+    background-color: #d1d5db; 
+}
+
+#selected-time-display { 
+    transition: all 0.2s ease-in-out; 
+}
+
+#confirm-time-btn { 
+    transition: all 0.3s ease-in-out; 
+}
+
+/* ========== 管理端專用樣式 ========== */
+.admin-day { 
+    min-height: 90px; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: flex-start; 
+    justify-content: flex-start; 
+    cursor: pointer; 
+    border-radius: 8px; 
+    font-size: 0.75rem; 
+    border: 1px solid #eee; 
+    background-color: #fff; 
+    position: relative; 
+    padding: 6px 4px; 
+    overflow: hidden; 
+}
+
+.admin-day.selected { 
+    border: 2px solid #333; 
+    background-color: #fafafa; 
+}
+
+.admin-day.status-off { 
+    background-color: #4b5563; 
+    color: #d1d5db; 
+    border-color: #6b7280; 
+}
+
+.admin-day.status-past { 
+    opacity: 0.5; 
+    background-color: #f9fafb; 
+    box-shadow: 0 0 0 2px #e5e7eb; 
+}
+
+.admin-day.has-pending { 
+    border: 2px solid #fbbf24; 
+    background-color: #fffbeb; 
+}
+
+.booking-bar { 
+    width: 100%; 
+    margin-top: 1px; 
+    padding: 3px 4px; 
+    border-radius: 3px; 
+    font-size: 8.5px; 
+    line-height: 1.2; 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    font-weight: 600; 
+    display: block; 
+}
+
+.bar-confirmed { 
+    background-color: #dcfce7; 
+    color: #15803d; 
+}
+
+.bar-pending { 
+    background-color: #fef3c7; 
+    color: #92400e; 
+}
+
+.bar-pending-payment { 
+    background-color: #fed7aa; 
+    color: #9a3412; 
+}
+
+.indicator-dot { 
+    width: 6px; 
+    height: 6px; 
+    border-radius: 50%; 
+    position: absolute; 
+    top: 6px; 
+    right: 6px; 
+}
+
+.schedule-item { 
+    display: flex; 
+    flex-direction: column; 
+    padding: 12px; 
+    background: white; 
+    border-radius: 12px; 
+    border: 1px solid #eee; 
+    margin-bottom: 8px; 
+}
+
+.schedule-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 8px; 
+}
+
+.schedule-actions { 
+    display: flex; 
+    gap: 8px; 
+    justify-content: flex-end; 
+}
+
+.tag { 
+    padding: 2px 8px; 
+    border-radius: 4px; 
+    font-size: 0.7rem; 
+    font-weight: bold; 
+}
+
+.tag-pending { 
+    background: #fffbeb; 
+    color: #d97706; 
+    border: 1px solid #fcd34d; 
+}
+
+.tag-pending-payment { 
+    background: #fef3c7; 
+    color: #92400e; 
+    border: 1px solid #fbbf24; 
+}
+
+.tag-confirmed { 
+    background: #dcfce7; 
+    color: #15803d; 
+    border: 1px solid #86efac; 
+}
+
+.tag-booked { 
+    background: #fef2f2; 
+    color: #b91c1c; 
+    border: 1px solid #fecaca; 
+}
+
+.tag-open { 
+    background: #ecfccb; 
+    color: #3f6212; 
+    border: 1px solid #d9f99d; 
+}
+
+.admin-slot { 
+    font-size: 0.7rem; 
+    padding: 6px; 
+    border-radius: 6px; 
+    border: 1px solid #eee; 
+    cursor: pointer; 
+    text-align: center; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    white-space: nowrap; 
+}
+
+.admin-slot.locked { 
+    background-color: #fee2e2; 
+    color: #ef4444; 
+    border-color: #fecaca; 
+}
+
+.admin-slot.open { 
+    background-color: #fff; 
+    color: #333; 
+    border-color: #ddd; 
+}

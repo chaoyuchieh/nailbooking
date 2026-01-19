@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nail Collector | 後台管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="./css/styles.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+    <!-- Loading 指示器 -->
+    <div id="global-loading" style="display: none;">
+        <div class="w-8 h-8 border-4 border-gray-300 border-t-gray-800 rounded-full animate-spin"></div>
+        <p class="mt-2 text-xs text-gray-500 font-bold">載入中...</p>
+    </div>
+
+    <!-- 登入畫面 -->
+    <div id="login-overlay" class="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center p-8">
+        <div class="w-full max-w-xs">
+            <h1 class="text-2xl font-bold tracking-widest text-gray-800 mb-2 text-center">NAIL COLLECTOR</h1>
+            <p class="text-gray-400 text-sm mb-8 text-center">管理員後台系統</p>
+            
+            <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                <h2 class="text-gray-800 font-bold mb-4 text-center">後台登入</h2>
+                <input id="admin-id" type="text" placeholder="帳號" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-sm outline-none mb-3 focus:border-gray-400">
+                <input id="admin-pwd" type="password" placeholder="密碼" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-sm outline-none mb-4 focus:border-gray-400">
+                <button onclick="window.doAdminLogin()" class="w-full bg-gray-800 text-white py-3 rounded-lg font-bold shadow-md hover:bg-gray-700 transition">
+                    <i class="fas fa-sign-in-alt mr-2"></i>登入系統
+                </button>
+                
+                <div class="mt-6 pt-4 border-t border-gray-200 text-center">
+                    <a href="./index.html" class="text-xs text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-arrow-left mr-1"></i>返回顧客頁面
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <p class="text-[10px] text-gray-300 mt-8 text-center">System by Nail Collector</p>
+    </div>
+
+    <!-- 管理後台主畫面 -->
+    <div id="admin-panel" class="hidden fixed inset-0 z-40 bg-gray-50 flex justify-center items-center">
+        <div class="w-full max-w-md bg-gray-50 h-full shadow-2xl flex flex-col relative">
+            <!-- 頂部標題欄 -->
+            <div class="bg-white p-5 shadow-sm flex justify-between items-center border-b border-gray-100 flex-none z-10">
+                <div>
+                    <h2 class="text-base font-bold text-gray-800">📅 後台審核管理</h2>
+                    <div class="flex items-center gap-2 mt-1">
+                        <button onclick="changeAdminMonth(-1)" class="text-xs bg-gray-100 px-2 py-1 rounded hover:bg-gray-200 transition">◀</button>
+                        <select id="admin-month-selector" onchange="changeAdminMonthDirect()" class="text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-gray-400">
+                            <option value="0">1月</option>
+                            <option value="1">2月</option>
+                            <option value="2">3月</option>
+                            <option value="3">4月</option>
+                            <option value="4">5月</option>
+                            <option value="5">6月</option>
+                            <option value="6">7月</option>
+                            <option value="7">8月</option>
+                            <option value="8">9月</option>
+                            <option value="9">10月</option>
+                            <option value="10">11月</option>
+                            <option value="11">12月</option>
+                        </select>
+                        <select id="admin-year-selector" onchange="changeAdminMonthDirect()" class="text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-gray-400"></select>
+                        <button onclick="changeAdminMonth(1)" class="text-xs bg-gray-100 px-2 py-1 rounded hover:bg-gray-200 transition">▶</button>
+                    </div>
+                </div>
+                <button onclick="adminLogout()" class="text-xs text-red-500 border border-red-200 px-3 py-1 rounded-full hover:bg-red-50 transition">
+                    <i class="fas fa-sign-out-alt mr-1"></i>登出
+                </button>
+            </div>
+
+            <!-- 主內容區 -->
+            <div class="flex-1 overflow-y-auto p-4">
+                <!-- 統計資訊卡片 -->
+                <div class="bg-white p-3 rounded-xl shadow-sm mb-3 border border-gray-100">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-sm font-bold text-gray-700">
+                            <i class="fas fa-chart-bar mr-1"></i>統計資訊
+                        </h3>
+                        <button onclick="toggleStatsDetail()" class="text-xs text-blue-600 hover:text-blue-700 transition">
+                            <span id="stats-toggle-text">詳細 ▼</span>
+                        </button>
+                    </div>
+                    
+                    <!-- 簡要統計 -->
+                    <div id="today-booking-stats" class="space-y-2"></div>
+                    
+                    <!-- 詳細資訊 -->
+                    <div id="stats-detail" class="hidden pt-3 mt-3 border-t border-gray-100 space-y-2 fade-in">
+                        <div id="current-open-range" class="text-xs text-gray-700 bg-blue-50 p-3 rounded-lg">
+                            <div class="flex items-center gap-2 mb-1">
+                                <i class="fas fa-calendar-check text-blue-600"></i>
+                                <span class="font-bold text-blue-800">目前開放範圍</span>
+                            </div>
+                            <div id="open-range-dates" class="text-gray-600 ml-5">載入中...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 日曆 -->
+                <div class="bg-white p-3 rounded-xl shadow-sm mb-4 border border-gray-100">
+                    <p class="text-xs text-gray-500 mb-2 text-center">
+                        <i class="fas fa-hand-pointer mr-1"></i>點擊日期進行管理
+                    </p>
+                    <div class="grid grid-cols-7 gap-1 mb-2 text-center">
+                        <div class="text-[10px] text-red-400 font-bold">日</div>
+                        <div class="text-[10px] text-gray-400">一</div>
+                        <div class="text-[10px] text-gray-400">二</div>
+                        <div class="text-[10px] text-gray-400">三</div>
+                        <div class="text-[10px] text-gray-400">四</div>
+                        <div class="text-[10px] text-gray-400">五</div>
+                        <div class="text-[10px] text-blue-400 font-bold">六</div>
+                    </div>
+                    <div id="admin-calendar-grid" class="grid grid-cols-7 gap-1"></div>
+                </div>
+
+                <!-- 日期編輯區 -->
+                <div id="admin-edit-area" class="hidden fade-in">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-3">
+                        <div class="flex justify-between items-center mb-3">
+                            <div>
+                                <p class="text-[10px] text-gray-400 uppercase">編輯日期</p>
+                                <h3 id="admin-edit-date-title" class="text-lg font-bold text-gray-800"></h3>
+                            </div>
+                            <button onclick="closeEditArea()" class="text-xs text-gray-400 hover:text-gray-600 transition">
+                                <i class="fas fa-times text-lg"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <button id="admin-close-date-btn" onclick="toggleDateClosed()" class="w-full px-3 py-2 rounded-lg text-xs font-bold transition-colors border-2 border-gray-300 text-gray-600 hover:bg-gray-50">
+                                手動關閉此日期
+                            </button>
+                            <p class="text-[9px] text-gray-400 mt-1 text-center">關閉後客人將無法預約此日期</p>
+                        </div>
+                        
+                        <hr class="border-gray-100 mb-3">
+                        <p class="text-[10px] text-gray-400 mb-2 flex items-center">
+                            <i class="fas fa-list mr-1"></i>當日預約清單：
+                        </p>
+                        <div id="admin-schedule-list" class="space-y-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部儲存按鈕 -->
+            <div class="bg-white p-4 border-t border-gray-100 flex-none z-10">
+                <button onclick="saveAdminSettings()" class="w-full bg-gray-800 text-white py-3 rounded-xl font-bold shadow-lg text-sm hover:bg-gray-700 transition">
+                    <i class="fas fa-save mr-2"></i>儲存變更
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 載入 JS 文件 -->
+    <script src="./js/config.js"></script>
+    <script src="./js/common.js"></script>
+    <script src="./js/admin.js"></script>
+</body>
+</html>
