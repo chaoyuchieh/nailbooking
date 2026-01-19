@@ -9,280 +9,248 @@
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f9fafb; color: #333; -webkit-tap-highlight-color: transparent; }
-        .rounded-custom { border-radius: 24px; }
-        .btn-toggle { transition: all 0.2s; background-color: #fff; color: #666; border: 1px solid #e5e7eb; }
-        .btn-toggle.active { background-color: #374151; color: #fff; border-color: #374151; }
-        .calendar-day { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 50%; font-size: 0.8rem; position: relative; background: #fff; }
-        .calendar-day.selected { background-color: #374151; color: #fff; }
-        .calendar-day.booked { background-color: #d1d5db; color: #6b7280; }
-        .calendar-day.not-open { background-color: #d1d5db; color: #6b7280; cursor: not-allowed; position: relative; }
-        .calendar-day.not-open::after { content: '未開放'; position: absolute; bottom: 2px; font-size: 7px; color: #4b5563; }
-        .calendar-day.closed { background-color: #fee2e2; color: #dc2626; cursor: not-allowed; text-decoration: line-through; }
-        .admin-day { min-height: 90px; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; cursor: pointer; border-radius: 8px; font-size: 0.75rem; border: 1px solid #eee; background-color: #fff; position: relative; padding: 6px 4px; overflow: hidden; }
-        .admin-day.selected { border: 2px solid #333; background-color: #fafafa; }
-        .admin-day.status-off { background-color: #4b5563; color: #d1d5db; border-color: #6b7280; }
-        .admin-day.status-past { opacity: 0.5; background-color: #f9fafb; box-shadow: 0 0 0 2px #e5e7eb; }
-        .admin-day.has-pending { border: 2px solid #fbbf24; background-color: #fffbeb; }
-        .booking-bar { width: 100%; margin-top: 1px; padding: 3px 4px; border-radius: 3px; font-size: 8.5px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; display: block; }
-        .bar-confirmed { background-color: #dcfce7; color: #15803d; }
-        .bar-pending { background-color: #fef3c7; color: #92400e; }
-        .bar-pending-payment { background-color: #fed7aa; color: #9a3412; }
-        .indicator-dot { width: 6px; height: 6px; border-radius: 50%; position: absolute; top: 6px; right: 6px; }
-        .rule-box { background-color: #e5e7eb; border-radius: 16px; padding: 12px; font-size: 0.75rem; color: #666; margin-top: 8px; line-height: 1.6; }
-        .counter-btn { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background-color: #e5e7eb; color: #4b5563; font-size: 12px; }
-        .counter-btn:active { background-color: #d1d5db; }
-        .fade-in { animation: fadeIn 0.3s ease-in-out; }
-        .scale-110 { transform: scale(1.1); transition: transform 0.2s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
-        .schedule-item { display: flex; flex-direction: column; padding: 12px; background: white; border-radius: 12px; border: 1px solid #eee; margin-bottom: 8px; }
-        .schedule-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .schedule-actions { display: flex; gap: 8px; justify-content: flex-end; }
-        .tag { padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; }
-        .tag-pending { background: #fffbeb; color: #d97706; border: 1px solid #fcd34d; }
-        .tag-pending-payment { background: #fef3c7; color: #92400e; border: 1px solid #fbbf24; }
-        .tag-confirmed { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
-        .tag-booked { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
-        .tag-open { background: #ecfccb; color: #3f6212; border: 1px solid #d9f99d; }
-        .admin-slot { font-size: 0.7rem; padding: 6px; border-radius: 6px; border: 1px solid #eee; cursor: pointer; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .admin-slot.locked { background-color: #fee2e2; color: #ef4444; border-color: #fecaca; }
-        .admin-slot.open { background-color: #fff; color: #333; border-color: #ddd; }
-        #global-loading { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.95); z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; transition: opacity 0.3s; }
-        #selected-time-display { transition: all 0.2s ease-in-out; }
-        #confirm-time-btn { transition: all 0.3s ease-in-out; }
-    </style>
+    <link href="./css/styles.css" rel="stylesheet">
 </head>
 <body class="bg-white pb-40">
+    <!-- Loading 指示器 -->
     <div id="global-loading" style="display: none;">
         <div class="w-8 h-8 border-4 border-gray-300 border-t-gray-800 rounded-full animate-spin"></div>
         <p class="mt-2 text-xs text-gray-500 font-bold">載入中...</p>
     </div>
 
+    <!-- 登入畫面 -->
     <div id="login-overlay" class="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center p-8">
         <h1 class="text-2xl font-bold tracking-widest text-gray-800 mb-2">NAIL COLLECTOR</h1>
         <p class="text-gray-400 text-sm mb-12">收藏家預約系統</p>
+        
+        <!-- 自動登入提示 -->
         <div id="auto-login-hint" class="w-full max-w-xs mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200 hidden">
-            <div class="flex items-center gap-2 text-blue-800 text-sm"><i class="fas fa-info-circle"></i><span>正在自動登入...</span></div>
+            <div class="flex items-center gap-2 text-blue-800 text-sm">
+                <i class="fas fa-info-circle"></i>
+                <span>正在自動登入...</span>
+            </div>
         </div>
-        <div id="login-customer-view" class="w-full max-w-xs flex flex-col items-center gap-4 fade-in">
-            <button id="btn-line-login" onclick="window.loginWithLine()" class="w-full bg-[#06C755] text-white py-4 rounded-custom font-bold flex items-center justify-center gap-3 shadow-md hover:bg-[#05b54d] transition"><i class="fab fa-line text-xl"></i> 使用 LINE 登入預約</button>
+        
+        <!-- 顧客登入區 -->
+        <div class="w-full max-w-xs flex flex-col items-center gap-4 fade-in">
+            <button id="btn-line-login" onclick="loginWithLine()" class="w-full bg-[#06C755] text-white py-4 rounded-custom font-bold flex items-center justify-center gap-3 shadow-md hover:bg-[#05b54d] transition">
+                <i class="fab fa-line text-xl"></i> 使用 LINE 登入預約
+            </button>
+            
             <div class="mt-8"></div>
-            <button onclick="window.toggleAdminLogin(true)" class="text-xs text-gray-400 border-b border-gray-200 pb-1">管理員後台登入</button>
+            
+            <a href="./admin.html" class="text-xs text-gray-400 border-b border-gray-200 pb-1 hover:text-gray-600 transition">
+                管理員後台登入
+            </a>
         </div>
-        <div id="login-admin-view" class="w-full max-w-xs flex flex-col items-center gap-3 hidden fade-in">
-            <h2 class="text-gray-800 font-bold mb-2">後台登入</h2>
-            <input id="admin-id" type="text" placeholder="帳號 (admin)" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-sm outline-none">
-            <input id="admin-pwd" type="password" placeholder="密碼 (1234)" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-sm outline-none">
-            <button onclick="window.doAdminLogin()" class="w-full bg-gray-800 text-white py-3 rounded-lg font-bold shadow-md mt-2">登入系統</button>
-            <button onclick="window.toggleAdminLogin(false)" class="text-xs text-gray-400 mt-2">返回顧客入口</button>
-        </div>
+        
         <p class="text-[10px] text-gray-300 mt-12 text-center absolute bottom-10">System by Nail Collector</p>
     </div>
 
-    <div id="admin-panel" class="hidden fixed inset-0 z-40 bg-gray-50 flex justify-center items-center">
-        <div class="w-full max-w-md bg-gray-50 h-full shadow-2xl flex flex-col relative">
-            <div class="bg-white p-5 shadow-sm flex justify-between items-center border-b border-gray-100 flex-none z-10">
-                <div>
-                    <h2 class="text-base font-bold text-gray-800">📅 後台審核管理</h2>
-                    <div class="flex items-center gap-2 mt-1">
-                        <button onclick="window.changeAdminMonth(-1)" class="text-xs bg-gray-100 px-2 py-1 rounded hover:bg-gray-200">◀</button>
-                        <select id="admin-month-selector" onchange="window.changeAdminMonthDirect()" class="text-xs border border-gray-200 rounded px-2 py-1">
-                            <option value="0">1月</option>
-                            <option value="1">2月</option>
-                            <option value="2">3月</option>
-                            <option value="3">4月</option>
-                            <option value="4">5月</option>
-                            <option value="5">6月</option>
-                            <option value="6">7月</option>
-                            <option value="7">8月</option>
-                            <option value="8">9月</option>
-                            <option value="9">10月</option>
-                            <option value="10">11月</option>
-                            <option value="11">12月</option>
-                        </select>
-                        <select id="admin-year-selector" onchange="window.changeAdminMonthDirect()" class="text-xs border border-gray-200 rounded px-2 py-1"></select>
-                        <button onclick="window.changeAdminMonth(1)" class="text-xs bg-gray-100 px-2 py-1 rounded hover:bg-gray-200">▶</button>
-                    </div>
-                </div>
-                <button onclick="window.logout()" class="text-xs text-red-500 border border-red-200 px-3 py-1 rounded-full">登出</button>
-            </div>
-            <div class="flex-1 overflow-y-auto p-4">
-                <div class="bg-white p-3 rounded-xl shadow-sm mb-3 border border-gray-100">
-                    <h3 class="text-sm font-bold text-gray-700 mb-2">📅 開放設定</h3>
-                    <div id="current-open-range" class="text-xs text-gray-700 bg-blue-50 p-3 rounded-lg mb-2">
-                        <div class="flex items-center gap-2 mb-1">
-                            <i class="fas fa-calendar-check text-blue-600"></i>
-                            <span class="font-bold text-blue-800">目前開放範圍</span>
-                        </div>
-                        <div id="open-range-dates" class="text-gray-600 ml-5">載入中...</div>
-                    </div>
-                    <div id="closed-dates-list" class="pt-2 border-t border-gray-100">
-                        <p class="text-[10px] text-gray-500 mb-1">🚫 已關閉日期：</p>
-                        <div id="closed-dates-items" class="text-[10px] text-red-600"></div>
-                    </div>
-                </div>
-                <div class="bg-white p-3 rounded-xl shadow-sm mb-4 border border-gray-100">
-                    <div class="grid grid-cols-7 gap-1 mb-2 text-center"><div class="text-[10px] text-red-400 font-bold">日</div><div class="text-[10px] text-gray-400">一</div><div class="text-[10px] text-gray-400">二</div><div class="text-[10px] text-gray-400">三</div><div class="text-[10px] text-gray-400">四</div><div class="text-[10px] text-gray-400">五</div><div class="text-[10px] text-blue-400 font-bold">六</div></div>
-                    <div id="admin-calendar-grid" class="grid grid-cols-7 gap-1"></div>
-                </div>
-                <div id="admin-edit-area" class="hidden fade-in">
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-3">
-                        <div class="flex justify-between items-center mb-3">
-                            <div><p class="text-[10px] text-gray-400 uppercase">編輯日期</p><h3 id="admin-edit-date-title" class="text-lg font-bold text-gray-800"></h3></div>
-                            <button id="admin-status-toggle" onclick="window.toggleAdminDateStatus()" class="px-3 py-1.5 rounded-full text-xs font-bold transition-colors shadow-sm bg-gray-100">狀態切換</button>
-                        </div>
-                        <div class="mb-3">
-                            <button id="admin-close-date-btn" onclick="window.toggleDateClosed()" class="w-full px-3 py-2 rounded-lg text-xs font-bold transition-colors border-2">手動關閉此日期</button>
-                            <p class="text-[9px] text-gray-400 mt-1 text-center">關閉後客人將無法預約此日期</p>
-                        </div>
-                        <hr class="border-gray-100 mb-3"><p class="text-[10px] text-gray-400 mb-2">當日預約清單：</p>
-                        <div id="admin-schedule-list" class="space-y-2"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-white p-4 border-t border-gray-100 flex-none z-10">
-                <button onclick="window.saveAdminSettings()" class="w-full bg-gray-800 text-white py-3 rounded-xl font-bold shadow-lg text-sm hover:bg-gray-700 transition">儲存變更 (必須點擊)</button>
-            </div>
-        </div>
-    </div>
-
+    <!-- 主應用程式 -->
     <main id="main-app" class="max-w-md mx-auto p-4 hidden">
+        <!-- 頂部標題 -->
         <header class="flex items-center justify-between py-6 mb-4">
             <div>
                 <p class="text-[10px] text-gray-400 uppercase tracking-widest">歡迎回來，</p>
                 <h2 id="user-name" class="text-lg font-bold text-gray-800">收藏家 Guest</h2>
                 <p id="user-status" class="text-[10px] text-gray-500 mt-1"></p>
             </div>
-            <button onclick="window.logout()" class="text-xs text-gray-400 underline">登出</button>
+            <button onclick="logout()" class="text-xs text-gray-400 underline hover:text-gray-600 transition">登出</button>
         </header>
+
+        <!-- 好友提醒 -->
         <div id="friend-warning" class="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 rounded-lg hidden">
             <div class="flex items-start gap-3">
                 <i class="fab fa-line text-green-600 text-2xl mt-0.5"></i>
                 <div class="flex-1">
                     <p class="text-sm font-bold text-green-800 mb-1">📱 請先加入 LINE 官方帳號</p>
                     <p class="text-xs text-green-700 mb-3">為確保能即時收到預約通知，請先加入我們為好友！</p>
-                    <button id="add-friend-btn" onclick="window.addFriend()" class="text-xs bg-green-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-700 transition shadow-sm"><i class="fab fa-line mr-1"></i> 立即加入官方帳號</button>
-                    <button onclick="window.recheckFriendship()" class="ml-2 text-xs text-green-600 underline">我已加入，重新檢查</button>
+                    <button id="add-friend-btn" onclick="addFriend()" class="text-xs bg-green-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-700 transition shadow-sm">
+                        <i class="fab fa-line mr-1"></i> 立即加入官方帳號
+                    </button>
+                    <button onclick="recheckFriendship()" class="ml-2 text-xs text-green-600 underline hover:text-green-700 transition">
+                        我已加入，重新檢查
+                    </button>
                 </div>
             </div>
         </div>
+
+        <!-- LINE 登入警告 -->
         <div id="line-login-warning" class="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg hidden">
             <div class="flex items-start gap-3">
                 <i class="fas fa-exclamation-triangle text-yellow-600 text-lg mt-0.5"></i>
                 <div class="flex-1">
                     <p class="text-sm font-bold text-yellow-800 mb-1">尚未使用 LINE 登入</p>
                     <p class="text-xs text-yellow-700 mb-3">您目前無法送出預約，請先使用 LINE 帳號登入。</p>
-                    <button onclick="window.showLoginScreen()" class="text-xs bg-yellow-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-yellow-700 transition"><i class="fab fa-line mr-1"></i> 前往 LINE 登入</button>
+                    <button onclick="showLoginScreen()" class="text-xs bg-yellow-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-yellow-700 transition">
+                        <i class="fab fa-line mr-1"></i> 前往 LINE 登入
+                    </button>
                 </div>
             </div>
         </div>
 
+        <!-- 01 / Design 造型 -->
         <section class="mb-10">
-            <h2 class="text-xs font-bold text-gray-400 mb-4 tracking-tighter uppercase flex items-center"><span class="w-4 h-[1px] bg-gray-300 mr-2"></span> 01 / Design 造型</h2>
+            <h2 class="text-xs font-bold text-gray-400 mb-4 tracking-tighter uppercase flex items-center">
+                <span class="w-4 h-[1px] bg-gray-300 mr-2"></span> 01 / Design 造型
+            </h2>
             <div class="grid grid-cols-2 gap-2 mb-2">
-                <button onclick="window.selectSingleOption(this, 1000, 'design', '透明')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">透明 $1000</button>
-                <button onclick="window.selectSingleOption(this, 1200, 'design', '單色')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">單色 $1200</button>
-                <button onclick="window.selectSingleOption(this, 1300, 'design', '貓眼')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">貓眼 $1300</button>
-                <button onclick="window.selectSingleOption(this, 1400, 'design', '漸層')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">漸層 $1400</button>
-                <button onclick="window.selectSingleOption(this, 1400, 'design', '鏡面')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">鏡面 $1400</button>
+                <button onclick="selectSingleOption(this, 1000, 'design', '透明')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">透明 $1000</button>
+                <button onclick="selectSingleOption(this, 1200, 'design', '單色')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">單色 $1200</button>
+                <button onclick="selectSingleOption(this, 1300, 'design', '貓眼')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">貓眼 $1300</button>
+                <button onclick="selectSingleOption(this, 1400, 'design', '漸層')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">漸層 $1400</button>
+                <button onclick="selectSingleOption(this, 1400, 'design', '鏡面')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">鏡面 $1400</button>
             </div>
-            <button onclick="window.selectSingleOption(this, 1550, 'design', '五指造型'); window.toggleDesignRule('rule-5', this)" class="btn-toggle w-full mb-2 p-4 text-sm rounded-custom flex justify-between" data-group="design"><span>五指造型</span><span>$1550 up</span></button>
+            <button onclick="selectSingleOption(this, 1550, 'design', '五指造型'); toggleDesignRule('rule-5', this)" class="btn-toggle w-full mb-2 p-4 text-sm rounded-custom flex justify-between" data-group="design">
+                <span>五指造型</span><span>$1550 up</span>
+            </button>
             <div id="rule-5" class="hidden rule-box mb-2">4-6指造型 + 單色</div>
-            <button onclick="window.selectSingleOption(this, 1650, 'design', '十指造型'); window.toggleDesignRule('rule-10', this)" class="btn-toggle w-full mb-2 p-4 text-sm rounded-custom flex justify-between" data-group="design"><span>十指造型</span><span>$1650 up</span></button>
+            
+            <button onclick="selectSingleOption(this, 1650, 'design', '十指造型'); toggleDesignRule('rule-10', this)" class="btn-toggle w-full mb-2 p-4 text-sm rounded-custom flex justify-between" data-group="design">
+                <span>十指造型</span><span>$1650 up</span>
+            </button>
             <div id="rule-10" class="hidden rule-box mb-2">10指皆造型</div>
-            <button onclick="window.selectSingleOption(this, 1450, 'design', '任我做'); window.toggleDesignRule('rule-any', this)" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="design"><span>✨ 任我做</span><span>$1450</span></button>
+            
+            <button onclick="selectSingleOption(this, 1450, 'design', '任我做'); toggleDesignRule('rule-any', this)" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="design">
+                <span>✨ 任我做</span><span>$1450</span>
+            </button>
             <div id="rule-any" class="hidden rule-box bg-gray-800 text-gray-100">
                 <p class="text-xs mb-2">給我2個關鍵字任我發揮</p>
                 <div class="flex gap-2">
-                    <input id="keyword1" type="text" placeholder="關鍵字 1" maxlength="10" oninput="window.validate()" class="flex-1 bg-gray-700 text-white px-3 py-2 rounded text-sm outline-none border border-gray-600 focus:border-gray-400">
-                    <input id="keyword2" type="text" placeholder="關鍵字 2" maxlength="10" oninput="window.validate()" class="flex-1 bg-gray-700 text-white px-3 py-2 rounded text-sm outline-none border border-gray-600 focus:border-gray-400">
+                    <input id="keyword1" type="text" placeholder="關鍵字 1" maxlength="10" oninput="validate()" class="flex-1 bg-gray-700 text-white px-3 py-2 rounded text-sm outline-none border border-gray-600 focus:border-gray-400">
+                    <input id="keyword2" type="text" placeholder="關鍵字 2" maxlength="10" oninput="validate()" class="flex-1 bg-gray-700 text-white px-3 py-2 rounded text-sm outline-none border border-gray-600 focus:border-gray-400">
                 </div>
             </div>
         </section>
 
+        <!-- 02 / Removal 卸甲 -->
         <section class="mb-10">
-            <h2 class="text-xs font-bold text-gray-400 mb-4 tracking-tighter uppercase">02 / Removal 卸甲</h2>
+            <h2 class="text-xs font-bold text-gray-400 mb-4 tracking-tighter uppercase flex items-center">
+                <span class="w-4 h-[1px] bg-gray-300 mr-2"></span> 02 / Removal 卸甲
+            </h2>
             <div class="mb-3">
                 <label class="block text-sm text-gray-600 mb-2">是否需要卸甲？</label>
                 <div class="grid grid-cols-2 gap-2 mb-3">
-                    <button onclick="window.toggleRemovalNeed(true, this)" id="need-removal-yes" class="btn-toggle p-3 text-sm rounded-custom active" data-group="removal-need">需要卸甲</button>
-                    <button onclick="window.toggleRemovalNeed(false, this)" id="need-removal-no" class="btn-toggle p-3 text-sm rounded-custom" data-group="removal-need">不需要</button>
+                    <button onclick="toggleRemovalNeed(true, this)" id="need-removal-yes" class="btn-toggle p-3 text-sm rounded-custom active" data-group="removal-need">需要卸甲</button>
+                    <button onclick="toggleRemovalNeed(false, this)" id="need-removal-no" class="btn-toggle p-3 text-sm rounded-custom" data-group="removal-need">不需要</button>
                 </div>
             </div>
+            
             <div id="removal-options" class="space-y-2 mb-3">
                 <label class="block text-xs text-gray-500 mb-2">選擇卸甲方式：</label>
-                <button onclick="window.selectSingleOption(this, 100, 'removal', '本店4周內卸甲半價')" class="btn-toggle w-full p-3 text-sm rounded-custom text-left flex justify-between" data-group="removal"><span>本店4周內卸甲半價 🎉</span><span>$100</span></button>
-                <button onclick="window.selectSingleOption(this, 200, 'removal', '本店卸甲續作')" class="btn-toggle w-full p-3 text-sm rounded-custom text-left flex justify-between" data-group="removal"><span>本店卸甲續作</span><span>$200</span></button>
-                <button onclick="window.selectSingleOption(this, 400, 'removal', '他店卸甲續作')" class="btn-toggle w-full p-3 text-sm rounded-custom text-left flex justify-between" data-group="removal"><span>他店卸甲續作</span><span>$400</span></button>
-                <button onclick="window.selectSingleOption(this, 500, 'removal', '純卸甲')" class="btn-toggle w-full p-3 text-sm rounded-custom text-left flex justify-between" data-group="removal"><span>純卸甲</span><span>$500</span></button>
+                <button onclick="selectSingleOption(this, 100, 'removal', '本店4周內卸甲半價')" class="btn-toggle w-full p-3 text-sm rounded-custom text-left flex justify-between" data-group="removal">
+                    <span>本店4周內卸甲半價 🎉</span><span>$100</span>
+                </button>
+                <button onclick="selectSingleOption(this, 200, 'removal', '本店卸甲續作')" class="btn-toggle w-full p-3 text-sm rounded-custom text-left flex justify-between" data-group="removal">
+                    <span>本店卸甲續作</span><span>$200</span>
+                </button>
+                <button onclick="selectSingleOption(this, 400, 'removal', '他店卸甲續作')" class="btn-toggle w-full p-3 text-sm rounded-custom text-left flex justify-between" data-group="removal">
+                    <span>他店卸甲續作</span><span>$400</span>
+                </button>
+                <button onclick="selectSingleOption(this, 500, 'removal', '純卸甲')" class="btn-toggle w-full p-3 text-sm rounded-custom text-left flex justify-between" data-group="removal">
+                    <span>純卸甲</span><span>$500</span>
+                </button>
             </div>
+            
             <div id="removal-extras" class="bg-gray-50 p-4 rounded-custom space-y-3">
                 <p class="text-xs text-gray-500 mb-2">額外項目：</p>
                 <div class="flex justify-between items-center">
                     <span class="text-xs font-bold">大鑽/凹凸 ($50/指)</span>
                     <div class="flex items-center gap-3">
-                        <button onclick="window.updateBigDiamondCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button>
+                        <button onclick="updateBigDiamondCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button>
                         <span id="big-diamond-count" class="text-sm font-bold w-4 text-center">0</span>
-                        <button onclick="window.updateBigDiamondCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button>
+                        <button onclick="updateBigDiamondCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button>
                     </div>
                 </div>
                 <div class="flex justify-between items-center">
                     <span class="text-xs font-bold">卸指甲油 ($50/指)</span>
                     <div class="flex items-center gap-3">
-                        <button onclick="window.updateNailPolishRemovalCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button>
+                        <button onclick="updateNailPolishRemovalCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button>
                         <span id="nail-polish-removal-count" class="text-sm font-bold w-4 text-center">0</span>
-                        <button onclick="window.updateNailPolishRemovalCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button>
+                        <button onclick="updateNailPolishRemovalCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button>
                     </div>
                 </div>
             </div>
         </section>
 
+        <!-- 03 / Care 保養 / 其他 -->
         <section class="mb-10">
-            <h2 class="text-xs font-bold text-gray-400 mb-4 tracking-tighter uppercase">03 / Care 保養 / 其他</h2>
-            <button onclick="window.toggleService(this, 400, '基礎保養')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between mb-3"><span>基礎保養</span><span>$400</span></button>
+            <h2 class="text-xs font-bold text-gray-400 mb-4 tracking-tighter uppercase flex items-center">
+                <span class="w-4 h-[1px] bg-gray-300 mr-2"></span> 03 / Care 保養 / 其他
+            </h2>
+            <button onclick="toggleService(this, 400, '基礎保養')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between mb-3">
+                <span>基礎保養</span><span>$400</span>
+            </button>
             <div class="bg-gray-50 p-4 rounded-custom space-y-3">
                 <div class="flex justify-between items-center">
                     <span class="text-xs font-bold">無限跳純色 ($100/次)</span>
                     <div class="flex items-center gap-3">
-                        <button onclick="window.updateUnlimitedJumpCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button>
+                        <button onclick="updateUnlimitedJumpCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button>
                         <span id="unlimited-jump-count" class="text-sm font-bold w-4 text-center">0</span>
-                        <button onclick="window.updateUnlimitedJumpCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button>
+                        <button onclick="updateUnlimitedJumpCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button>
                     </div>
                 </div>
-                <div class="flex justify-between items-center"><span class="text-xs font-bold">延甲 ($150/指)</span><div class="flex items-center gap-3"><button onclick="window.updateExtensionCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button><span id="ext-count" class="text-sm font-bold w-4 text-center">0</span><button onclick="window.updateExtensionCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button></div></div>
-                <div class="flex justify-between items-center"><span class="text-xs font-bold">補甲 ($50/指)</span><div class="flex items-center gap-3"><button onclick="window.updateRepairCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button><span id="repair-count" class="text-sm font-bold w-4 text-center">0</span><button onclick="window.updateRepairCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button></div></div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold">延甲 ($150/指)</span>
+                    <div class="flex items-center gap-3">
+                        <button onclick="updateExtensionCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button>
+                        <span id="ext-count" class="text-sm font-bold w-4 text-center">0</span>
+                        <button onclick="updateExtensionCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold">補甲 ($50/指)</span>
+                    <div class="flex items-center gap-3">
+                        <button onclick="updateRepairCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button>
+                        <span id="repair-count" class="text-sm font-bold w-4 text-center">0</span>
+                        <button onclick="updateRepairCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button>
+                    </div>
+                </div>
             </div>
         </section>
 
+        <!-- 04 / Schedule 時間 -->
         <section class="mb-10">
-            <h2 class="text-xs font-bold text-gray-400 mb-4 tracking-tighter uppercase">04 / Schedule 時間</h2>
+            <h2 class="text-xs font-bold text-gray-400 mb-4 tracking-tighter uppercase flex items-center">
+                <span class="w-4 h-[1px] bg-gray-300 mr-2"></span> 04 / Schedule 時間
+            </h2>
             <div class="bg-white p-6 rounded-custom shadow-sm border border-gray-100">
-                <div class="flex justify-between items-end mb-4"><h3 id="calendar-title" class="text-xl font-bold text-gray-800"></h3><span class="text-[10px] text-gray-400">● 不可預約</span></div>
-                <div class="grid grid-cols-7 gap-2 mb-2 text-center text-xs text-gray-400 font-bold"><div class="text-red-400">日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div class="text-blue-400">六</div></div>
+                <div class="flex justify-between items-end mb-4">
+                    <h3 id="calendar-title" class="text-xl font-bold text-gray-800"></h3>
+                    <span class="text-[10px] text-gray-400">● 可預約</span>
+                </div>
+                
+                <div class="grid grid-cols-7 gap-2 mb-2 text-center text-xs text-gray-400 font-bold">
+                    <div class="text-red-400">日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div class="text-blue-400">六</div>
+                </div>
+                
                 <div id="calendar-grid" class="grid grid-cols-7 gap-2 mb-6"></div>
+                
                 <div id="time-slots-container" class="hidden pt-4 border-t border-gray-100 fade-in">
                     <p class="text-center text-xs text-gray-400 mb-3">選擇預約時間 (營業時間 10:00-19:00，每次服務約 2.5 小時)</p>
+                    
                     <div class="mb-4">
                         <p class="text-xs text-gray-500 mb-2 text-center">快速選擇</p>
                         <div id="quick-time-slots" class="grid grid-cols-3 gap-2"></div>
                     </div>
+                    
                     <div class="bg-gray-50 p-4 rounded-lg">
                         <p class="text-xs text-gray-500 mb-3 text-center">精確調整 (±10分鐘)</p>
                         <div class="flex items-center justify-center gap-4">
-                            <button onclick="window.adjustTime(-10)" class="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition">
+                            <button onclick="adjustTime(-10)" class="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition">
                                 <i class="fas fa-minus text-gray-700"></i>
                             </button>
                             <div class="text-center">
                                 <div id="selected-time-display" class="text-3xl font-bold text-gray-800">10:00</div>
                                 <div id="service-end-time" class="text-xs text-gray-500 mt-1">服務至 12:30</div>
                             </div>
-                            <button onclick="window.adjustTime(10)" class="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition">
+                            <button onclick="adjustTime(10)" class="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition">
                                 <i class="fas fa-plus text-gray-700"></i>
                             </button>
                         </div>
                         <div class="mt-4 flex justify-center">
-                            <button onclick="window.confirmTime()" id="confirm-time-btn" class="bg-gray-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-gray-700 transition">
+                            <button onclick="confirmTime()" id="confirm-time-btn" class="bg-gray-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-gray-700 transition">
                                 ✓ 確認此時間
                             </button>
                         </div>
@@ -294,31 +262,20 @@
             </div>
         </section>
 
-        <section class="bg-gray-50 p-6 rounded-custom mb-24 text-xs text-gray-600">
-<section class="bg-gray-50 p-6 rounded-custom mb-24 text-xs text-gray-600">
-    <p class="mb-4">【 歡迎光臨入場門票🎟 】<br>
-為了保障每位收藏家權益，<br>
-新客預約時會收取 <span class="font-bold text-black">$500</span> 預約門票，<br>
-匯款完成即為您保留專屬時段。<br>
-入場門票於當日來施作時會全數折抵當日消費！！<br>
-為維護施作排程，<br>
-預約成功後恕不接受任何理由之取消。<br>
-若當日未到（NO SHOW）或遲到逾 15 分鐘以上，<br>
-門票將全額轉作該時段之營業損失補償，不予退還。<br>
-惟如遇不可抗力因素，<br>
-（如突發疾病、重大事故、天災等）<br>
-請於第一時間主動告知，<br>
-經確認後可協助更改預約時間乙次，<br>
-更改後之預約恕不再接受任何變更。<br>
-請確定日期與時段後再行預約<br>
-謝謝您的理解與配合😌🫶🏻<br>
-*新客定義：首次預約及3個月以上未預約者<br>
-[本店保有最終預約與規則解釋權]</p>
-    <label class="flex items-center gap-2 cursor-pointer">
-        <input type="checkbox" id="term-check" onchange="window.validate()" class="accent-gray-800">
-        <span>我已閱讀並同意規範</span>
-    </label>
-</section>
+        <!-- 規範與同意 -->
+        <section class="bg-gray-50 rounded-custom mb-24 text-xs text-gray-600 overflow-hidden">
+            <div class="p-4">
+                <p class="mb-3 leading-relaxed">首次預約需匯款 <span class="font-bold text-black">$500</span> 保留。</p>
+            </div>
+            <div class="bg-white border-t border-gray-200 p-4">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="term-check" onchange="validate()" class="accent-gray-800 w-4 h-4 flex-shrink-0">
+                    <span class="leading-relaxed">我已閱讀並同意規範</span>
+                </label>
+            </div>
+        </section>
+
+        <!-- 底部固定按鈕 -->
         <footer class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur border-t border-gray-100 p-4 z-40">
             <div class="max-w-md mx-auto flex items-center justify-between">
                 <div>
@@ -326,1889 +283,16 @@
                     <p class="text-xl font-bold text-gray-800">$<span id="price-display">0</span></p>
                     <p id="validation-msg" class="text-[9px] text-red-500 font-bold"></p>
                 </div>
-                <button id="submit-btn" onclick="window.checkAndSubmit()" class="bg-gray-900 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition opacity-50 flex items-center gap-2"><span>送出預約</span></button>
+                <button id="submit-btn" onclick="checkAndSubmit()" class="bg-gray-900 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition opacity-50 flex items-center gap-2">
+                    <span>送出預約</span>
+                </button>
             </div>
         </footer>
     </main>
 
-    <script>
-        console.log('🚀 Script started loading');
-        
-        const SUPABASE_URL = 'https://alkuncpbqslksxeorndz.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsa3VuY3BicXNsa3N4ZW9ybmR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczMzg0MjIsImV4cCI6MjA4MjkxNDQyMn0.Q-HxirPEavixO-tW6hRp6Rz6fFLrWMqfCU3kEKcrRAg';
-        const LIFF_ID = '2008856015-4bLaPE5n';
-        const LINE_OFFICIAL_ID = '@229lgsmd';
-
-        let supabaseClient = null;
-        if (typeof supabase !== 'undefined' && SUPABASE_URL.startsWith('http')) {
-             supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-             console.log('✅ Supabase initialized');
-        }
-
-        const today = new Date();
-        let currentYear = today.getFullYear();
-        let currentMonth = today.getMonth();
-        let adminYear = today.getFullYear();
-        let adminMonth = today.getMonth();
-        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        const BUSINESS_HOURS = {
-            start: { hour: 10, minute: 0 },
-            end: { hour: 19, minute: 0 }
-        };
-        const SERVICE_DURATION_MINUTES = 150;
-        
-        let calendarData = [];
-        let adminSelectedIndex = null;
-        let closedDates = [];
-        let bookingOpenRanges = { start: null, end: null };
-        
-        let priceState = { design: 0, removal: 0, extras: 0 };
-        let bookingDetails = { 
-            design: { name: '', price: 0, keywords: [] },
-            removal: { name: '', price: 0 },
-            extras: []
-        };
-        let extensionCount = 0; 
-        let repairCount = 0;
-        let unlimitedJumpCount = 0;
-        let bigDiamondCount = 0;
-        let nailPolishRemovalCount = 0;
-        let selectedDate = null; 
-        let selectedTime = null;
-        let currentTimeHour = 10;
-        let currentTimeMinute = 0;
-        let currentDateBookedTimes = [];
-        let userProfile = null;
-        let liffInitialized = false;
-        let isFriend = false;
-
-        console.log('✅ Variables initialized');
-
-        window.showLoginScreen = function() {
-            document.getElementById('main-app').classList.add('hidden');
-            document.getElementById('login-overlay').classList.remove('hidden');
-        }
-
-        window.updateUserStatus = function() {
-            const warningEl = document.getElementById('line-login-warning');
-            const friendWarningEl = document.getElementById('friend-warning');
-            const statusEl = document.getElementById('user-status');
-            const userNameEl = document.getElementById('user-name');
-            
-            if (!userProfile || !userProfile.userId) {
-                warningEl.classList.remove('hidden');
-                friendWarningEl.classList.add('hidden');
-                statusEl.innerText = '⚠️ 訪客模式（無法預約）';
-                statusEl.classList.add('text-red-500', 'font-bold');
-                userNameEl.innerText = '訪客';
-            } else if (!isFriend) {
-                warningEl.classList.add('hidden');
-                friendWarningEl.classList.remove('hidden');
-                statusEl.innerText = '⚠️ 建議加入 LINE 官方帳號';
-                statusEl.classList.add('text-orange-500', 'font-bold');
-                statusEl.classList.remove('text-green-600', 'text-red-500');
-                userNameEl.innerText = userProfile.displayName;
-            } else {
-                warningEl.classList.add('hidden');
-                friendWarningEl.classList.add('hidden');
-                statusEl.innerText = '✓ LINE 帳號已連結';
-                statusEl.classList.remove('text-red-500', 'text-orange-500');
-                statusEl.classList.add('text-green-600');
-                userNameEl.innerText = userProfile.displayName;
-            }
-        }
-
-        window.checkFriendship = async function() {
-            if (!liffInitialized || !liff.isLoggedIn()) {
-                console.warn("⚠️ LIFF 未初始化或未登入，跳過好友檢查");
-                isFriend = true;
-                return true;
-            }
-            
-            try {
-                const friendship = await liff.getFriendship();
-                isFriend = friendship.friendFlag;
-                console.log(isFriend ? "✅ 用戶已加為好友" : "❌ 用戶尚未加為好友");
-                return isFriend;
-            } catch (e) {
-                console.error("⚠️ 無法檢查好友狀態", e);
-                isFriend = true;
-                return true;
-            }
-        }
-
-        window.addFriend = function() {
-            if (LINE_OFFICIAL_ID && LINE_OFFICIAL_ID !== '@your_line_id') {
-                window.open(`https://line.me/R/ti/p/${LINE_OFFICIAL_ID}`, '_blank');
-            } else {
-                alert("請先設定 LINE_OFFICIAL_ID");
-            }
-        }
-
-        window.recheckFriendship = async function() {
-            window.showLoading(true);
-            await window.checkFriendship();
-            window.updateUserStatus();
-            window.showLoading(false);
-            
-            if (isFriend) {
-                alert("✅ 已確認您是我們的好友！\n現在可以正常預約了。");
-            } else {
-                alert("❌ 尚未偵測到好友關係\n\n請確認：\n1. 已在 LINE 中加入我們的官方帳號\n2. 稍等片刻再試一次");
-            }
-        }
-
-        window.loginWithLine = async function() {
-            console.log('🔐 loginWithLine called');
-            sessionStorage.removeItem('manualLogout');
-            if (LIFF_ID && LIFF_ID !== 'YOUR_LIFF_ID_HERE') {
-                if (!liff.isLoggedIn()) {
-                    try {
-                        console.log('🔄 Redirecting to LINE login...');
-                        liff.login({ redirectUri: window.location.href });
-                    } catch (err) {
-                        console.error('❌ LINE login error:', err);
-                        alert("LINE 登入錯誤：\n" + err.message);
-                    }
-                } else {
-                    try {
-                        console.log('✅ Already logged in, getting profile...');
-                        userProfile = await liff.getProfile();
-                        await window.checkFriendship();
-                        document.getElementById('login-overlay').classList.add('hidden');
-                        document.getElementById('main-app').classList.remove('hidden');
-                        window.updateUserStatus();
-                        await window.fetchCalendarData();
-                        document.getElementById('calendar-title').innerText = `${monthNames[currentMonth]} ${currentYear}`;
-                        window.renderCalendar();
-                    } catch (e) {
-                        console.error('❌ Error getting LINE data:', e);
-                        alert("無法取得 LINE 資料：" + e.message);
-                    }
-                }
-            } else {
-                alert("請設定 LIFF ID");
-            }
-        }
-
-        window.toggleAdminLogin = function(show) {
-            document.getElementById('login-customer-view').classList.toggle('hidden', show);
-            document.getElementById('login-admin-view').classList.toggle('hidden', !show);
-        }
-
-        window.doAdminLogin = function() {
-            sessionStorage.removeItem('manualLogout');
-            if (document.getElementById('admin-id').value === 'admin' && document.getElementById('admin-pwd').value === '1234') {
-                document.getElementById('login-overlay').classList.add('hidden');
-                document.getElementById('admin-panel').classList.remove('hidden');
-                document.getElementById('admin-panel').style.display = 'flex';
-                
-                window.initAdminYearSelector();
-                
-                window.fetchAdminCalendarData().then(() => {
-                    window.renderAdminCalendar();
-                    window.updateCurrentOpenRange();
-                });
-            } else {
-                alert('帳號 admin / 密碼 1234');
-            }
-        }
-
-        window.initAdminYearSelector = function() {
-            const yearSelect = document.getElementById('admin-year-selector');
-            const monthSelect = document.getElementById('admin-month-selector');
-            const currentYear = today.getFullYear();
-            
-            yearSelect.innerHTML = '';
-            for (let y = currentYear - 1; y <= currentYear + 2; y++) {
-                const option = document.createElement('option');
-                option.value = y;
-                option.text = `${y}年`;
-                yearSelect.appendChild(option);
-            }
-            
-            yearSelect.value = adminYear;
-            monthSelect.value = adminMonth;
-        }
-
-        window.changeAdminMonth = function(delta) {
-            adminMonth += delta;
-            if (adminMonth > 11) {
-                adminMonth = 0;
-                adminYear++;
-            } else if (adminMonth < 0) {
-                adminMonth = 11;
-                adminYear--;
-            }
-            
-            document.getElementById('admin-year-selector').value = adminYear;
-            document.getElementById('admin-month-selector').value = adminMonth;
-            
-            window.fetchAdminCalendarData().then(() => {
-                window.renderAdminCalendar();
-                window.updateCurrentOpenRange();
-            });
-        }
-
-        window.changeAdminMonthDirect = function() {
-            adminYear = parseInt(document.getElementById('admin-year-selector').value);
-            adminMonth = parseInt(document.getElementById('admin-month-selector').value);
-            
-            window.fetchAdminCalendarData().then(() => {
-                window.renderAdminCalendar();
-                window.updateCurrentOpenRange();
-            });
-        }
-
-        window.logout = function() {
-            sessionStorage.setItem('manualLogout', 'true');
-            try { if (typeof liff !== 'undefined' && liff.isLoggedIn()) liff.logout(); } catch (e) {}
-            location.reload();
-        }
-
-        window.selectSingleOption = function(el, price, group, name) {
-            document.querySelectorAll(`button[data-group="${group}"]`).forEach(b => b.classList.remove('active'));
-            if (group === 'design') {
-                document.querySelectorAll('.rule-box').forEach(b => b.classList.add('hidden'));
-                document.getElementById('keyword1').value = '';
-                document.getElementById('keyword2').value = '';
-            }
-            el.classList.add('active');
-            priceState[group] = price;
-            
-            if (group === 'design') {
-                bookingDetails.design = { name: name || '', price: price, keywords: [] };
-            } else if (group === 'removal') {
-                bookingDetails.removal = { name: name || '', price: price };
-            }
-            
-            window.updateUI();
-            window.validate();
-        }
-
-        window.toggleRemovalNeed = function(need, el) {
-            document.querySelectorAll(`button[data-group="removal-need"]`).forEach(b => b.classList.remove('active'));
-            el.classList.add('active');
-            
-            const removalOptions = document.getElementById('removal-options');
-            const removalExtras = document.getElementById('removal-extras');
-            
-            if (need) {
-                removalOptions.classList.remove('hidden');
-                removalExtras.classList.remove('hidden');
-            } else {
-                removalOptions.classList.add('hidden');
-                removalExtras.classList.add('hidden');
-                document.querySelectorAll(`button[data-group="removal"]`).forEach(b => b.classList.remove('active'));
-                priceState.removal = 0;
-                bookingDetails.removal = { name: '無須卸甲', price: 0 };
-                bigDiamondCount = 0;
-                nailPolishRemovalCount = 0;
-                document.getElementById('big-diamond-count').innerText = '0';
-                document.getElementById('nail-polish-removal-count').innerText = '0';
-                window.updateUI();
-            }
-            window.validate();
-        }
-
-        window.updateBigDiamondCount = function(n) {
-            if (bigDiamondCount + n >= 0) { 
-                bigDiamondCount += n; 
-                document.getElementById('big-diamond-count').innerText = bigDiamondCount; 
-                window.updateUI(); 
-            }
-        }
-
-        window.updateNailPolishRemovalCount = function(n) {
-            if (nailPolishRemovalCount + n >= 0) { 
-                nailPolishRemovalCount += n; 
-                document.getElementById('nail-polish-removal-count').innerText = nailPolishRemovalCount; 
-                window.updateUI(); 
-            }
-        }
-
-        window.toggleService = function(el, price, name) {
-            if (el.classList.contains('active')) { 
-                el.classList.remove('active'); 
-                priceState.extras -= price;
-                bookingDetails.extras = bookingDetails.extras.filter(e => e.name !== name);
-            }
-            else { 
-                el.classList.add('active'); 
-                priceState.extras += price;
-                bookingDetails.extras.push({ name: name || '加購項目', price: price });
-            }
-            window.updateUI();
-        }
-
-        window.toggleDesignRule = function(id, el) {
-            const rule = document.getElementById(id);
-            if (el.classList.contains('active')) rule.classList.remove('hidden');
-            else rule.classList.add('hidden');
-        }
-
-        window.updateExtensionCount = function(n) {
-            if (extensionCount + n >= 0) { extensionCount += n; document.getElementById('ext-count').innerText = extensionCount; window.updateUI(); }
-        }
-        window.updateRepairCount = function(n) {
-            if (repairCount + n >= 0) { repairCount += n; document.getElementById('repair-count').innerText = repairCount; window.updateUI(); }
-        }
-        window.updateUnlimitedJumpCount = function(n) {
-            if (unlimitedJumpCount + n >= 0) { 
-                unlimitedJumpCount += n; 
-                document.getElementById('unlimited-jump-count').innerText = unlimitedJumpCount; 
-                window.updateUI(); 
-            }
-        }
-
-        window.calculateTotal = function() {
-            return priceState.design + priceState.removal + priceState.extras + 
-                   (unlimitedJumpCount * 100) + (extensionCount * 150) + (repairCount * 50) +
-                   (bigDiamondCount * 50) + (nailPolishRemovalCount * 50);
-        }
-
-        window.updateUI = function() {
-            const total = window.calculateTotal();
-            const priceEl = document.getElementById('price-display');
-            priceEl.innerText = total;
-            if (total === 0) priceEl.classList.add('text-red-500'); else priceEl.classList.remove('text-red-500');
-            window.validate();
-        }
-
-        window.validate = function() {
-            const check = document.getElementById('term-check').checked;
-            const total = window.calculateTotal();
-            const btn = document.getElementById('submit-btn');
-            const msgEl = document.getElementById('validation-msg');
-            
-            let errors = [];
-            if (!userProfile || !userProfile.userId) errors.push("需 LINE 登入");
-            if (total <= 0) errors.push("未選項目");
-            
-            const needRemovalBtn = document.getElementById('need-removal-yes');
-            if (needRemovalBtn && needRemovalBtn.classList.contains('active')) {
-                const hasRemovalSelected = Array.from(document.querySelectorAll('button[data-group="removal"]')).some(btn => btn.classList.contains('active'));
-                if (!hasRemovalSelected) {
-                    errors.push("請選擇卸甲方式");
-                }
-            }
-            
-            if (bookingDetails.design.name === '任我做') {
-                const k1 = document.getElementById('keyword1').value.trim();
-                const k2 = document.getElementById('keyword2').value.trim();
-                if (!k1 || !k2) errors.push("任我做需填關鍵字");
-            }
-            
-            if (!selectedDate) errors.push("未選日期");
-            if (!selectedTime) errors.push("未選時間");
-            if (!check) errors.push("未勾選同意");
-
-            const isValid = errors.length === 0;
-
-            if (isValid) {
-                btn.classList.remove('opacity-50');
-                msgEl.innerText = '';
-            } else {
-                btn.classList.add('opacity-50');
-                msgEl.innerText = errors.join(' / ');
-            }
-            btn.disabled = false;
-        }
-
-        window.checkAndSubmit = async function() {
-            const check = document.getElementById('term-check').checked;
-            const total = window.calculateTotal();
-            
-            if (!userProfile || !userProfile.userId) {
-                alert("❌ 請先使用 LINE 登入才能預約！");
-                window.showLoginScreen();
-                return;
-            }
-            
-            if (!isFriend) {
-                const confirmBooking = confirm("⚠️ 建議加入 LINE 官方帳號\n\n雖然可以繼續預約，但加入官方帳號後才能收到預約通知。\n\n是否仍要繼續預約？");
-                if (!confirmBooking) {
-                    document.getElementById('friend-warning').scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    return;
-                }
-            }
-            
-            if (total <= 0) { alert("❌ 您尚未選擇任何服務項目！"); return; }
-            
-            const needRemovalBtn = document.getElementById('need-removal-yes');
-            if (needRemovalBtn && needRemovalBtn.classList.contains('active')) {
-                const hasRemovalSelected = Array.from(document.querySelectorAll('button[data-group="removal"]')).some(btn => btn.classList.contains('active'));
-                if (!hasRemovalSelected) {
-                    alert("❌ 您選擇了需要卸甲，請選擇卸甲方式！");
-                    document.getElementById('removal-options').scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    return;
-                }
-            }
-            
-            if (bookingDetails.design.name === '任我做') {
-                const k1 = document.getElementById('keyword1').value.trim();
-                const k2 = document.getElementById('keyword2').value.trim();
-                if (!k1 || !k2) {
-                    alert("❌ 任我做需要填寫兩個關鍵字！");
-                    document.getElementById('keyword1').focus();
-                    return;
-                }
-            }
-            
-            if (!selectedDate) { alert("❌ 請選擇預約日期"); return; }
-            if (!selectedTime) { alert("❌ 請選擇預約時段"); return; }
-            if (!check) { alert("❌ 請先勾選同意規範"); return; }
-
-            try {
-                await window.finalSubmit();
-            } catch (e) {
-                alert("發生錯誤：" + e.message);
-            }
-        }
-
-        window.finalSubmit = async function() {
-            if (!userProfile || !userProfile.userId) {
-                alert("❌ 安全驗證失敗");
-                window.showLoginScreen();
-                return;
-            }
-            if (!supabaseClient) {
-                alert("❌ 資料庫未連線");
-                return;
-            }
-            
-            const btn = document.getElementById('submit-btn');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 處理中...';
-            btn.disabled = true;
-
-            try {
-                const dateId = `${currentYear}-${currentMonth}-${selectedDate.split('/')[1]}`;
-                const { data, error: fetchErr } = await supabaseClient.from('calendar_slots').select('*').eq('date_id', dateId).single();
-                let booked = (data && data.booked_slots) ? data.booked_slots : [];
-                
-                if (booked.some(s => (typeof s === 'string' ? s : s.time) === selectedTime)) throw new Error("手腳太慢了！該時段剛被搶走 😭");
-                
-                let userName = userProfile.displayName;
-                let userId = userProfile.userId;
-                
-                let details = {
-                    design: { ...bookingDetails.design },
-                    removal: { ...bookingDetails.removal },
-                    extras: [...bookingDetails.extras]
-                };
-                
-                if (bookingDetails.design.name === '任我做') {
-                    details.design.keywords = [
-                        document.getElementById('keyword1').value.trim(),
-                        document.getElementById('keyword2').value.trim()
-                    ];
-                }
-                
-                if (unlimitedJumpCount > 0) details.extras.push({ name: '無限跳純色', count: unlimitedJumpCount, price: unlimitedJumpCount * 100 });
-                if (extensionCount > 0) details.extras.push({ name: '延甲', count: extensionCount, price: extensionCount * 150 });
-                if (repairCount > 0) details.extras.push({ name: '補甲', count: repairCount, price: repairCount * 50 });
-                if (bigDiamondCount > 0) details.extras.push({ name: '大鑽/凹凸', count: bigDiamondCount, price: bigDiamondCount * 50 });
-                if (nailPolishRemovalCount > 0) details.extras.push({ name: '卸指甲油', count: nailPolishRemovalCount, price: nailPolishRemovalCount * 50 });
-                
-                booked.push({
-                    time: selectedTime,
-                    user: userName,
-                    userId: userId,
-                    status: 'pending',
-                    bookingDetails: details,
-                    totalPrice: window.calculateTotal()
-                });
-
-                const { error } = await supabaseClient.from('calendar_slots').upsert({ date_id: dateId, booked_slots: booked, status: 'available' });
-                if (error) throw error;
-                
-                let detailMsg = '';
-                if (details.design.name) {
-                    detailMsg += `\n🎨 造型：${details.design.name}`;
-                    if (details.design.keywords && details.design.keywords.length > 0) {
-                        detailMsg += ` (${details.design.keywords.join(', ')})`;
-                    }
-                }
-                if (details.removal.name) {
-                    detailMsg += `\n💅 卸甲：${details.removal.name}`;
-                }
-                if (details.extras.length > 0) {
-                    detailMsg += `\n✨ 加購：${details.extras.map(e => {
-                        if (e.count) return `${e.name} x${e.count}`;
-                        return e.name;
-                    }).join(', ')}`;
-                }
-                
-                const successMsg = `【預約已送出】
-
-您好 ${userName}，
-我們已收到您的預約申請！
-
-📅 日期：${selectedDate}
-⏰ 時間：${selectedTime}${detailMsg}
-💰 預估金額：${window.calculateTotal()}
-
-⏳ 請等待管理員審核
-審核通過後我們會立即通知您。
-
-感謝您的預約！
-
----
-LOST.IN.GALLERY_`;
-
-                try {
-                    if (liffInitialized && liff.isInClient()) {
-                        await liff.sendMessages([{
-                            type: 'text',
-                            text: successMsg
-                        }]);
-                        alert("✅ 預約申請已送出！\n\n已在 LINE 發送確認訊息。");
-                        
-                        // 延遲後重新載入頁面，回到主畫面
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1500);
-                    } else {
-                        alert(`✅ 預約申請已送出！\n\n${successMsg}`);
-                        
-                        // 重新載入頁面回到主畫面
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 2000);
-                    }
-                } catch (e) {
-                    console.warn("LINE message failed", e);
-                    alert(`✅ 預約申請已送出！\n\n${successMsg}`);
-                    
-                    // 發送訊息失敗也重新載入
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 2000);
-                }
-
-            } catch (e) {
-                alert("❌ 預約失敗：" + e.message);
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
-        }
-
-        window.saveAdminSettings = async function() {
-            if (!supabaseClient) { alert("離線模式無法儲存"); logout(); return; }
-            
-            if (!confirm('確定要儲存所有變更嗎？')) {
-                return;
-            }
-            
-            window.showLoading(true);
-            try {
-                const updates = calendarData.map(item => ({
-                    date_id: `${adminYear}-${adminMonth}-${item.date}`, 
-                    status: item.status, 
-                    booked_slots: item.bookedSlots
-                }));
-                const { error: calError } = await supabaseClient.from('calendar_slots').upsert(updates);
-                if (calError) throw calError;
-                
-                await window.saveClosedDates();
-                
-                alert("✅ 儲存成功！"); 
-                window.logout();
-            } catch (e) { 
-                alert("❌ 儲存失敗：" + e.message); 
-                window.showLoading(false); 
-            }
-        }
-
-        window.updateClosedDatesList = function() {
-            const container = document.getElementById('closed-dates-items');
-            if (!container) return;
-            
-            if (closedDates.length === 0) {
-                container.innerHTML = '<p class="text-gray-400">無關閉日期</p>';
-                return;
-            }
-            
-            const sortedDates = [...closedDates].sort();
-            const html = sortedDates.map(dateStr => {
-                const parts = dateStr.split('-');
-                const displayDate = `${parseInt(parts[1])+1}/${parts[2]}`;
-                return `<span class="inline-block bg-red-50 text-red-700 px-2 py-0.5 rounded mr-1 mb-1 text-[9px] font-bold">${displayDate}</span>`;
-            }).join('');
-            
-            container.innerHTML = html;
-        }
-
-        window.renderAdminCalendar = function() {
-            const grid = document.getElementById('admin-calendar-grid');
-            grid.innerHTML = '';
-            const firstDay = new Date(adminYear, adminMonth, 1).getDay();
-            for(let i=0; i<firstDay; i++) grid.appendChild(document.createElement('div'));
-
-            const todayDate = new Date();
-            todayDate.setHours(0, 0, 0, 0);
-
-            calendarData.forEach((item, index) => {
-                const div = document.createElement('div');
-                
-                const itemDate = new Date(adminYear, adminMonth, item.date);
-                itemDate.setHours(0, 0, 0, 0);
-                const isPastDate = itemDate < todayDate;
-                
-                const isHoliday = item.status === 'booked';
-                const dateColor = isHoliday ? 'text-gray-300' : (isPastDate ? 'text-gray-400' : 'text-gray-700');
-                
-                let dayText = `<div class="text-[11px] font-bold mb-1 ${dateColor}">${item.date}</div>`;
-                
-                if (isHoliday) {
-                    dayText += `<div class="text-[9px] text-gray-400 text-center mt-2">🚫 公休</div>`;
-                } else if (item.bookedSlots && item.bookedSlots.length > 0) {
-                     const sorted = [...item.bookedSlots].sort((a,b) => {
-                         const ta = (typeof a==='string'?a:a.time);
-                         const tb = (typeof b==='string'?b:b.time);
-                         return ta.localeCompare(tb);
-                     });
-                     
-                     dayText += `<div class="w-full flex flex-col gap-[2px] overflow-hidden">`;
-                     
-                     sorted.forEach(booking => {
-                         const time = (typeof booking === 'string') ? booking : booking.time;
-                         const user = (typeof booking === 'object' && booking.user) ? booking.user : 'Admin';
-                         const status = (typeof booking === 'object' && booking.status) ? booking.status : 'approved';
-                         
-                         let barClass = 'bar-confirmed';
-                         let statusIcon = '';
-                         
-                         if (status === 'pending') {
-                             barClass = 'bar-pending';
-                             statusIcon = '⏳';
-                         } else if (status === 'pending_payment') {
-                             barClass = 'bar-pending-payment';
-                             statusIcon = '💰';
-                         } else if (status === 'confirmed' || status === 'approved') {
-                             barClass = 'bar-confirmed';
-                             statusIcon = '✓';
-                         }
-                         
-                         let displayUser = user;
-                         if (user.length > 3) {
-                             displayUser = user.substring(0, 3) + '…';
-                         }
-                         
-                         dayText += `<div class="booking-bar ${barClass}" title="${time} ${user}">${statusIcon}${time} ${displayUser}</div>`;
-                     });
-                     
-                     dayText += `</div>`;
-                }
-
-                div.innerHTML = dayText;
-                div.className = `admin-day ${isPastDate ? 'status-past' : ''} ${index === adminSelectedIndex ? 'selected' : ''}`;
-                
-                if (isHoliday) {
-                    div.className += ' status-off';
-                }
-                
-                div.onclick = () => window.selectAdminDate(index);
-                
-                if(!isPastDate && item.status === 'available' && (!item.bookedSlots || item.bookedSlots.length === 0)) {
-                   const dot = document.createElement('div');
-                   dot.className = "indicator-dot bg-green-400";
-                   div.appendChild(dot);
-                }
-                
-                grid.appendChild(div);
-            });
-            
-            window.updateClosedDatesList();
-            window.updateCurrentOpenRange();
-        }
-
-        window.updateCurrentOpenRange = function() {
-            const rangeEl = document.getElementById('open-range-dates');
-            if (!rangeEl) return;
-            
-            window.calculateBookingRange();
-            
-            if (bookingOpenRanges.ranges && bookingOpenRanges.ranges.length > 0) {
-                const now = new Date();
-                
-                const futureRanges = bookingOpenRanges.ranges.filter(range => {
-                    return range.end >= now;
-                });
-                
-                if (futureRanges.length > 0) {
-                    const rangeTexts = futureRanges.map(range => {
-                        const startDate = range.start;
-                        const endDate = range.end;
-                        
-                        if (startDate < now && endDate >= now) {
-                            return `${now.getMonth()+1}/${now.getDate()}-${endDate.getMonth()+1}/${endDate.getDate()}`;
-                        }
-                        
-                        return `${startDate.getMonth()+1}/${startDate.getDate()}-${endDate.getMonth()+1}/${endDate.getDate()}`;
-                    });
-                    rangeEl.innerHTML = rangeTexts.join(' &nbsp; ');
-                } else {
-                    rangeEl.innerHTML = '目前無開放時段';
-                }
-            } else {
-                rangeEl.innerHTML = '目前無開放時段';
-            }
-        }
-
-        window.selectAdminDate = function(index) {
-            adminSelectedIndex = index;
-            window.renderAdminCalendar();
-            const item = calendarData[index];
-            document.getElementById('admin-edit-area').classList.remove('hidden');
-            document.getElementById('admin-edit-date-title').innerText = `${adminMonth+1} / ${item.date}`;
-            
-            window.updateCloseDateButton();
-
-            const listContainer = document.getElementById('admin-schedule-list');
-            listContainer.innerHTML = '';
-
-            if (item.status === 'booked') {
-                listContainer.innerHTML = `<div class="text-center p-4 bg-gray-100 rounded text-gray-500">🚫 本日已設為公休</div>`;
-            } else {
-                if (item.bookedSlots && item.bookedSlots.length > 0) {
-                    const sortedBookings = [...item.bookedSlots].sort((a,b) => {
-                        const ta = (typeof a==='string'?a:a.time);
-                        const tb = (typeof b==='string'?b:b.time);
-                        return ta.localeCompare(tb);
-                    });
-                    
-                    sortedBookings.forEach(booking => {
-                        const time = typeof booking === 'string' ? booking : booking.time;
-                        const userName = typeof booking === 'object' ? booking.user : 'Admin';
-                        const status = typeof booking === 'object' ? (booking.status || 'approved') : 'approved';
-                        const paymentDeadline = typeof booking === 'object' ? booking.paymentDeadline : null;
-                        const bookingDetails = typeof booking === 'object' ? booking.bookingDetails : null;
-                        const totalPrice = typeof booking === 'object' ? (booking.totalPrice || 0) : 0;
-
-                        const row = document.createElement('div');
-                        row.className = 'schedule-item shadow-sm';
-                        let contentHtml = '';
-                        
-                        let detailsHtml = '';
-                        if (bookingDetails) {
-                            detailsHtml = '<div class="text-xs text-gray-600 bg-gray-50 p-2 rounded mb-2">';
-                            if (bookingDetails.design && bookingDetails.design.name) {
-                                detailsHtml += `<div class="mb-1"><span class="font-bold">造型：</span>${bookingDetails.design.name}`;
-                                if (bookingDetails.design.keywords && bookingDetails.design.keywords.length > 0) {
-                                    detailsHtml += ` (${bookingDetails.design.keywords.join(', ')})`;
-                                }
-                                detailsHtml += `</div>`;
-                            }
-                            if (bookingDetails.removal && bookingDetails.removal.name) {
-                                detailsHtml += `<div class="mb-1"><span class="font-bold">卸甲：</span>${bookingDetails.removal.name}</div>`;
-                            }
-                            if (bookingDetails.extras && bookingDetails.extras.length > 0) {
-                                detailsHtml += `<div><span class="font-bold">加購：</span>${bookingDetails.extras.map(e => {
-                                    if (e.count) return `${e.name} x${e.count}`;
-                                    return e.name;
-                                }).join(', ')}</div>`;
-                            }
-                            detailsHtml += `<div class="mt-1 font-bold text-gray-800">總計：$${totalPrice}</div>`;
-                            detailsHtml += '</div>';
-                        }
-
-                        if (status === 'pending') {
-                            contentHtml = `
-                                <div class="schedule-header"><span class="font-bold text-gray-800">${time}</span><span class="tag tag-pending">待審核</span></div>
-                                <div class="text-sm mb-2 text-gray-600">預約人：<span class="font-bold">${userName}</span></div>
-                                ${detailsHtml}
-                                <div class="flex flex-col gap-2 mb-2">
-                                    <button onclick="window.approveBooking(${index}, '${time}')" class="w-full text-xs bg-gray-600 text-white px-3 py-2 rounded font-bold shadow hover:bg-gray-700">✅ 確認預約（免訂金）</button>
-                                    <button onclick="window.approveBookingWithPayment(${index}, '${time}')" class="w-full text-xs bg-red-600 text-white px-3 py-2 rounded font-bold shadow hover:bg-red-700">💰 確認（需付訂金 $500）</button>
-                                </div>
-                                <div class="schedule-actions">
-                                    <button onclick="window.rejectBooking(${index}, '${time}')" class="text-xs bg-red-100 text-red-600 px-3 py-1 rounded font-bold hover:bg-red-200">❌ 拒絕</button>
-                                </div>`;
-                        } else if (status === 'pending_payment') {
-                            contentHtml = `
-                                <div class="schedule-header"><span class="font-bold text-gray-800">${time}</span><span class="tag tag-pending-payment">待付款</span></div>
-                                <div class="text-sm mb-2 text-gray-600">預約人：<span class="font-bold">${userName}</span></div>
-                                ${detailsHtml}
-                                <div class="text-xs text-orange-700 mb-3 bg-orange-50 p-2 rounded">💰 等待客人匯款訂金 $500</div>
-                                <div class="schedule-actions">
-                                    <button onclick="window.rejectBooking(${index}, '${time}')" class="text-xs bg-red-100 text-red-600 px-3 py-1 rounded font-bold hover:bg-red-200">取消預約</button>
-                                    <button onclick="window.confirmPayment(${index}, '${time}')" class="text-xs bg-green-600 text-white px-3 py-1 rounded font-bold shadow hover:bg-green-700">已收款 ✅</button>
-                                </div>`;
-                        } else if (status === 'confirmed') {
-                            let paymentInfo = '';
-                            if (paymentDeadline) {
-                                paymentInfo = '<div class="text-xs text-green-600 mb-2">✅ 已收訂金 $500</div>';
-                            } else {
-                                paymentInfo = '<div class="text-xs text-blue-600 mb-2">✅ 免訂金</div>';
-                            }
-                            contentHtml = `
-                                <div class="schedule-header"><span class="font-bold text-gray-800">${time}</span><span class="tag tag-confirmed">已確認</span></div>
-                                <div class="text-sm mb-2 text-gray-600">預約人：${userName}</div>
-                                ${detailsHtml}
-                                ${paymentInfo}
-                                <div class="schedule-actions"><button onclick="window.toggleAdminSlot(${index}, '${time}')" class="text-xs border border-red-200 text-red-500 px-3 py-1 rounded hover:bg-red-50">取消預約</button></div>`;
-                        } else {
-                            contentHtml = `
-                                <div class="schedule-header"><span class="font-bold text-gray-800">${time}</span><span class="tag tag-confirmed">已預約</span></div>
-                                <div class="text-sm mb-2 text-gray-600">預約人：${userName}</div>
-                                ${detailsHtml}
-                                <div class="schedule-actions"><button onclick="window.toggleAdminSlot(${index}, '${time}')" class="text-xs border border-red-200 text-red-500 px-3 py-1 rounded hover:bg-red-50">取消預約</button></div>`;
-                        }
-                        
-                        row.innerHTML = contentHtml;
-                        listContainer.appendChild(row);
-                    });
-                } else {
-                    listContainer.innerHTML = `<div class="text-center p-4 bg-gray-50 rounded text-gray-400 text-sm">📅 本日尚無預約</div>`;
-                }
-            }
-        }
-
-        window.toggleDateClosed = function() {
-            if (adminSelectedIndex === null) return;
-            
-            const item = calendarData[adminSelectedIndex];
-            const dateStr = `${adminYear}-${adminMonth}-${item.date}`;
-            const displayDate = `${adminMonth+1}/${item.date}`;
-            const idx = closedDates.indexOf(dateStr);
-            const btn = document.getElementById('admin-close-date-btn');
-            
-            if (idx >= 0) {
-                if (!confirm(`確定要重新開放 ${displayDate} 嗎？`)) {
-                    return;
-                }
-                closedDates.splice(idx, 1);
-                btn.classList.remove('bg-red-50', 'border-red-300', 'text-red-700');
-                btn.classList.add('border-gray-300', 'text-gray-600');
-                btn.innerText = '手動關閉此日期';
-                window.updateClosedDatesList();
-                alert('✅ 日期已重新開放');
-            } else {
-                const bookingCount = item.bookedSlots ? item.bookedSlots.length : 0;
-                let confirmMsg = `⚠️ 確定要關閉 ${displayDate} 嗎？`;
-                
-                if (bookingCount > 0) {
-                    confirmMsg += `\n\n目前有 ${bookingCount} 個預約會保留。`;
-                }
-                
-                if (!confirm(confirmMsg)) {
-                    return;
-                }
-                closedDates.push(dateStr);
-                btn.classList.remove('border-gray-300', 'text-gray-600');
-                btn.classList.add('bg-red-50', 'border-red-300', 'text-red-700');
-                btn.innerText = '✓ 此日期已關閉';
-                window.updateClosedDatesList();
-                alert('✅ 日期已關閉');
-            }
-        }
-
-        window.updateCloseDateButton = function() {
-            if (adminSelectedIndex === null) return;
-            const item = calendarData[adminSelectedIndex];
-            const dateStr = `${adminYear}-${adminMonth}-${item.date}`;
-            const btn = document.getElementById('admin-close-date-btn');
-            
-            if (closedDates.includes(dateStr)) {
-                btn.classList.remove('border-gray-300', 'text-gray-600');
-                btn.classList.add('bg-red-50', 'border-red-300', 'text-red-700');
-                btn.innerText = '✓ 此日期已關閉（點擊重新開放）';
-            } else {
-                btn.classList.remove('bg-red-50', 'border-red-300', 'text-red-700');
-                btn.classList.add('border-gray-300', 'text-gray-600');
-                btn.innerText = '手動關閉此日期';
-            }
-        }
-
-        window.toggleAdminDateStatus = function() {
-            if (adminSelectedIndex === null) return;
-            const item = calendarData[adminSelectedIndex];
-            const dateStr = `${adminMonth+1}/${item.date}`;
-            const newStatus = (item.status === 'available') ? 'booked' : 'available';
-            
-            let confirmMsg = '';
-            if (newStatus === 'booked') {
-                const bookingCount = item.bookedSlots ? item.bookedSlots.length : 0;
-                if (bookingCount > 0) {
-                    confirmMsg = `⚠️ 確定要將此日設為公休嗎？\n\n日期：${dateStr}\n目前有 ${bookingCount} 個預約\n\n設為公休後，所有預約將被刪除！`;
-                } else {
-                    confirmMsg = `確定要將 ${dateStr} 設為公休嗎？`;
-                }
-            } else {
-                confirmMsg = `確定要將 ${dateStr} 重新開放預約嗎？`;
-            }
-            
-            if (!confirm(confirmMsg)) {
-                return;
-            }
-            
-            item.status = newStatus;
-            if(item.status === 'booked') item.bookedSlots = [];
-            window.selectAdminDate(adminSelectedIndex);
-        }
-
-        window.toggleAdminSlot = function(index, time) {
-            const slots = calendarData[index].bookedSlots;
-            const idx = slots.findIndex(s => (typeof s === 'string' ? s : s.time) === time);
-            
-            if (idx >= 0) {
-                const slot = slots[idx];
-                const userName = (typeof slot === 'object') ? slot.user : 'Admin';
-                const dateStr = `${adminMonth+1}/${calendarData[index].date}`;
-                
-                if (!confirm(`⚠️ 確定要刪除此預約嗎？\n\n日期：${dateStr}\n時間：${time}\n預約人：${userName}`)) {
-                    return;
-                }
-                slots.splice(idx, 1);
-            } else {
-                slots.push({ time: time, user: 'Admin', status: 'approved' });
-            }
-            window.selectAdminDate(index);
-        }
-
-        window.approveBooking = async function(index, time) {
-            const slots = calendarData[index].bookedSlots;
-            const slot = slots.find(s => s.time === time);
-            if (!slot) return;
-            
-            if (!slot.userId) {
-                alert("❌ 無法發送訊息：缺少用戶 ID");
-                return;
-            }
-            
-            slot.status = 'confirmed';
-            await window.saveDateToDB(index);
-            
-            const dateStr = `${adminMonth+1}/${calendarData[index].date}`;
-            
-            let detailMsg = '';
-            if (slot.bookingDetails) {
-                const bd = slot.bookingDetails;
-                if (bd.design && bd.design.name) {
-                    detailMsg += `\n🎨 造型：${bd.design.name}`;
-                    if (bd.design.keywords && bd.design.keywords.length > 0) {
-                        detailMsg += ` (${bd.design.keywords.join(', ')})`;
-                    }
-                }
-                if (bd.removal && bd.removal.name) {
-                    detailMsg += `\n💅 卸甲：${bd.removal.name}`;
-                }
-                if (bd.extras && bd.extras.length > 0) {
-                    detailMsg += `\n✨ 加購：${bd.extras.map(e => {
-                        if (e.count) return `${e.name} x${e.count}`;
-                        return e.name;
-                    }).join(', ')}`;
-                }
-            }
-            
-            const msg = `【預約確認通知】
-
-Hi ${slot.user}，
-您的預約已確認！
-
-📅 日期：${dateStr}
-⏰ 時間：${slot.time}${detailMsg}
-💰 預估金額：$${slot.totalPrice || 0}
-
-✅ 預約完成
-期待您的光臨！
-
----
-LOST.IN.GALLERY_`;
-            
-            window.showLoading(true);
-            try {
-                const response = await fetch('/api/send-line-message', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId: slot.userId,
-                        message: msg
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok) {
-                    alert("✅ 預約已確認，訊息已自動發送給客人！");
-                } else {
-                    alert("⚠️ 預約已確認，但訊息發送失敗：" + (result.error || '未知錯誤'));
-                }
-            } catch (error) {
-                alert("❌ 發送訊息時發生錯誤：" + error.message);
-            } finally {
-                window.showLoading(false);
-                window.selectAdminDate(index);
-            }
-        }
-
-        window.approveBookingWithPayment = async function(index, time) {
-            const slots = calendarData[index].bookedSlots;
-            const slot = slots.find(s => s.time === time);
-            if (!slot) return;
-            
-            if (!slot.userId) {
-                alert("❌ 無法發送訊息：缺少用戶 ID");
-                return;
-            }
-            
-            const paymentDeadline = new Date();
-            paymentDeadline.setHours(paymentDeadline.getHours() + 24);
-            
-            slot.status = 'pending_payment';
-            slot.paymentDeadline = paymentDeadline.toISOString();
-            
-            await window.saveDateToDB(index);
-            
-            const dateStr = `${adminMonth+1}/${calendarData[index].date}`;
-            
-            let detailMsg = '';
-            if (slot.bookingDetails) {
-                const bd = slot.bookingDetails;
-                if (bd.design && bd.design.name) {
-                    detailMsg += `\n🎨 造型：${bd.design.name}`;
-                    if (bd.design.keywords && bd.design.keywords.length > 0) {
-                        detailMsg += ` (${bd.design.keywords.join(', ')})`;
-                    }
-                }
-                if (bd.removal && bd.removal.name) {
-                    detailMsg += `\n💅 卸甲：${bd.removal.name}`;
-                }
-                if (bd.extras && bd.extras.length > 0) {
-                    detailMsg += `\n✨ 加購：${bd.extras.map(e => {
-                        if (e.count) return `${e.name} x${e.count}`;
-                        return e.name;
-                    }).join(', ')}`;
-                }
-            }
-            
-            const msg = `【預約審核通過】
-
-Hi ${slot.user}，
-您的預約已通過審核！
-
-📅 日期：${dateStr}
-⏰ 時間：${slot.time}${detailMsg}
-💰 預估金額：$${slot.totalPrice || 0}
-
-💰 請匯款訂金 $500
-匯款後請截圖通知我們確認。
-
-【匯款資訊】
-銀行：(請填入您的銀行)
-帳號：(請填入您的帳號)
-戶名：(請填入戶名)
-
----
-LOST.IN.GALLERY_`;
-            
-            window.showLoading(true);
-            try {
-                const response = await fetch('/api/send-line-message', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId: slot.userId,
-                        message: msg
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok) {
-                    alert("✅ 審核通過，付款通知已自動發送給客人！");
-                } else {
-                    alert("⚠️ 審核通過，但訊息發送失敗：" + (result.error || '未知錯誤'));
-                }
-            } catch (error) {
-                alert("❌ 發送訊息時發生錯誤：" + error.message);
-            } finally {
-                window.showLoading(false);
-                window.selectAdminDate(index);
-            }
-        }
-
-        window.confirmPayment = async function(index, time) {
-            if(!confirm("確定已收到客人的 $500 訂金嗎？")) return;
-            
-            const slots = calendarData[index].bookedSlots;
-            const slot = slots.find(s => s.time === time);
-            if (!slot) return;
-            
-            if (!slot.userId) {
-                alert("❌ 無法發送訊息：缺少用戶 ID");
-                return;
-            }
-            
-            slot.status = 'confirmed';
-            slot.paidAt = new Date().toISOString();
-            
-            await window.saveDateToDB(index);
-            
-            const dateStr = `${adminMonth+1}/${calendarData[index].date}`;
-            
-            let detailMsg = '';
-            if (slot.bookingDetails) {
-                const bd = slot.bookingDetails;
-                if (bd.design && bd.design.name) {
-                    detailMsg += `\n🎨 造型：${bd.design.name}`;
-                    if (bd.design.keywords && bd.design.keywords.length > 0) {
-                        detailMsg += ` (${bd.design.keywords.join(', ')})`;
-                    }
-                }
-                if (bd.removal && bd.removal.name) {
-                    detailMsg += `\n💅 卸甲：${bd.removal.name}`;
-                }
-                if (bd.extras && bd.extras.length > 0) {
-                    detailMsg += `\n✨ 加購：${bd.extras.map(e => {
-                        if (e.count) return `${e.name} x${e.count}`;
-                        return e.name;
-                    }).join(', ')}`;
-                }
-            }
-            
-            const msg = `【訂金確認】
-
-Hi ${slot.user}，
-我們已確認收到您的訂金 $500！
-
-📅 預約日期：${dateStr}
-⏰ 預約時間：${slot.time}${detailMsg}
-💰 預估金額：$${slot.totalPrice || 0}
-
-✅ 預約確認完成
-期待您的光臨！
-
----
-LOST.IN.GALLERY_`;
-            
-            window.showLoading(true);
-            try {
-                const response = await fetch('/api/send-line-message', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId: slot.userId,
-                        message: msg
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok) {
-                    alert("✅ 收款確認，通知已自動發送給客人！");
-                } else {
-                    alert("⚠️ 收款確認，但訊息發送失敗：" + (result.error || '未知錯誤'));
-                }
-            } catch (error) {
-                alert("❌ 發送訊息時發生錯誤：" + error.message);
-            } finally {
-                window.showLoading(false);
-                window.selectAdminDate(index);
-            }
-        }
-
-        window.rejectBooking = async function(index, time) {
-            const slots = calendarData[index].bookedSlots;
-            const slot = slots.find(s => s.time === time);
-            
-            if(!confirm(`確定要拒絕 ${slot?.user || '此'} 的預約嗎？`)) return;
-            
-            const idx = slots.findIndex(s => s.time === time);
-            if (idx < 0) return;
-            
-            const userName = slots[idx].user || '客人';
-            const userId = slots[idx].userId;
-            const dateStr = `${adminMonth+1}/${calendarData[index].date}`;
-            
-            let detailMsg = '';
-            if (slots[idx].bookingDetails) {
-                const bd = slots[idx].bookingDetails;
-                if (bd.design && bd.design.name) {
-                    detailMsg += `\n🎨 造型：${bd.design.name}`;
-                    if (bd.design.keywords && bd.design.keywords.length > 0) {
-                        detailMsg += ` (${bd.design.keywords.join(', ')})`;
-                    }
-                }
-                if (bd.removal && bd.removal.name) {
-                    detailMsg += `\n💅 卸甲：${bd.removal.name}`;
-                }
-                if (bd.extras && bd.extras.length > 0) {
-                    detailMsg += `\n✨ 加購：${bd.extras.map(e => {
-                        if (e.count) return `${e.name} x${e.count}`;
-                        return e.name;
-                    }).join(', ')}`;
-                }
-            }
-            
-            slots.splice(idx, 1);
-            await window.saveDateToDB(index);
-            
-            if (userId) {
-                const msg = `【預約通知】
-
-Hi ${userName}，
-
-很抱歉，您的預約申請未能通過審核。
-
-📅 原申請日期：${dateStr}
-⏰ 原申請時間：${time}${detailMsg}
-
-如有疑問或需要改約其他時段，
-歡迎隨時與我們聯繫！
-
----
-LOST.IN.GALLERY_`;
-                
-                window.showLoading(true);
-                try {
-                    const response = await fetch('/api/send-line-message', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            userId: userId,
-                            message: msg
-                        })
-                    });
-                    
-                    if (response.ok) {
-                        alert("✅ 預約已取消，通知已自動發送給客人");
-                    } else {
-                        alert("⚠️ 預約已取消，但訊息發送失敗");
-                    }
-                } catch (error) {
-                    alert("⚠️ 預約已取消，但發送通知時發生錯誤");
-                } finally {
-                    window.showLoading(false);
-                }
-            } else {
-                alert("⚠️ 預約已取消，但無法發送通知（缺少用戶 ID）");
-            }
-            
-            window.selectAdminDate(index);
-        }
-
-        window.saveDateToDB = async function(index) {
-            if (!supabaseClient) return;
-            window.showLoading(true);
-            const item = calendarData[index];
-            try {
-                const { error } = await supabaseClient.from('calendar_slots').upsert({
-                    date_id: `${adminYear}-${adminMonth}-${item.date}`,
-                    status: item.status,
-                    booked_slots: item.bookedSlots
-                });
-                if(error) throw error;
-            } catch(e) {
-                alert("更新失敗: " + e.message);
-            } finally {
-                window.showLoading(false);
-            }
-        }
-
-        window.fetchAdminCalendarData = async function() {
-            window.showLoading(true);
-            try {
-                const { data, error } = await supabaseClient.from('calendar_slots').select('*');
-                if (error) throw error;
-                
-                await window.loadClosedDates();
-                
-                window.initMockData(true, adminYear, adminMonth);
-                data.forEach(row => {
-                    const parts = row.date_id.split('-');
-                    if (parseInt(parts[0]) === adminYear && parseInt(parts[1]) === adminMonth) {
-                        const d = parseInt(parts[2]);
-                        if (calendarData[d-1]) {
-                            calendarData[d-1].status = row.status;
-                            calendarData[d-1].bookedSlots = row.booked_slots || [];
-                        }
-                    }
-                });
-            } catch (err) { 
-                console.log('⚠️ 無法載入資料，使用預設資料:', err.message);
-                window.initMockData(false, adminYear, adminMonth); 
-            }
-            finally { window.showLoading(false); }
-        }
-
-        window.fetchCalendarData = async function() {
-            window.showLoading(true);
-            try {
-                const { data, error } = await supabaseClient.from('calendar_slots').select('*');
-                if (error) throw error;
-                
-                await window.loadClosedDates();
-                
-                window.initMockData(true, currentYear, currentMonth);
-                data.forEach(row => {
-                    const parts = row.date_id.split('-');
-                    if (parseInt(parts[0]) === currentYear && parseInt(parts[1]) === currentMonth) {
-                        const d = parseInt(parts[2]);
-                        if (calendarData[d-1]) {
-                            calendarData[d-1].status = row.status;
-                            calendarData[d-1].bookedSlots = row.booked_slots || [];
-                        }
-                    }
-                });
-            } catch (err) { 
-                console.log('⚠️ 無法載入資料，使用預設資料:', err.message);
-                window.initMockData(false, currentYear, currentMonth); 
-            }
-            finally { window.showLoading(false); }
-        }
-
-        window.initMockData = function(onlyStructure = false, year = currentYear, month = currentMonth) {
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const todayDate = new Date();
-            todayDate.setHours(0, 0, 0, 0);
-            
-            calendarData = [];
-            for (let i = 1; i <= daysInMonth; i++) {
-                const itemDate = new Date(year, month, i);
-                itemDate.setHours(0, 0, 0, 0);
-                let isPast = itemDate < todayDate;
-                let status = isPast ? 'past' : 'available';
-                calendarData.push({ date: i, status: status, bookedSlots: [] });
-            }
-        }
-
-        window.calculateBookingRange = function() {
-            const now = new Date();
-            const currentDay = now.getDate();
-            const currentMonth = now.getMonth();
-            const currentYear = now.getFullYear();
-            
-            let openRanges = [];
-            
-            let lastMonth = currentMonth - 1;
-            let lastYear = currentYear;
-            if (lastMonth < 0) { lastMonth = 11; lastYear--; }
-            
-            const lastMonth15th = new Date(lastYear, lastMonth, 15);
-            if (now >= lastMonth15th) {
-                openRanges.push({
-                    start: new Date(currentYear, currentMonth, 1),
-                    end: new Date(currentYear, currentMonth, 15, 23, 59, 59)
-                });
-            }
-            
-            const lastMonth25th = new Date(lastYear, lastMonth, 25);
-            if (now >= lastMonth25th) {
-                openRanges.push({
-                    start: new Date(currentYear, currentMonth, 16),
-                    end: new Date(currentYear, currentMonth + 1, 0, 23, 59, 59)
-                });
-            }
-            
-            const thisMonth15th = new Date(currentYear, currentMonth, 15);
-            if (now >= thisMonth15th) {
-                let nextMonth = currentMonth + 1;
-                let nextYear = currentYear;
-                if (nextMonth > 11) { nextMonth = 0; nextYear++; }
-                openRanges.push({
-                    start: new Date(nextYear, nextMonth, 1),
-                    end: new Date(nextYear, nextMonth, 15, 23, 59, 59)
-                });
-            }
-            
-            const thisMonth25th = new Date(currentYear, currentMonth, 25);
-            if (now >= thisMonth25th) {
-                let nextMonth = currentMonth + 1;
-                let nextYear = currentYear;
-                if (nextMonth > 11) { nextMonth = 0; nextYear++; }
-                openRanges.push({
-                    start: new Date(nextYear, nextMonth, 16),
-                    end: new Date(nextYear, nextMonth + 1, 0, 23, 59, 59)
-                });
-            }
-            
-            if (openRanges.length > 0) {
-                const allStarts = openRanges.map(r => r.start);
-                const allEnds = openRanges.map(r => r.end);
-                bookingOpenRanges = {
-                    start: new Date(Math.min(...allStarts)),
-                    end: new Date(Math.max(...allEnds)),
-                    ranges: openRanges
-                };
-            } else {
-                bookingOpenRanges = { start: null, end: null, ranges: [] };
-            }
-            
-            console.log('📅 可預約範圍:', bookingOpenRanges);
-            return bookingOpenRanges;
-        }
-
-        window.showLoading = function(show) { document.getElementById('global-loading').style.display = show ? 'flex' : 'none'; }
-
-        window.loadClosedDates = async function() {
-            if (!supabaseClient) return;
-            try {
-                const { data, error } = await supabaseClient
-                    .from('booking_settings')
-                    .select('setting_value')
-                    .eq('setting_key', 'closed_dates')
-                    .single();
-                
-                if (data && data.setting_value && data.setting_value.dates) {
-                    closedDates = data.setting_value.dates;
-                    console.log('📅 已載入關閉日期:', closedDates);
-                }
-            } catch(e) {
-                console.log('⚠️ 無法載入關閉日期設定:', e.message);
-            }
-        }
-
-        window.saveClosedDates = async function() {
-            if (!supabaseClient) return;
-            try {
-                const { error } = await supabaseClient
-                    .from('booking_settings')
-                    .upsert({
-                        setting_key: 'closed_dates',
-                        setting_value: { dates: closedDates }
-                    });
-                
-                if (error) throw error;
-                console.log('✅ 關閉日期已儲存');
-            } catch(e) {
-                console.error('❌ 儲存關閉日期失敗:', e.message);
-            }
-        }
-
-        window.isDateBookable = function(year, month, day) {
-            const checkDate = new Date(year, month, day);
-            checkDate.setHours(0, 0, 0, 0);
-            const dateStr = `${year}-${month}-${day}`;
-            
-            if (closedDates.includes(dateStr)) {
-                return { bookable: false, reason: 'closed' };
-            }
-            
-            const todayDate = new Date();
-            todayDate.setHours(0, 0, 0, 0);
-            if (checkDate < todayDate) {
-                return { bookable: false, reason: 'past' };
-            }
-            
-            if (!bookingOpenRanges.start || !bookingOpenRanges.ranges) {
-                window.calculateBookingRange();
-            }
-            
-            if (bookingOpenRanges.ranges && bookingOpenRanges.ranges.length > 0) {
-                const checkTime = checkDate.getTime();
-                const isInRange = bookingOpenRanges.ranges.some(range => {
-                    return checkTime >= range.start.getTime() && checkTime <= range.end.getTime();
-                });
-                
-                if (isInRange) {
-                    return { bookable: true, reason: 'available' };
-                } else {
-                    return { bookable: false, reason: 'not-open' };
-                }
-            }
-            
-            return { bookable: false, reason: 'not-open' };
-        }
-
-        window.renderCalendar = function() {
-            const grid = document.getElementById('calendar-grid'); 
-            grid.innerHTML = '';
-            const first = new Date(currentYear, currentMonth, 1).getDay();
-            
-            window.calculateBookingRange();
-            
-            for(let i=0; i<first; i++) grid.appendChild(document.createElement('div'));
-            
-            calendarData.forEach(item => {
-                const div = document.createElement('div');
-                div.innerText = item.date;
-                
-                const dateCheck = window.isDateBookable(currentYear, currentMonth, item.date);
-                
-                let className = 'calendar-day';
-                let clickable = false;
-                
-                if (dateCheck.reason === 'closed') {
-                    className += ' closed';
-                    div.title = '此日期已關閉';
-                } else if (dateCheck.reason === 'not-open') {
-                    className += ' not-open';
-                    div.title = '尚未開放預約';
-                } else if (dateCheck.reason === 'past' || item.status === 'past') {
-                    className += ' booked';
-                    div.title = '已過期';
-                } else if (item.status === 'booked') {
-                    className += ' booked';
-                    div.title = '本日公休';
-                } else if (dateCheck.bookable && item.status === 'available') {
-                    clickable = true;
-                    div.title = '點擊預約';
-                }
-                
-                div.className = className;
-                
-                if(clickable) {
-                    div.onclick = () => window.selectDate(div, item.date, item.bookedSlots);
-                }
-                
-                grid.appendChild(div);
-            });
-        }
-
-        window.selectDate = function(el, date, slots) {
-            document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
-            el.classList.add('selected'); 
-            selectedDate = `${currentMonth+1}/${date}`;
-            selectedTime = null;
-            
-            currentTimeHour = 10;
-            currentTimeMinute = 0;
-            currentDateBookedTimes = slots.map(s => typeof s === 'string' ? s : s.time);
-            
-            window.renderTimeSelector();
-            window.updateServiceEndTime();
-            window.validate();
-        }
-
-        window.renderTimeSelector = function() {
-            const container = document.getElementById('time-slots-container'); 
-            container.classList.remove('hidden');
-            
-            const quickSlotsGrid = document.getElementById('quick-time-slots');
-            quickSlotsGrid.innerHTML = '';
-            
-            const quickSlots = [];
-            for (let hour = 10; hour <= 18; hour++) {
-                quickSlots.push({ hour: hour, minute: 0 });
-            }
-            
-            quickSlots.forEach(slot => {
-                const timeStr = window.formatTime(slot.hour, slot.minute);
-                const timeMinutes = slot.hour * 60 + slot.minute;
-                const isConflict = window.isTimeConflict(timeMinutes);
-                
-                const btn = document.createElement('button');
-                btn.className = 'btn-toggle p-3 text-sm rounded-custom transition';
-                btn.innerText = timeStr;
-                
-                if (isConflict) {
-                    btn.className += ' opacity-50 cursor-not-allowed';
-                    btn.disabled = true;
-                    btn.title = '此時段與現有預約衝突';
-                } else {
-                    btn.onclick = () => window.quickSelectTime(slot.hour, slot.minute);
-                }
-                
-                quickSlotsGrid.appendChild(btn);
-            });
-            
-            const timeDisplay = document.getElementById('selected-time-display');
-            timeDisplay.innerText = window.formatTime(currentTimeHour, currentTimeMinute);
-            
-            window.updateServiceEndTime();
-            window.checkTimeConflict();
-        }
-
-        window.quickSelectTime = function(hour, minute) {
-            currentTimeHour = hour;
-            currentTimeMinute = minute;
-            
-            document.querySelectorAll('#quick-time-slots button').forEach(btn => {
-                btn.classList.remove('active', 'bg-gray-800', 'text-white');
-            });
-            event.target.classList.add('active', 'bg-gray-800', 'text-white');
-            
-            const timeDisplay = document.getElementById('selected-time-display');
-            timeDisplay.innerText = window.formatTime(currentTimeHour, currentTimeMinute);
-            
-            window.updateServiceEndTime();
-            window.checkTimeConflict();
-            
-            timeDisplay.classList.add('scale-110');
-            setTimeout(() => {
-                timeDisplay.classList.remove('scale-110');
-            }, 200);
-        }
-
-        window.updateServiceEndTime = function() {
-            const currentTimeMinutes = currentTimeHour * 60 + currentTimeMinute;
-            const endTimeMinutes = currentTimeMinutes + SERVICE_DURATION_MINUTES;
-            const endTime = window.minutesToTime(endTimeMinutes);
-            const endTimeStr = window.formatTime(endTime.hour, endTime.minute);
-            
-            const serviceEndDisplay = document.getElementById('service-end-time');
-            if (serviceEndDisplay) {
-                serviceEndDisplay.innerText = `服務至 ${endTimeStr}`;
-            }
-        }
-
-        window.formatTime = function(hour, minute) {
-            return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-        }
-
-        window.timeToMinutes = function(timeStr) {
-            const [hour, minute] = timeStr.split(':').map(Number);
-            return hour * 60 + minute;
-        }
-
-        window.minutesToTime = function(totalMinutes) {
-            const hour = Math.floor(totalMinutes / 60);
-            const minute = totalMinutes % 60;
-            return { hour, minute };
-        }
-
-        window.checkTimeOverlap = function(start1, end1, start2, end2) {
-            return start1 < end2 && start2 < end1;
-        }
-
-        window.isTimeConflict = function(selectedTimeMinutes) {
-            const selectedStart = selectedTimeMinutes;
-            const selectedEnd = selectedTimeMinutes + SERVICE_DURATION_MINUTES;
-            
-            for (let bookedTimeStr of currentDateBookedTimes) {
-                const bookedStart = window.timeToMinutes(bookedTimeStr);
-                const bookedEnd = bookedStart + SERVICE_DURATION_MINUTES;
-                
-                if (window.checkTimeOverlap(selectedStart, selectedEnd, bookedStart, bookedEnd)) {
-                    return true;
-                }
-            }
-            
-            return false;
-        }
-
-        window.adjustTime = function(minutes) {
-            let totalMinutes = currentTimeHour * 60 + currentTimeMinute + minutes;
-            
-            let newHour = Math.floor(totalMinutes / 60);
-            let newMinute = totalMinutes % 60;
-            
-            const startMinutes = BUSINESS_HOURS.start.hour * 60 + BUSINESS_HOURS.start.minute;
-            const endMinutes = BUSINESS_HOURS.end.hour * 60 + BUSINESS_HOURS.end.minute;
-            
-            if (totalMinutes < startMinutes) {
-                currentTimeHour = BUSINESS_HOURS.start.hour;
-                currentTimeMinute = BUSINESS_HOURS.start.minute;
-            } else if (totalMinutes > endMinutes) {
-                currentTimeHour = BUSINESS_HOURS.end.hour;
-                currentTimeMinute = BUSINESS_HOURS.end.minute;
-            } else {
-                currentTimeHour = newHour;
-                currentTimeMinute = newMinute;
-            }
-            
-            document.querySelectorAll('#quick-time-slots button').forEach(btn => {
-                const btnTime = btn.innerText;
-                const currentTime = window.formatTime(currentTimeHour, currentTimeMinute);
-                if (btnTime === currentTime) {
-                    btn.classList.add('active', 'bg-gray-800', 'text-white');
-                } else {
-                    btn.classList.remove('active', 'bg-gray-800', 'text-white');
-                }
-            });
-            
-            const timeDisplay = document.getElementById('selected-time-display');
-            timeDisplay.innerText = window.formatTime(currentTimeHour, currentTimeMinute);
-            
-            window.updateServiceEndTime();
-            window.checkTimeConflict();
-        }
-
-        window.checkTimeConflict = function() {
-            const currentTimeMinutes = currentTimeHour * 60 + currentTimeMinute;
-            const hasConflict = window.isTimeConflict(currentTimeMinutes);
-            
-            const warning = document.getElementById('time-conflict-warning');
-            const confirmBtn = document.getElementById('confirm-time-btn');
-            
-            if (hasConflict) {
-                const nextAvailableTime = window.findNextAvailableTime(currentTimeMinutes);
-                
-                if (nextAvailableTime) {
-                    const availTime = window.minutesToTime(nextAvailableTime);
-                    const availTimeStr = window.formatTime(availTime.hour, availTime.minute);
-                    warning.innerHTML = `⏰ 建議選擇：<strong>${availTimeStr}</strong> 或之後的時間`;
-                } else {
-                    warning.innerHTML = `⚠️ 今日已無可用時段`;
-                }
-                
-                warning.classList.remove('hidden');
-                confirmBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                confirmBtn.disabled = true;
-            } else {
-                warning.classList.add('hidden');
-                confirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                confirmBtn.disabled = false;
-            }
-        }
-
-        window.findNextAvailableTime = function(fromTimeMinutes) {
-            let latestEndTime = fromTimeMinutes;
-            
-            for (let bookedTimeStr of currentDateBookedTimes) {
-                const bookedStart = window.timeToMinutes(bookedTimeStr);
-                const bookedEnd = bookedStart + SERVICE_DURATION_MINUTES;
-                const selectedStart = fromTimeMinutes;
-                const selectedEnd = fromTimeMinutes + SERVICE_DURATION_MINUTES;
-                
-                if (window.checkTimeOverlap(selectedStart, selectedEnd, bookedStart, bookedEnd)) {
-                    if (bookedEnd > latestEndTime) {
-                        latestEndTime = bookedEnd;
-                    }
-                }
-            }
-            
-            const businessEndMinutes = BUSINESS_HOURS.end.hour * 60 + BUSINESS_HOURS.end.minute;
-            
-            if (latestEndTime + SERVICE_DURATION_MINUTES <= businessEndMinutes) {
-                return latestEndTime;
-            }
-            
-            return null;
-        }
-
-        window.confirmTime = function() {
-            const timeStr = window.formatTime(currentTimeHour, currentTimeMinute);
-            const currentTimeMinutes = currentTimeHour * 60 + currentTimeMinute;
-            
-            if (window.isTimeConflict(currentTimeMinutes)) {
-                const nextAvailableTime = window.findNextAvailableTime(currentTimeMinutes);
-                
-                if (nextAvailableTime) {
-                    const availTime = window.minutesToTime(nextAvailableTime);
-                    const availTimeStr = window.formatTime(availTime.hour, availTime.minute);
-                    alert(`❌ 此時段無法預約\n\n💡 建議選擇：${availTimeStr} 或之後的時間`);
-                } else {
-                    alert("❌ 今日已無可用時段\n\n請選擇其他日期");
-                }
-                return;
-            }
-            
-            selectedTime = timeStr;
-            
-            const endTimeMinutes = currentTimeMinutes + SERVICE_DURATION_MINUTES;
-            const endTime = window.minutesToTime(endTimeMinutes);
-            const endTimeStr = window.formatTime(endTime.hour, endTime.minute);
-            
-            const timeDisplay = document.getElementById('selected-time-display');
-            const confirmBtn = document.getElementById('confirm-time-btn');
-            
-            timeDisplay.classList.add('text-green-600');
-            confirmBtn.innerHTML = `✓ 已確認 (${timeStr}-${endTimeStr})`;
-            confirmBtn.classList.add('bg-green-600');
-            confirmBtn.classList.remove('bg-gray-800');
-            
-            setTimeout(() => {
-                timeDisplay.classList.remove('text-green-600');
-                confirmBtn.innerHTML = '✓ 確認此時間';
-                confirmBtn.classList.remove('bg-green-600');
-                confirmBtn.classList.add('bg-gray-800');
-            }, 2000);
-            
-            window.validate();
-        }
-
-        window.validate();
-
-        console.log('🔍 Function check:');
-        console.log('- loginWithLine:', typeof window.loginWithLine);
-        console.log('- toggleAdminLogin:', typeof window.toggleAdminLogin);
-        console.log('- doAdminLogin:', typeof window.doAdminLogin);
-        console.log('- checkAndSubmit:', typeof window.checkAndSubmit);
-
-        (async function init() {
-            console.log('🎬 Init function started');
-            if (LIFF_ID && LIFF_ID !== 'YOUR_LIFF_ID_HERE') {
-                try {
-                    console.log('🔄 Initializing LIFF...');
-                    await liff.init({ liffId: LIFF_ID });
-                    liffInitialized = true;
-                    console.log('✅ LIFF initialized successfully');
-                    
-                    if (!sessionStorage.getItem('manualLogout')) {
-                        if (liff.isLoggedIn()) {
-                            console.log('✅ User is logged in, auto-login...');
-                            document.getElementById('auto-login-hint').classList.remove('hidden');
-                            
-                            userProfile = await liff.getProfile();
-                            await window.checkFriendship();
-                            
-                            document.getElementById('login-overlay').classList.add('hidden');
-                            document.getElementById('main-app').classList.remove('hidden');
-                            window.updateUserStatus();
-                            
-                            await window.fetchCalendarData();
-                            document.getElementById('calendar-title').innerText = `${monthNames[currentMonth]} ${currentYear}`;
-                            window.renderCalendar();
-                        } else {
-                            console.log('⚠️ User not logged in');
-                            if (liff.isInClient()) {
-                                console.log('📱 Running in LINE client, attempting auto-login...');
-                                document.getElementById('auto-login-hint').classList.remove('hidden');
-                                setTimeout(() => {
-                                    liff.login({ redirectUri: window.location.href });
-                                }, 1000);
-                            }
-                        }
-                    }
-                } catch (e) {
-                    console.error("❌ LIFF Init Failed:", e);
-                    console.error("Error details:", {
-                        message: e.message,
-                        code: e.code,
-                        liffId: LIFF_ID,
-                        currentUrl: window.location.href,
-                        isHttps: window.location.protocol === 'https:'
-                    });
-                    
-                    const hint = document.getElementById('auto-login-hint');
-                    hint.classList.remove('hidden', 'bg-blue-50', 'border-blue-200');
-                    hint.classList.add('bg-red-50', 'border-red-200');
-                    
-                    let errorDetail = e.message;
-                    let suggestion = '';
-                    
-                    if (e.message.includes('LIFF ID')) {
-                        suggestion = '請檢查 LIFF ID 是否正確';
-                    } else if (e.message.includes('Endpoint URL') || e.message.includes('redirect')) {
-                        suggestion = '請檢查 LINE Developers Console 中的 Endpoint URL 設定';
-                    } else if (window.location.protocol !== 'https:' && !window.location.hostname.includes('localhost')) {
-                        suggestion = 'LIFF 需要 HTTPS 環境';
-                    } else {
-                        suggestion = '請檢查 LINE Developers Console 的所有設定';
-                    }
-                    
-                    hint.innerHTML = `
-                        <div class="flex items-start gap-2 text-red-800 text-xs">
-                            <i class="fas fa-exclamation-circle mt-0.5"></i>
-                            <div>
-                                <p class="font-bold mb-1">❌ LIFF 初始化失敗</p>
-                                <p class="mb-1 text-red-700">錯誤: ${errorDetail}</p>
-                                <p class="mb-2 text-red-600">💡 ${suggestion}</p>
-                                <div class="flex gap-2">
-                                    <button onclick="window.location.href='https://developers.line.biz/console/'" 
-                                        class="text-xs bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">
-                                        前往 Console 檢查
-                                    </button>
-                                    <button onclick="window.location.reload()" 
-                                        class="text-xs bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700">
-                                        重新載入
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
-            }
-            console.log('🏁 Init function completed');
-        })();
-
-        console.log('✅ Script fully loaded');
-    </script>
+    <!-- 載入 JS 文件 -->
+    <script src="./js/config.js"></script>
+    <script src="./js/common.js"></script>
+    <script src="./js/customer.js"></script>
 </body>
 </html>
-
-
