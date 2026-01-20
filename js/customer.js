@@ -808,4 +808,58 @@ window.confirmTime = function() {
     window.validate();
 };
 
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('🚀 頁面載入完成，開始初始化...');
+    
+    // 檢查是否手動登出
+    if (sessionStorage.getItem('manualLogout') === 'true') {
+        console.log('📌 手動登出狀態，顯示登入畫面');
+        return;
+    }
+    
+    // 初始化 LIFF
+    if (CONFIG.LIFF_ID && CONFIG.LIFF_ID !== 'YOUR_LIFF_ID_HERE') {
+        try {
+            console.log('🔄 初始化 LIFF...');
+            await liff.init({ liffId: CONFIG.LIFF_ID });
+            liffInitialized = true;
+            console.log('✅ LIFF 初始化成功');
+            console.log('📱 在 LINE 內開啟:', liff.isInClient());
+            console.log('🔐 登入狀態:', liff.isLoggedIn());
+            
+            // 如果已登入，自動取得用戶資料
+            if (liff.isLoggedIn()) {
+                try {
+                    document.getElementById('auto-login-hint')?.classList.remove('hidden');
+                    
+                    userProfile = await liff.getProfile();
+                    console.log('👤 用戶資料:', userProfile.displayName);
+                    
+                    await window.checkFriendship();
+                    
+                    // 隱藏登入畫面，顯示主應用
+                    document.getElementById('login-overlay').classList.add('hidden');
+                    document.getElementById('main-app').classList.remove('hidden');
+                    
+                    window.updateUserStatus();
+                    
+                    // 載入行事曆
+                    await window.fetchCalendarData();
+                    document.getElementById('calendar-title').innerText = `${MONTH_NAMES[currentMonth]} ${currentYear}`;
+                    window.renderCalendar();
+                    
+                } catch (e) {
+                    console.error('❌ 取得用戶資料失敗:', e);
+                    document.getElementById('auto-login-hint')?.classList.add('hidden');
+                }
+            }
+        } catch (e) {
+            console.error('❌ LIFF 初始化失敗:', e);
+            liffInitialized = false;
+        }
+    } else {
+        console.warn('⚠️ 未設定 LIFF_ID');
+    }
+});
+
 console.log('✅ customer.js loaded');
