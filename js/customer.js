@@ -66,7 +66,80 @@ window.loginWithLine = async function() {
         alert("LINE 登入錯誤：\n" + err.message);
     }
 };
+window.updateUserStatus = function() {
+    const warningEl = document.getElementById('line-login-warning');
+    const friendWarningEl = document.getElementById('friend-warning');
+    const statusEl = document.getElementById('user-status');
+    const userNameEl = document.getElementById('user-name');
+    
+    if (!userProfile || !userProfile.userId) {
+        warningEl?.classList.remove('hidden');
+        friendWarningEl?.classList.add('hidden');
+        if (statusEl) {
+            statusEl.innerText = '⚠️ 訪客模式（無法預約）';
+            statusEl.classList.add('text-red-500', 'font-bold');
+        }
+        if (userNameEl) userNameEl.innerText = '訪客';
+    } else if (!isFriend) {
+        warningEl?.classList.add('hidden');
+        friendWarningEl?.classList.remove('hidden');
+        if (statusEl) {
+            statusEl.innerText = '⚠️ 建議加入 LINE 官方帳號';
+            statusEl.classList.add('text-orange-500', 'font-bold');
+            statusEl.classList.remove('text-green-600', 'text-red-500');
+        }
+        if (userNameEl) userNameEl.innerText = userProfile.displayName;
+    } else {
+        warningEl?.classList.add('hidden');
+        friendWarningEl?.classList.add('hidden');
+        if (statusEl) {
+            statusEl.innerText = '✓ LINE 帳號已連結';
+            statusEl.classList.remove('text-red-500', 'text-orange-500');
+            statusEl.classList.add('text-green-600');
+        }
+        if (userNameEl) userNameEl.innerText = userProfile.displayName;
+    }
+};
 
+window.checkFriendship = async function() {
+    if (!liffInitialized || !liff.isLoggedIn()) {
+        console.warn("⚠️ LIFF 未初始化或未登入，跳過好友檢查");
+        isFriend = true;
+        return true;
+    }
+    
+    try {
+        const friendship = await liff.getFriendship();
+        isFriend = friendship.friendFlag;
+        console.log(isFriend ? "✅ 用戶已加為好友" : "❌ 用戶尚未加為好友");
+        return isFriend;
+    } catch (e) {
+        console.error("⚠️ 無法檢查好友狀態", e);
+        isFriend = true;
+        return true;
+    }
+};
+
+window.addFriend = function() {
+    if (CONFIG.LINE_OFFICIAL_ID && CONFIG.LINE_OFFICIAL_ID !== '@your_line_id') {
+        window.open(`https://line.me/R/ti/p/${CONFIG.LINE_OFFICIAL_ID}`, '_blank');
+    } else {
+        alert("請先設定 LINE_OFFICIAL_ID");
+    }
+};
+
+window.recheckFriendship = async function() {
+    window.showLoading(true);
+    await window.checkFriendship();
+    window.updateUserStatus();
+    window.showLoading(false);
+    
+    if (isFriend) {
+        alert("✅ 已確認您是我們的好友！");
+    } else {
+        alert("❌ 尚未偵測到好友關係");
+    }
+};
 // ===== 選項選擇功能 =====
 
 window.selectSingleOption = function(el, price, group, name) {
