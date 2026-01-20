@@ -73,6 +73,13 @@ body {
     color: #6b7280; 
 }
 
+.calendar-day.closed { 
+    background-color: #374151;  /* 深灰色 */
+    color: #fff;                /* 白色文字 */
+    cursor: pointer;            /* 可點擊 */
+    text-decoration: line-through; 
+}
+
 .calendar-day.not-open { 
     background-color: #d1d5db; 
     color: #6b7280; 
