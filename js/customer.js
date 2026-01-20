@@ -537,6 +537,7 @@ window.fetchCalendarData = async function() {
 
 window.renderCalendar = function() {
     const grid = document.getElementById('calendar-grid'); 
+    if (!grid) return;
     grid.innerHTML = '';
     const first = new Date(currentYear, currentMonth, 1).getDay();
     
@@ -556,6 +557,10 @@ window.renderCalendar = function() {
         if (dateCheck.reason === 'closed') {
             className += ' closed';
             div.title = '此日期已關閉';
+            // 👇 點擊時跳出提醒
+            div.onclick = () => {
+                alert('🚫 此日期已關閉，無法預約\n\n如有需要請聯繫我們');
+            };
         } else if (dateCheck.reason === 'not-open') {
             className += ' not-open';
             div.title = '尚未開放預約';
