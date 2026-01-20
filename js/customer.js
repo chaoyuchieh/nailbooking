@@ -28,111 +28,43 @@ window.showLoginScreen = function() {
     document.getElementById('login-overlay').classList.remove('hidden');
 };
 
-window.updateUserStatus = function() {
-    const warningEl = document.getElementById('line-login-warning');
-    const friendWarningEl = document.getElementById('friend-warning');
-    const statusEl = document.getElementById('user-status');
-    const userNameEl = document.getElementById('user-name');
-    
-    if (!userProfile || !userProfile.userId) {
-        warningEl.classList.remove('hidden');
-        friendWarningEl.classList.add('hidden');
-        statusEl.innerText = '⚠️ 訪客模式（無法預約）';
-        statusEl.classList.add('text-red-500', 'font-bold');
-        userNameEl.innerText = '訪客';
-    } else if (!isFriend) {
-        warningEl.classList.add('hidden');
-        friendWarningEl.classList.remove('hidden');
-        statusEl.innerText = '⚠️ 建議加入 LINE 官方帳號';
-        statusEl.classList.add('text-orange-500', 'font-bold');
-        statusEl.classList.remove('text-green-600', 'text-red-500');
-        userNameEl.innerText = userProfile.displayName;
-    } else {
-        warningEl.classList.add('hidden');
-        friendWarningEl.classList.add('hidden');
-        statusEl.innerText = '✓ LINE 帳號已連結';
-        statusEl.classList.remove('text-red-500', 'text-orange-500');
-        statusEl.classList.add('text-green-600');
-        userNameEl.innerText = userProfile.displayName;
-    }
-};
-
-window.checkFriendship = async function() {
-    if (!liffInitialized || !liff.isLoggedIn()) {
-        console.warn("⚠️ LIFF 未初始化或未登入，跳過好友檢查");
-        isFriend = true;
-        return true;
-    }
-    
-    try {
-        const friendship = await liff.getFriendship();
-        isFriend = friendship.friendFlag;
-        console.log(isFriend ? "✅ 用戶已加為好友" : "❌ 用戶尚未加為好友");
-        return isFriend;
-    } catch (e) {
-        console.error("⚠️ 無法檢查好友狀態", e);
-        isFriend = true;
-        return true;
-    }
-};
-
-window.addFriend = function() {
-    if (CONFIG.LINE_OFFICIAL_ID && CONFIG.LINE_OFFICIAL_ID !== '@your_line_id') {
-        window.open(`https://line.me/R/ti/p/${CONFIG.LINE_OFFICIAL_ID}`, '_blank');
-    } else {
-        alert("請先設定 LINE_OFFICIAL_ID");
-    }
-};
-
-window.recheckFriendship = async function() {
-    window.showLoading(true);
-    await window.checkFriendship();
-    window.updateUserStatus();
-    window.showLoading(false);
-    
-    if (isFriend) {
-        alert("✅ 已確認您是我們的好友！\n現在可以正常預約了。");
-    } else {
-        alert("❌ 尚未偵測到好友關係\n\n請確認：\n1. 已在 LINE 中加入我們的官方帳號\n2. 稍等片刻再試一次");
-    }
-};
-
 window.loginWithLine = async function() {
     console.log('🔐 loginWithLine called');
     sessionStorage.removeItem('manualLogout');
-    if (CONFIG.LIFF_ID && CONFIG.LIFF_ID !== 'YOUR_LIFF_ID_HERE') {
-        if (!liff.isLoggedIn()) {
-            try {
-                console.log('🔄 Redirecting to LINE login...');
-                liff.login({ redirectUri: window.location.href });
-            } catch (err) {
-                console.error('❌ LINE login error:', err);
-                alert("LINE 登入錯誤：\n" + err.message);
-            }
-        } else {
-            try {
-                console.log('✅ Already logged in, getting profile...');
-                userProfile = await liff.getProfile();
-                await window.checkFriendship();
-                document.getElementById('login-overlay').classList.add('hidden');
-                document.getElementById('main-app').classList.remove('hidden');
-                window.updateUserStatus();
-                await window.fetchCalendarData();
-                document.getElementById('calendar-title').innerText = `${MONTH_NAMES[currentMonth]} ${currentYear}`;
-                window.renderCalendar();
-            } catch (e) {
-                console.error('❌ Error getting LINE data:', e);
-                alert("無法取得 LINE 資料：" + e.message);
-            }
-        }
-    } else {
+    
+    if (!CONFIG.LIFF_ID || CONFIG.LIFF_ID === 'YOUR_LIFF_ID_HERE') {
         alert("請設定 LIFF ID");
+        return;
     }
-};
-
-window.toggleAdminLogin = function(show) {
-    document.getElementById('login-customer-view').classList.toggle('hidden', show);
-    document.getElementById('login-admin-view').classList.toggle('hidden', !show);
+    
+    try {
+        // 如果 LIFF 還沒初始化，先初始化
+        if (!liffInitialized) {
+            console.log('🔄 初始化 LIFF...');
+            await liff.init({ liffId: CONFIG.LIFF_ID });
+            liffInitialized = true;
+            console.log('✅ LIFF 初始化成功');
+        }
+        
+        if (!liff.isLoggedIn()) {
+            console.log('🔄 Redirecting to LINE login...');
+            liff.login({ redirectUri: window.location.href });
+        } else {
+            // 已登入，取得用戶資料
+            console.log('✅ Already logged in, getting profile...');
+            userProfile = await liff.getProfile();
+            await window.checkFriendship();
+            document.getElementById('login-overlay').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            window.updateUserStatus();
+            await window.fetchCalendarData();
+            document.getElementById('calendar-title').innerText = `${MONTH_NAMES[currentMonth]} ${currentYear}`;
+            window.renderCalendar();
+        }
+    } catch (err) {
+        console.error('❌ LINE login error:', err);
+        alert("LINE 登入錯誤：\n" + err.message);
+    }
 };
 
 // ===== 選項選擇功能 =====
