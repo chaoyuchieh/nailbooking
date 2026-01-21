@@ -373,7 +373,7 @@ window.finalSubmit = async function() {
     btn.disabled = true;
 
     try {
-        const dateId = `${currentYear}-${currentMonth}-${selectedDate.split('/')[1]}`;
+        const dateId = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(selectedDate.split('/')[1]).padStart(2, '0')}`;
         const { data, error: fetchErr } = await supabaseClient
             .from('calendar_slots')
             .select('*')
