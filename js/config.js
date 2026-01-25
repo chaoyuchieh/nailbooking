@@ -17,7 +17,7 @@ const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Se
 // 初始化 Supabase Client
 let supabaseClient = null;
 if (typeof supabase !== 'undefined' && CONFIG.SUPABASE_URL.startsWith('http')) {
-    supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.CONFIG.SUPABASE_ANON_KEY);
+    supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
     console.log('✅ Supabase initialized');
 }
 
