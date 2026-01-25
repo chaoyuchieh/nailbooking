@@ -766,16 +766,11 @@ function getBookingByDateAndIndex(dateStr, bookingIndex) {
 
 // 發送 LINE 訊息
 async function sendLineMessage(userId, message) {
-    if (!CONFIG.SUPABASE_URL) {
-        console.warn('⚠️ 未設定 SUPABASE_URL，無法發送訊息');
-        return;
-    }
-    
-    const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/send-line-message`, {
+    // 改用 Vercel API
+    const response = await fetch('/api/send-line-message', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`
+            'Content-Type': 'application/json'
         },
         body: JSON.stringify({
             userId: userId,
@@ -784,9 +779,10 @@ async function sendLineMessage(userId, message) {
     });
     
     if (!response.ok) {
+        const error = await response.json();
+        console.error('發送訊息失敗:', error);
         throw new Error('發送訊息失敗');
     }
+    
+    return await response.json();
 }
-
-console.log('✅ admin.js 載入完成');
-console.log('doAdminLogin 類型:', typeof window.doAdminLogin);
