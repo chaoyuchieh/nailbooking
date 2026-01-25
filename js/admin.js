@@ -383,7 +383,7 @@ window.toggleDateClosed = function() {
     if (adminSelectedIndex === null) return;
     
     const item = calendarData[adminSelectedIndex];
-    const dateStr = `${adminYear}-${adminMonth}-${item.date}`;
+    const dateStr = `${adminYear}-${adminMonth+ 1}-${item.date}`;
     
     const idx = closedDates.indexOf(dateStr);
     if (idx > -1) {
