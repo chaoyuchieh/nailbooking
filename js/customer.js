@@ -66,6 +66,7 @@ window.loginWithLine = async function() {
         alert("LINE 登入錯誤：\n" + err.message);
     }
 };
+
 window.updateUserStatus = function() {
     const warningEl = document.getElementById('line-login-warning');
     const friendWarningEl = document.getElementById('friend-warning');
@@ -140,6 +141,7 @@ window.recheckFriendship = async function() {
         alert("❌ 尚未偵測到好友關係");
     }
 };
+
 // ===== 選項選擇功能 =====
 
 window.selectSingleOption = function(el, price, group, name) {
@@ -373,15 +375,32 @@ window.finalSubmit = async function() {
     btn.disabled = true;
 
     try {
+        // ✅ 組合日期 ID
         const dateId = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(selectedDate.split('/')[1]).padStart(2, '0')}`;
+        console.log('📅 查詢日期:', dateId);
+        
+        // ✅ 查詢現有記錄
         const { data, error: fetchErr } = await supabaseClient
             .from('calendar_slots')
             .select('*')
-            .eq('date_id', dateId)
-            .single();
-            
-        let booked = (data && data.booked_slots) ? data.booked_slots : [];
+            .eq('date_id', dateId);
         
+        // ✅ 錯誤處理
+        if (fetchErr) {
+            console.error('❌ 資料庫查詢錯誤:', fetchErr);
+            throw fetchErr;
+        }
+        
+        // ✅ 處理查詢結果
+        let booked = [];
+        if (data && data.length > 0) {
+            booked = data[0].booked_slots || [];
+            console.log('📋 找到現有記錄，已有', booked.length, '筆預約');
+        } else {
+            console.log('📝 這是新的日期，將建立記錄');
+        }
+        
+        // ✅ 檢查時段是否被搶
         if (booked.some(s => (typeof s === 'string' ? s : s.time) === selectedTime)) {
             throw new Error("手腳太慢了！該時段剛被搶走 😭");
         }
@@ -389,6 +408,7 @@ window.finalSubmit = async function() {
         let userName = userProfile.displayName;
         let userId = userProfile.userId;
         
+        // ✅ 組合預約詳細資料
         let details = {
             design: { ...bookingDetails.design },
             removal: { ...bookingDetails.removal },
@@ -428,6 +448,7 @@ window.finalSubmit = async function() {
             price: nailPolishRemovalCount * 50 
         });
         
+        // ✅ 新增預約
         booked.push({
             time: selectedTime,
             user: userName,
@@ -437,7 +458,10 @@ window.finalSubmit = async function() {
             totalPrice: window.calculateTotal()
         });
 
-        const { error } = await supabaseClient
+        console.log('💾 準備儲存預約:', booked[booked.length - 1]);
+
+        // ✅ 儲存到資料庫
+        const { error: saveErr } = await supabaseClient
             .from('calendar_slots')
             .upsert({ 
                 date_id: dateId, 
@@ -445,8 +469,14 @@ window.finalSubmit = async function() {
                 status: 'available' 
             });
             
-        if (error) throw error;
+        if (saveErr) {
+            console.error('❌ 儲存錯誤:', saveErr);
+            throw saveErr;
+        }
         
+        console.log('✅ 預約儲存成功');
+        
+        // ✅ 組合確認訊息
         let detailMsg = '';
         if (details.design.name) {
             detailMsg += `\n🎨 造型：${details.design.name}`;
@@ -481,25 +511,25 @@ window.finalSubmit = async function() {
 ---
 LOST.IN.GALLERY_`;
 
+        // ✅ 發送確認訊息
         try {
             if (liffInitialized && liff.isInClient()) {
                 await liff.sendMessages([{
                     type: 'text',
                     text: successMsg
                 }]);
-                alert("✅ 預約申請已送出！\n\n已在 LINE 發送確認訊息。");
-                setTimeout(() => window.location.reload(), 1500);
-            } else {
-                alert(`✅ 預約申請已送出！\n\n${successMsg}`);
-                setTimeout(() => window.location.reload(), 2000);
+                console.log('✅ 已在 LINE 發送確認訊息');
             }
         } catch (e) {
-            console.warn("LINE message failed", e);
-            alert(`✅ 預約申請已送出！\n\n${successMsg}`);
-            setTimeout(() => window.location.reload(), 2000);
+            console.warn("⚠️ LINE 訊息發送失敗", e);
         }
+        
+        // ✅ 顯示成功訊息
+        alert(`✅ 預約申請已送出！\n\n${successMsg}`);
+        setTimeout(() => window.location.reload(), 2000);
 
     } catch (e) {
+        console.error('❌ 預約失敗:', e);
         alert("❌ 預約失敗：" + e.message);
         btn.innerHTML = originalText;
         btn.disabled = false;
@@ -519,7 +549,7 @@ window.fetchCalendarData = async function() {
         window.initMockData(true, currentYear, currentMonth);
         data.forEach(row => {
             const parts = row.date_id.split('-');
-            if (parseInt(parts[0]) === currentYear && parseInt(parts[1]) === currentMonth) {
+            if (parseInt(parts[0]) === currentYear && parseInt(parts[1]) === currentMonth + 1) {
                 const d = parseInt(parts[2]);
                 if (calendarData[d-1]) {
                     calendarData[d-1].status = row.status;
@@ -557,7 +587,6 @@ window.renderCalendar = function() {
         if (dateCheck.reason === 'closed') {
             className += ' closed';
             div.title = '此日期已關閉';
-            // 👇 點擊時跳出提醒
             div.onclick = () => {
                 alert('🚫 此日期已關閉，無法預約\n\n如有需要請聯繫我們');
             };
