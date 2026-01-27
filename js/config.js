@@ -22,3 +22,16 @@ if (typeof supabase !== 'undefined' && CONFIG.SUPABASE_URL.startsWith('http')) {
 }
 
 console.log('✅ config.js loaded');
+
+const CONFIG = {
+    SUPABASE_URL: 'https://alkuncpbqslksxeorndz.supabase.co',
+    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    LIFF_ID: '2008856015-4bLaPE5n',
+    LINE_OFFICIAL_ID: '@229lgsmd',
+    LINE_MESSAGE_API_URL: '/api/send-line-message',  // ← 加這行
+    BUSINESS_HOURS: {
+        start: { hour: 10, minute: 0 },
+        end: { hour: 19, minute: 0 }
+    },
+    SERVICE_DURATION_MINUTES: 150
+};
