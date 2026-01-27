@@ -310,21 +310,24 @@ window.checkAndSubmit = async function() {
     const check = document.getElementById('term-check').checked;
     const total = window.calculateTotal();
     
+    // ✅ 強制要求 LINE 登入
     if (!userProfile || !userProfile.userId) {
         alert("❌ 請先使用 LINE 登入才能預約！");
         window.showLoginScreen();
         return;
     }
     
+    // ✅ 強制要求加入好友
     if (!isFriend) {
-        const confirmBooking = confirm("⚠️ 建議加入 LINE 官方帳號\n\n雖然可以繼續預約，但加入官方帳號後才能收到預約通知。\n\n是否仍要繼續預約？");
-        if (!confirmBooking) {
-            document.getElementById('friend-warning').scrollIntoView({ behavior: 'smooth', block: 'center' });
-            return;
-        }
+        alert("❌ 請先加入 LINE 官方帳號才能預約\n\n加入後即可享受即時通知服務！");
+        document.getElementById('friend-warning').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
     }
     
-    if (total <= 0) { alert("❌ 您尚未選擇任何服務項目！"); return; }
+    if (total <= 0) { 
+        alert("❌ 您尚未選擇任何服務項目！"); 
+        return; 
+    }
     
     const needRemovalBtn = document.getElementById('need-removal-yes');
     if (needRemovalBtn && needRemovalBtn.classList.contains('active')) {
@@ -357,7 +360,6 @@ window.checkAndSubmit = async function() {
         alert("發生錯誤：" + e.message);
     }
 };
-
 window.finalSubmit = async function() {
     if (!userProfile || !userProfile.userId) {
         alert("❌ 安全驗證失敗");
@@ -474,7 +476,7 @@ window.finalSubmit = async function() {
             throw saveErr;
         }
         
-        console.log('✅ 預約儲存成功');
+       console.log('✅ 預約儲存成功');
         
         // ✅ 組合確認訊息
         let detailMsg = '';
@@ -494,39 +496,53 @@ window.finalSubmit = async function() {
             }).join(', ')}`;
         }
         
-        const successMsg = `【預約已送出】
+        const successMsg = `【新預約申請】
 
-您好 ${userName}，
-我們已收到您的預約申請！
+📋 預約資訊：
 
+👤 顧客：${userName}
 📅 日期：${selectedDate}
 ⏰ 時間：${selectedTime}${detailMsg}
-💰 預估金額：${window.calculateTotal()}
+💰 預估金額：$${window.calculateTotal()}
 
-⏳ 請等待管理員審核
-審核通過後我們會立即通知您。
-
-感謝您的預約！
+⏳ 等待管理員審核中...
 
 ---
 LOST.IN.GALLERY_`;
 
-        // ✅ 發送確認訊息
+        // ✅ 發送預約訊息給官方帳號
         try {
             if (liffInitialized && liff.isInClient()) {
                 await liff.sendMessages([{
                     type: 'text',
                     text: successMsg
                 }]);
-                console.log('✅ 已在 LINE 發送確認訊息');
+                console.log('✅ 已發送預約訊息到官方帳號');
+                
+                alert("✅ 預約申請已送出！\n\n已在 LINE 發送預約訊息，請等待管理員審核。");
+                setTimeout(() => window.location.reload(), 2000);
+            } else {
+                // 不在 LINE 環境中
+                alert("❌ 請在 LINE 中開啟此頁面才能完成預約");
+                throw new Error('Not in LINE environment');
             }
         } catch (e) {
-            console.warn("⚠️ LINE 訊息發送失敗", e);
+            console.error("❌ 發送訊息失敗:", e);
+            
+            // 刪除剛才建立的預約
+            booked.pop();
+            await supabaseClient
+                .from('calendar_slots')
+                .upsert({ 
+                    date_id: dateId, 
+                    booked_slots: booked, 
+                    status: 'available' 
+                });
+            
+            alert("❌ 預約失敗：無法發送訊息\n\n請確認：\n1. 在 LINE 中開啟\n2. 已加入官方帳號為好友");
+            btn.innerHTML = originalText;
+            btn.disabled = false;
         }
-        
-        // ✅ 顯示成功訊息
-        alert(`✅ 預約申請已送出！\n\n${successMsg}`);
-        setTimeout(() => window.location.reload(), 2000);
 
     } catch (e) {
         console.error('❌ 預約失敗:', e);
