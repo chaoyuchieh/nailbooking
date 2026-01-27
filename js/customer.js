@@ -522,29 +522,24 @@ window.finalSubmit = async function() {
 ---
 LOST.IN.GALLERY_`;
 
-        // ✅ 使用 Push Message API 發送
+      
         try {
-            if (CONFIG.LINE_MESSAGE_API_URL) {
-                console.log('📤 發送預約確認訊息...');
-                
-                const response = await fetch(CONFIG.LINE_MESSAGE_API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId: userId,
-                        message: successMsg
-                    })
-                });
-                
-                if (response.ok) {
-                    console.log('✅ 確認訊息發送成功');
-                } else {
-                    console.warn('⚠️ 確認訊息發送失敗');
-                }
-            }
-        } catch (e) {
-            console.warn("⚠️ 發送訊息失敗:", e);
-        }
+    console.log('📤 準備發送 LINE 訊息...');
+    console.log('🔍 liffInitialized:', liffInitialized);
+    console.log('🔍 isInClient:', liff.isInClient());
+    
+    if (liffInitialized && liff.isInClient()) {
+        await liff.sendMessages([{
+            type: 'text',
+            text: successMsg
+        }]);
+        console.log('✅ LINE 訊息發送成功');
+    } else {
+        console.warn('⚠️ 不在 LINE App 內，無法自動發送訊息');
+    }
+} catch (e) {
+    console.warn("⚠️ 發送訊息失敗:", e);
+}
 
         alert(`✅ 預約申請已送出！\n\n已發送確認訊息到您的 LINE\n請等待管理員審核通知。`);
         setTimeout(() => window.location.reload(), 2000);
