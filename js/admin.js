@@ -700,7 +700,7 @@ async function updateBookingStatus(dateStr, bookingIndex, newStatus) {
     const month = parseInt(parts[1]);
     const day = parseInt(parts[2]);
     
-    const dateId = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const dateId = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     
     const { data, error: fetchErr } = await supabaseClient
         .from('calendar_slots')
@@ -730,7 +730,7 @@ async function removeBooking(dateStr, bookingIndex) {
     const month = parseInt(parts[1]);
     const day = parseInt(parts[2]);
     
-    const dateId = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const dateId = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     
     const { data, error: fetchErr } = await supabaseClient
         .from('calendar_slots')
