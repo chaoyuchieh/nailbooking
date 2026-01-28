@@ -527,7 +527,8 @@ LOST.IN.GALLERY_`;
     console.log('📤 準備發送 LINE 訊息...');
     console.log('🔍 liffInitialized:', liffInitialized);
     console.log('🔍 isInClient:', liff.isInClient());
-    
+            
+    alert('DEBUG: isInClient=' + liff.isInClient());
     if (liffInitialized && liff.isInClient()) {
         await liff.sendMessages([{
             type: 'text',
