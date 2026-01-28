@@ -226,7 +226,7 @@ window.selectAdminDate = function(index) {
     
     // 更新關閉按鈕狀態
     const closeBtn = document.getElementById('admin-close-date-btn');
-    const dateStr = `${adminYear}-${adminMonth}-${item.date}`;
+    const dateStr = `${adminYear}-${String(adminMonth + 1).padStart(2, '0')}-${String(item.date).padStart(2, '0')}`;
     const isClosed = closedDates.includes(dateStr) || item.status === 'booked';
     
     if (isClosed) {
@@ -383,7 +383,7 @@ window.toggleDateClosed = function() {
     if (adminSelectedIndex === null) return;
     
     const item = calendarData[adminSelectedIndex];
-    const dateStr = `${adminYear}-${adminMonth+ 1}-${item.date}`;
+    const dateStr = `${adminYear}-${String(adminMonth + 1).padStart(2, '0')}-${String(item.date).padStart(2, '0')}`;
     
     const idx = closedDates.indexOf(dateStr);
     if (idx > -1) {
