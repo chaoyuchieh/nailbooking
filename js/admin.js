@@ -695,13 +695,8 @@ LOST.IN.GALLERY_`);
 
 // 更新預約狀態
 async function updateBookingStatus(dateStr, bookingIndex, newStatus) {
-    const parts = dateStr.split('-');
-    const year = parseInt(parts[0]);
-    const month = parseInt(parts[1]);
-    const day = parseInt(parts[2]);
-    
-    // 保持 month + 1
-    const dateId = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    // dateStr 已經是正確格式，直接使用
+    const dateId = dateStr;
     
     const { data, error: fetchErr } = await supabaseClient
         .from('calendar_slots')
@@ -726,13 +721,8 @@ async function updateBookingStatus(dateStr, bookingIndex, newStatus) {
 
 // 刪除預約
 async function removeBooking(dateStr, bookingIndex) {
-    const parts = dateStr.split('-');
-    const year = parseInt(parts[0]);
-    const month = parseInt(parts[1]);
-    const day = parseInt(parts[2]);
-    
-    // 保持 month + 1
-    const dateId = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    // dateStr 已經是正確格式，直接使用
+    const dateId = dateStr;
     
     const { data, error: fetchErr } = await supabaseClient
         .from('calendar_slots')
@@ -752,7 +742,6 @@ async function removeBooking(dateStr, bookingIndex) {
     
     if (updateErr) throw updateErr;
 }
-
 // 取得預約資料
 function getBookingByDateAndIndex(dateStr, bookingIndex) {
     const parts = dateStr.split('-');
