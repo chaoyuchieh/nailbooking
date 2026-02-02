@@ -125,10 +125,15 @@ window.saveClosedDates = async function() {
     try {
         const { error } = await supabaseClient
             .from('booking_settings')
-            .upsert({
-                setting_key: 'closed_dates',
-                setting_value: { dates: closedDates }
-            });
+            .upsert(
+                {
+                    setting_key: 'closed_dates',
+                    setting_value: { dates: closedDates }
+                },
+                { 
+                    onConflict: 'setting_key'  // ← 加上這個！
+                }
+            );
         
         if (error) throw error;
         console.log('✅ 關閉日期已儲存');
@@ -136,7 +141,6 @@ window.saveClosedDates = async function() {
         console.error('❌ 儲存關閉日期失敗:', e.message);
     }
 };
-
 window.initMockData = function(onlyStructure = false, year = currentYear, month = currentMonth) {
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const todayDate = new Date();
