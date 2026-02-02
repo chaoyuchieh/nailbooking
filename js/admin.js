@@ -575,34 +575,30 @@ LOST.IN.GALLERY_`);
 
 // 拒絕預約
 window.rejectBooking = async function(dateStr, bookingIndex, userId) {
-    const reason = prompt('請輸入拒絕原因（選填）：');
-    if (reason === null) return; // 取消
+    if (!confirm('確定要拒絕此預約嗎？')) return;
     
     window.showLoading(true);
     try {
-        // 先取得預約資料（在刪除前）
+        // 先取得預約資料
         const booking = getBookingByDateAndIndex(dateStr, bookingIndex);
         
         // 刪除預約
         await removeBooking(dateStr, bookingIndex);
         
-        // 發送通知
-        let message = `【預約未通過】
+        // 發送通知（不含原因）
+        await sendLineMessage(userId, `【預約未通過】
 
 您好 ${booking.user}，
 很抱歉，您的預約無法受理
 
 📅 預約日期：${dateStr}
-⏰ 預約時間：${booking.time}`;
+⏰ 預約時間：${booking.time}
 
-        if (reason && reason.trim()) {
-            message += `\n\n原因：${reason}`;
-        }
-        
-        message += `\n\n如有疑問請聯繫我們\n感謝您的理解
+如有疑問請聯繫我們
+感謝您的理解
 
 ---
-LOST.IN.GALLERY_`;
+LOST.IN.GALLERY_`);
 
         await sendLineMessage(userId, message);
         
