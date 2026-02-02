@@ -648,11 +648,7 @@ LOST.IN.GALLERY_`);
 
 // 取消預約
 window.cancelBooking = async function(dateStr, bookingIndex, userId) {
-    const reason = prompt('請輸入取消原因：');
-    if (!reason || !reason.trim()) {
-        alert('請輸入取消原因');
-        return;
-    }
+      if (!confirm('確定要取消此預約嗎？')) return;
     
     window.showLoading(true);
     try {
