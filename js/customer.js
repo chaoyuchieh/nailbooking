@@ -415,7 +415,7 @@ window.finalSubmit = async function() {
         
         // ✅ 檢查時段是否被搶
         if (booked.some(s => (typeof s === 'string' ? s : s.time) === selectedTime)) {
-            throw new Error("手腳太慢了！該時段剛被搶走 😭");
+            throw new Error("該時段已被預約 😭");
         }
         
         let userName = userProfile.displayName;
@@ -528,7 +528,6 @@ LOST.IN.GALLERY_`;
     console.log('🔍 liffInitialized:', liffInitialized);
     console.log('🔍 isInClient:', liff.isInClient());
             
-    alert('DEBUG: isInClient=' + liff.isInClient());
     if (liffInitialized && liff.isInClient()) {
         await liff.sendMessages([{
             type: 'text',
