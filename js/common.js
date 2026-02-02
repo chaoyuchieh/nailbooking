@@ -159,7 +159,9 @@ window.initMockData = function(onlyStructure = false, year = currentYear, month 
 window.isDateBookable = function(year, month, day) {
     const checkDate = new Date(year, month, day);
     checkDate.setHours(0, 0, 0, 0);
-    const dateStr = `${year}-${month}-${day}`;
+    
+    // 改成有補零的格式，跟 admin 一致
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     
     if (closedDates.includes(dateStr)) {
         return { bookable: false, reason: 'closed' };
