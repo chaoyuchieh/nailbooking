@@ -1,4 +1,4 @@
-// customer.js - 客戶端功能
+// customer.js - 客戶端功能,
 
 // ===== 客戶端全域變數 =====
 let priceState = { design: 0, removal: 0, extras: 0 };
