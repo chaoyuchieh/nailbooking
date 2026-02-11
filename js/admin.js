@@ -180,28 +180,48 @@ window.renderAdminCalendar = function() {
                 return ta.localeCompare(tb);
             });
             
-            dayText += `<div class="w-full flex flex-col gap-[2px] overflow-hidden">`;
-            sorted.forEach(booking => {
-                const time = (typeof booking === 'string') ? booking : booking.time;
-                const user = (typeof booking === 'object' && booking.user) ? booking.user : 'Admin';
-                const status = (typeof booking === 'object' && booking.status) ? booking.status : 'approved';
-                
-                let barClass = 'bar-confirmed';
-                let statusIcon = '✓';
-                
-                if (status === 'pending') {
-                    barClass = 'bar-pending';
-                    statusIcon = '⏳';
-                } else if (status === 'pending_payment') {
-                    barClass = 'bar-pending-payment';
-                    statusIcon = '💰';
-                }
-                
-                const displayUser = user.length > 3 ? user.substring(0, 3) + '…' : user;
-                dayText += `<div class="booking-bar ${barClass}" title="${time} ${user}">${statusIcon}${time} ${displayUser}</div>`;
-            });
-            dayText += `</div>`;
+            dayText += `<div class="w-full flex flex-col gap-[3px] overflow-hidden">`;
+sorted.forEach(booking => {
+    const time = (typeof booking === 'string') ? booking : booking.time;
+    const user = (typeof booking === 'object' && booking.user) ? booking.user : 'Admin';
+    const status = (typeof booking === 'object' && booking.status) ? booking.status : 'approved';
+    
+    let barClass = 'bar-confirmed';
+    let statusIcon = '✓';
+    
+    if (status === 'pending') {
+        barClass = 'bar-pending';
+        statusIcon = '⏳';
+    } else if (status === 'pending_payment') {
+        barClass = 'bar-pending-payment';
+        statusIcon = '💰';
+    }
+    
+    let detailsHtml = '';
+if (details) {
+    if (details.design && details.design.name) {
+        // 從 text-[9px] 改為 text-[10px]
+        detailsHtml += `<div class="text-[10px] text-gray-600 font-medium">🎨 ${details.design.name}`;
+        if (details.design.keywords && details.design.keywords.length > 0) {
+            detailsHtml += ` (${details.design.keywords.join(', ')})`;
         }
+        detailsHtml += `</div>`;
+    }
+    if (details.removal && details.removal.name) {
+        detailsHtml += `<div class="text-[10px] text-gray-600 font-medium">💅 ${details.removal.name}</div>`;
+    }
+    if (details.extras && details.extras.length > 0) {
+        const extrasStr = details.extras.map(e => {
+            if (e.count) return `${e.name} x${e.count}`;
+            return e.name;
+        }).join(', ');
+        detailsHtml += `<div class="text-[10px] text-gray-600 font-medium">✨ ${extrasStr}</div>`;
+    }
+}
+
+// ✅ 日期標題也放大
+dayText += `<div class="text-[12px] font-bold mb-1 ${dateColor}">${item.date}</div>`;
+
         
         div.innerHTML = dayText;
         div.className = `admin-day ${isPastDate ? 'status-past' : ''} ${index === adminSelectedIndex ? 'selected' : ''}`;
