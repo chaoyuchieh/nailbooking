@@ -136,163 +136,53 @@ body {
     transition: all 0.3s ease-in-out; 
 }
 
-/* ========== 管理端專用樣式 ========== */
-.admin-day { 
-    min-height: 90px; 
-    display: flex; 
-    flex-direction: column; 
-    align-items: flex-start; 
-    justify-content: flex-start; 
-    cursor: pointer; 
-    border-radius: 8px; 
-    font-size: 0.75rem; 
-    border: 1px solid #eee; 
-    background-color: #fff; 
-    position: relative; 
-    padding: 6px 4px; 
-    overflow: hidden; 
+/* 管理後台日曆樣式 */
+.admin-day {
+    padding: 12px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+    border: 1px solid #e5e7eb;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
 }
 
-.admin-day.selected { 
-    border: 2px solid #333; 
-    background-color: #fafafa; 
+.admin-day:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
 }
 
-.admin-day.status-off { 
-    background-color: #4b5563; 
-    color: #d1d5db; 
-    border-color: #6b7280; 
+.admin-day.selected {
+    background: #dbeafe;
+    border-color: #3b82f6;
 }
 
-.admin-day.status-past { 
-    opacity: 0.5; 
-    background-color: #f9fafb; 
-    box-shadow: 0 0 0 2px #e5e7eb; 
+/* ✅ 公休日期 - 灰色背景 */
+.admin-day.status-off {
+    background: #f3f4f6 !important;  /* 淺灰色背景 */
+    border-color: #d1d5db;
+    cursor: default;
+    opacity: 0.7;
 }
 
-.admin-day.has-pending { 
-    border: 2px solid #fbbf24; 
-    background-color: #fffbeb; 
+.admin-day.status-off:hover {
+    background: #e5e7eb !important;  /* 稍微深一點的灰色 */
 }
 
-.booking-bar { 
-    width: 100%; 
-    margin-top: 1px; 
-    padding: 3px 4px; 
-    border-radius: 3px; 
-    font-size: 8.5px; 
-    line-height: 1.2; 
-    white-space: nowrap; 
-    overflow: hidden; 
-    text-overflow: ellipsis; 
-    font-weight: 600; 
-    display: block; 
+/* 公休日期的日期數字 */
+.admin-day.status-off .text-gray-700 {
+    color: #9ca3af !important;  /* 灰色文字 */
 }
 
-.bar-confirmed { 
-    background-color: #dcfce7; 
-    color: #15803d; 
+/* 過去日期 */
+.admin-day.status-past {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
-.bar-pending { 
-    background-color: #fef3c7; 
-    color: #92400e; 
-}
-
-.bar-pending-payment { 
-    background-color: #fed7aa; 
-    color: #9a3412; 
-}
-
-.indicator-dot { 
-    width: 6px; 
-    height: 6px; 
-    border-radius: 50%; 
-    position: absolute; 
-    top: 6px; 
-    right: 6px; 
-}
-
-.schedule-item { 
-    display: flex; 
-    flex-direction: column; 
-    padding: 12px; 
-    background: white; 
-    border-radius: 12px; 
-    border: 1px solid #eee; 
-    margin-bottom: 8px; 
-}
-
-.schedule-header { 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    margin-bottom: 8px; 
-}
-
-.schedule-actions { 
-    display: flex; 
-    gap: 8px; 
-    justify-content: flex-end; 
-}
-
-.tag { 
-    padding: 2px 8px; 
-    border-radius: 4px; 
-    font-size: 0.7rem; 
-    font-weight: bold; 
-}
-
-.tag-pending { 
-    background: #fffbeb; 
-    color: #d97706; 
-    border: 1px solid #fcd34d; 
-}
-
-.tag-pending-payment { 
-    background: #fef3c7; 
-    color: #92400e; 
-    border: 1px solid #fbbf24; 
-}
-
-.tag-confirmed { 
-    background: #dcfce7; 
-    color: #15803d; 
-    border: 1px solid #86efac; 
-}
-
-.tag-booked { 
-    background: #fef2f2; 
-    color: #b91c1c; 
-    border: 1px solid #fecaca; 
-}
-
-.tag-open { 
-    background: #ecfccb; 
-    color: #3f6212; 
-    border: 1px solid #d9f99d; 
-}
-
-.admin-slot { 
-    font-size: 0.7rem; 
-    padding: 6px; 
-    border-radius: 6px; 
-    border: 1px solid #eee; 
-    cursor: pointer; 
-    text-align: center; 
-    overflow: hidden; 
-    text-overflow: ellipsis; 
-    white-space: nowrap; 
-}
-
-.admin-slot.locked { 
-    background-color: #fee2e2; 
-    color: #ef4444; 
-    border-color: #fecaca; 
-}
-
-.admin-slot.open { 
-    background-color: #fff; 
-    color: #333; 
-    border-color: #ddd; 
+.admin-day.status-past:hover {
+    background: white;
+    border-color: #e5e7eb;
 }
