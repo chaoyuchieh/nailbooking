@@ -165,7 +165,8 @@ window.renderAdminCalendar = function() {
         itemDate.setHours(0, 0, 0, 0);
         const isPastDate = itemDate < todayDate;
         
-        const isHoliday = item.status === 'booked';
+        const dateStr = `${adminYear}-${String(adminMonth + 1).padStart(2, '0')}-${String(item.date).padStart(2, '0')}`;
+        const isHoliday = item.status === 'booked' || closedDates.includes(dateStr);
         const dateColor = isHoliday ? 'text-gray-300' : (isPastDate ? 'text-gray-400' : 'text-gray-700');
         
         let dayText = `<div class="text-[11px] font-bold mb-1 ${dateColor}">${item.date}</div>`;
