@@ -6,7 +6,6 @@ console.log('🚀 admin.js 開始載入...');
 if (typeof CONFIG === 'undefined') {
     console.error('❌ CONFIG 未定義，請確認 config.js 已載入');
 }
-
 if (typeof supabaseClient === 'undefined') {
     console.warn('⚠️ supabaseClient 未定義，將使用離線模式');
 }
@@ -141,8 +140,9 @@ window.fetchAdminCalendarData = async function() {
 };
 
 // === 渲染行事曆 ===
+// === 渲染行事曆 (TimeTree 彩色標籤版) ===
 window.renderAdminCalendar = function() {
-    console.log('🎨 渲染管理行事曆 (TimeTree 風格)...');
+    console.log('🎨 渲染管理行事曆 (TimeTree 彩色標籤)...');
     const grid = document.getElementById('admin-calendar-grid');
     if (!grid) return;
     
@@ -151,7 +151,9 @@ window.renderAdminCalendar = function() {
     // 月初空白
     const firstDay = new Date(adminYear, adminMonth, 1).getDay();
     for (let i = 0; i < firstDay; i++) {
-        grid.appendChild(document.createElement('div'));
+        const emptyDiv = document.createElement('div');
+        emptyDiv.className = 'admin-day';
+        grid.appendChild(emptyDiv);
     }
     
     const todayDate = new Date();
@@ -168,76 +170,70 @@ window.renderAdminCalendar = function() {
         const dateStr = `${adminYear}-${String(adminMonth + 1).padStart(2, '0')}-${String(item.date).padStart(2, '0')}`;
         const isHoliday = item.status === 'booked' || closedDates.includes(dateStr);
         const hasBooking = item.bookedSlots && item.bookedSlots.length > 0;
-        const bookingCount = hasBooking ? item.bookedSlots.length : 0;
         
         // 構建日期數字
-        let dayText = `<div class="date-number">${item.date}</div>`;
+        let dayHTML = `<div class="date-number">${item.date}</div>`;
         
-        // 根據狀態添加背景色和內容
+        // 根據狀態構建內容
         let statusClass = 'admin-day';
         
-        if (isPastDate || isHoliday) {
-            // 過期或公休 - 深灰色背景
+        if (isHoliday) {
             statusClass += ' status-off';
-            if (isHoliday) {
-                dayText += `<div class="holiday-label">🚫 公休</div>`;
-            }
+            dayHTML += `<div class="holiday-label">🚫 公休</div>`;
         } else if (hasBooking) {
-            // 有預約 - 綠色背景
-            statusClass += ' has-booking';
-            
-            // 根據預約數量調整深度
-            if (bookingCount >= 2) {
-                statusClass = statusClass.replace('has-booking', 'has-multiple-booking');
-            }
-            
-            // 顯示預約摘要（只顯示時間和部分名字）
+            // 排序預約
             const sorted = [...item.bookedSlots].sort((a, b) => {
                 const ta = (typeof a === 'string' ? a : a.time);
                 const tb = (typeof b === 'string' ? b : b.time);
                 return ta.localeCompare(tb);
             });
             
-            dayText += `<div class="booking-info">`;
-            sorted.slice(0, 2).forEach(booking => {  // 最多顯示 2 筆
+            dayHTML += `<div class="booking-info">`;
+            
+            // 只顯示前 2 筆預約
+            sorted.slice(0, 2).forEach(booking => {
                 const time = (typeof booking === 'string') ? booking : booking.time;
                 const user = (typeof booking === 'object' && booking.user) ? booking.user : 'Admin';
-                const displayUser = user.length > 2 ? user.substring(0, 2) : user;
-                dayText += `<div>⏰ ${time}</div>`;
+                const status = (typeof booking === 'object' && booking.status) ? booking.status : 'confirmed';
+                
+                // 根據狀態決定顏色類別
+                let statusClass = 'status-confirmed';
+                if (status === 'pending') {
+                    statusClass = 'status-pending';
+                } else if (status === 'pending_payment') {
+                    statusClass = 'status-pending-payment';
+                } else if (status === 'rejected') {
+                    statusClass = 'status-rejected';
+                }
+                
+                // 截短名字（最多 4 個字）
+                const displayUser = user.length > 4 ? user.substring(0, 4) : user;
+                
+                dayHTML += `<div class="booking-tag ${statusClass}" title="${time} ${user}">⏰ ${time} ${displayUser}</div>`;
             });
             
-            if (bookingCount > 2) {
-                dayText += `<div>+${bookingCount - 2} more</div>`;
+            // 如果超過 2 筆，顯示 +N more
+            if (sorted.length > 2) {
+                dayHTML += `<div class="booking-more">+${sorted.length - 2} more</div>`;
             }
-            dayText += `</div>`;
+            
+            dayHTML += `</div>`;
+        }
+        
+        if (isPastDate) {
+            statusClass += ' status-past';
         }
         
         if (index === adminSelectedIndex) {
             statusClass += ' selected';
         }
         
-        div.innerHTML = dayText;
+        div.innerHTML = dayHTML;
         div.className = statusClass;
         div.onclick = () => window.selectAdminDate(index);
         grid.appendChild(div);
     });
 };
-
-// ===== CSS 類別定義 =====
-/*
-使用的 CSS 類別：
-- .admin-day           → 基礎日期格子
-- .status-past         → 過期日期（深灰色）
-- .status-off          → 公休日期（深灰色）
-- .has-booking         → 有 1 筆預約（綠色）
-- .has-multiple-booking → 有 2+ 筆預約（深綠色）
-- .selected            → 選中狀態（紅色邊框）
-- .date-number         → 日期數字
-- .booking-info        → 預約資訊區
-- .holiday-label       → 公休標籤
-
-需要在 styles.css 中定義上述樣式
-*/
 
 // === 選擇日期 ===
 window.selectAdminDate = function(index) {
