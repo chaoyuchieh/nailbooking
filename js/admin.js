@@ -169,7 +169,7 @@ window.renderAdminCalendar = function() {
         const isHoliday = item.status === 'booked' || closedDates.includes(dateStr);
         const dateColor = isHoliday ? 'text-gray-300' : (isPastDate ? 'text-gray-400' : 'text-gray-700');
         
-        let dayText = `<div class="text-[11px] font-bold mb-1 ${dateColor}">${item.date}</div>`;
+        let dayText = `<div class="text-[12px] font-bold mb-1 ${dateColor}">${item.date}</div>`;
         
         if (isHoliday) {
             dayText += `<div class="text-[9px] text-gray-400 text-center mt-2">🚫 公休</div>`;
@@ -180,48 +180,28 @@ window.renderAdminCalendar = function() {
                 return ta.localeCompare(tb);
             });
             
-            dayText += `<div class="w-full flex flex-col gap-[3px] overflow-hidden">`;
-sorted.forEach(booking => {
-    const time = (typeof booking === 'string') ? booking : booking.time;
-    const user = (typeof booking === 'object' && booking.user) ? booking.user : 'Admin';
-    const status = (typeof booking === 'object' && booking.status) ? booking.status : 'approved';
-    
-    let barClass = 'bar-confirmed';
-    let statusIcon = '✓';
-    
-    if (status === 'pending') {
-        barClass = 'bar-pending';
-        statusIcon = '⏳';
-    } else if (status === 'pending_payment') {
-        barClass = 'bar-pending-payment';
-        statusIcon = '💰';
-    }
-    
-    let detailsHtml = '';
-if (details) {
-    if (details.design && details.design.name) {
-        // 從 text-[9px] 改為 text-[10px]
-        detailsHtml += `<div class="text-[10px] text-gray-600 font-medium">🎨 ${details.design.name}`;
-        if (details.design.keywords && details.design.keywords.length > 0) {
-            detailsHtml += ` (${details.design.keywords.join(', ')})`;
+            dayText += `<div class="w-full flex flex-col gap-[4px] overflow-hidden">`;
+            sorted.forEach(booking => {
+                const time = (typeof booking === 'string') ? booking : booking.time;
+                const user = (typeof booking === 'object' && booking.user) ? booking.user : 'Admin';
+                const status = (typeof booking === 'object' && booking.status) ? booking.status : 'approved';
+                
+                let barClass = 'bar-confirmed';
+                let statusIcon = '✓';
+                
+                if (status === 'pending') {
+                    barClass = 'bar-pending';
+                    statusIcon = '⏳';
+                } else if (status === 'pending_payment') {
+                    barClass = 'bar-pending-payment';
+                    statusIcon = '💰';
+                }
+                
+                const displayUser = user.length > 3 ? user.substring(0, 3) + '…' : user;
+                dayText += `<div class="booking-bar ${barClass} text-[11px] font-semibold" title="${time} ${user}">${statusIcon}${time} ${displayUser}</div>`;
+            });
+            dayText += `</div>`;
         }
-        detailsHtml += `</div>`;
-    }
-    if (details.removal && details.removal.name) {
-        detailsHtml += `<div class="text-[10px] text-gray-600 font-medium">💅 ${details.removal.name}</div>`;
-    }
-    if (details.extras && details.extras.length > 0) {
-        const extrasStr = details.extras.map(e => {
-            if (e.count) return `${e.name} x${e.count}`;
-            return e.name;
-        }).join(', ');
-        detailsHtml += `<div class="text-[10px] text-gray-600 font-medium">✨ ${extrasStr}</div>`;
-    }
-}
-
-// ✅ 日期標題也放大
-dayText += `<div class="text-[12px] font-bold mb-1 ${dateColor}">${item.date}</div>`;
-
         
         div.innerHTML = dayText;
         div.className = `admin-day ${isPastDate ? 'status-past' : ''} ${index === adminSelectedIndex ? 'selected' : ''}`;
@@ -620,8 +600,6 @@ window.rejectBooking = async function(dateStr, bookingIndex, userId) {
 
 ---
 LOST.IN.GALLERY_`);
-
-        await sendLineMessage(userId, message);
         
         alert('✅ 已拒絕預約並通知顧客');
         await window.fetchAdminCalendarData();
@@ -669,7 +647,7 @@ LOST.IN.GALLERY_`);
 
 // 取消預約
 window.cancelBooking = async function(dateStr, bookingIndex, userId) {
-      if (!confirm('確定要取消此預約嗎？')) return;
+    if (!confirm('確定要取消此預約嗎？')) return;
     
     window.showLoading(true);
     try {
@@ -685,8 +663,6 @@ window.cancelBooking = async function(dateStr, bookingIndex, userId) {
 
 📅 預約日期：${dateStr}
 ⏰ 預約時間：${booking.time}
-
-取消原因：${reason}
 
 如需重新預約請聯繫我們
 造成不便敬請見諒
@@ -708,7 +684,6 @@ LOST.IN.GALLERY_`);
 
 // 更新預約狀態
 async function updateBookingStatus(dateStr, bookingIndex, newStatus) {
-    // dateStr 已經是正確格式，直接使用
     const dateId = dateStr;
     
     const { data, error: fetchErr } = await supabaseClient
@@ -734,7 +709,6 @@ async function updateBookingStatus(dateStr, bookingIndex, newStatus) {
 
 // 刪除預約
 async function removeBooking(dateStr, bookingIndex) {
-    // dateStr 已經是正確格式，直接使用
     const dateId = dateStr;
     
     const { data, error: fetchErr } = await supabaseClient
@@ -755,6 +729,7 @@ async function removeBooking(dateStr, bookingIndex) {
     
     if (updateErr) throw updateErr;
 }
+
 // 取得預約資料
 function getBookingByDateAndIndex(dateStr, bookingIndex) {
     const parts = dateStr.split('-');
@@ -770,7 +745,6 @@ function getBookingByDateAndIndex(dateStr, bookingIndex) {
 
 // 發送 LINE 訊息
 async function sendLineMessage(userId, message) {
-    // 改用 Vercel API
     const response = await fetch('/api/send-line-message', {
         method: 'POST',
         headers: {
@@ -790,3 +764,5 @@ async function sendLineMessage(userId, message) {
     
     return await response.json();
 }
+
+console.log('✅ admin.js 載入完成');
