@@ -1,142 +1,156 @@
+/* ==========================================================
+   Nail Collector - 完整樣式表
+   ========================================================== */
+
 /* ========== 共用樣式 ========== */
-body { 
-    font-family: 'Noto Sans TC', sans-serif; 
-    background-color: #f9fafb; 
-    color: #333; 
-    -webkit-tap-highlight-color: transparent; 
+body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background-color: #f9fafb;
+    color: #333;
+    -webkit-tap-highlight-color: transparent;
 }
 
-.rounded-custom { border-radius: 24px; }
-
-.btn-toggle { 
-    transition: all 0.2s; 
-    background-color: #fff; 
-    color: #666; 
-    border: 1px solid #e5e7eb; 
+.rounded-custom {
+    border-radius: 24px;
 }
 
-.btn-toggle.active { 
-    background-color: #374151; 
-    color: #fff; 
-    border-color: #374151; 
+.btn-toggle {
+    transition: all 0.2s;
+    background-color: #fff;
+    color: #666;
+    border: 1px solid #e5e7eb;
 }
 
-.fade-in { 
-    animation: fadeIn 0.3s ease-in-out; 
+.btn-toggle.active {
+    background-color: #374151;
+    color: #fff;
+    border-color: #374151;
 }
 
-.scale-110 { 
-    transform: scale(1.1); 
-    transition: transform 0.2s ease-in-out; 
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
 }
 
-@keyframes fadeIn { 
-    from { opacity: 0; transform: translateY(-5px); } 
-    to { opacity: 1; transform: translateY(0); } 
+.scale-110 {
+    transform: scale(1.1);
+    transition: transform 0.2s ease-in-out;
 }
 
-#global-loading { 
-    position: fixed; 
-    top: 0; 
-    left: 0; 
-    right: 0; 
-    bottom: 0; 
-    background: rgba(255,255,255,0.95); 
-    z-index: 9999; 
-    display: flex; 
-    justify-content: center; 
-    align-items: center; 
-    flex-direction: column; 
-    transition: opacity 0.3s; 
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ========== 顧客端專用樣式 ========== */
-.calendar-day { 
-    aspect-ratio: 1/1; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    cursor: pointer; 
-    border-radius: 50%; 
-    font-size: 0.8rem; 
-    position: relative; 
-    background: #fff; 
+/* ---- 全域 Loading 遮罩 ---- */
+#global-loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    transition: opacity 0.3s;
 }
 
-.calendar-day.selected { 
-    background-color: #374151; 
-    color: #fff; 
+
+/* ==========================================================
+   顧客端 - 日曆
+   ========================================================== */
+.calendar-day {
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 50%;
+    font-size: 0.8rem;
+    position: relative;
+    background: #fff;
 }
 
-.calendar-day.booked { 
-    background-color: #d1d5db; 
-    color: #6b7280; 
+/* 已選取 */
+.calendar-day.selected {
+    background-color: #374151;
+    color: #fff;
 }
 
-.calendar-day.closed { 
-    background-color: #374151;  /* 深灰色 */
-    color: #fff;                /* 白色文字 */
-    cursor: pointer;            /* 可點擊 */
-    text-decoration: line-through; 
+/* 已被預約（滿） */
+.calendar-day.booked {
+    background-color: #d1d5db;
+    color: #6b7280;
 }
 
-.calendar-day.not-open { 
-    background-color: #d1d5db; 
-    color: #6b7280; 
-    cursor: not-allowed; 
-    position: relative; 
+/* 公休日 - 不可點擊 */
+.calendar-day.closed {
+    background-color: #d1d5db;
+    color: #6b7280;
+    cursor: not-allowed;
+    text-decoration: line-through;
 }
 
-.calendar-day.not-open::after { 
-    content: '未開放'; 
-    position: absolute; 
-    bottom: 2px; 
-    font-size: 7px; 
-    color: #4b5563; 
+/* 尚未開放預約 */
+.calendar-day.not-open {
+    background-color: #d1d5db;
+    color: #6b7280;
+    cursor: not-allowed;
+    position: relative;
 }
 
-.calendar-day.closed { 
-    background-color: #d1d5db; 
-    color: #6b7280; 
-    cursor: not-allowed; 
-    text-decoration: line-through; 
+.calendar-day.not-open::after {
+    content: '未開放';
+    position: absolute;
+    bottom: 2px;
+    font-size: 7px;
+    color: #4b5563;
 }
 
-.rule-box { 
-    background-color: #e5e7eb; 
-    border-radius: 16px; 
-    padding: 12px; 
-    font-size: 0.75rem; 
-    color: #666; 
-    margin-top: 8px; 
-    line-height: 1.6; 
+
+/* ==========================================================
+   顧客端 - 預約操作元件
+   ========================================================== */
+.rule-box {
+    background-color: #e5e7eb;
+    border-radius: 16px;
+    padding: 12px;
+    font-size: 0.75rem;
+    color: #666;
+    margin-top: 8px;
+    line-height: 1.6;
 }
 
-.counter-btn { 
-    width: 28px; 
-    height: 28px; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    border-radius: 50%; 
-    background-color: #e5e7eb; 
-    color: #4b5563; 
-    font-size: 12px; 
+.counter-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: #e5e7eb;
+    color: #4b5563;
+    font-size: 12px;
 }
 
-.counter-btn:active { 
-    background-color: #d1d5db; 
+.counter-btn:active {
+    background-color: #d1d5db;
 }
 
-#selected-time-display { 
-    transition: all 0.2s ease-in-out; 
+#selected-time-display {
+    transition: all 0.2s ease-in-out;
 }
 
-#confirm-time-btn { 
-    transition: all 0.3s ease-in-out; 
+#confirm-time-btn {
+    transition: all 0.3s ease-in-out;
 }
 
-/* 管理後台日曆樣式 */
+
+/* ==========================================================
+   管理後台 - 日曆
+   ========================================================== */
 .admin-day {
     padding: 12px 8px;
     border-radius: 8px;
@@ -154,26 +168,26 @@ body {
     border-color: #d1d5db;
 }
 
+/* 已選取 */
 .admin-day.selected {
     background: #dbeafe;
     border-color: #3b82f6;
 }
 
-/* ✅ 公休日期 - 灰色背景 */
+/* 公休日 - 灰色背景 */
 .admin-day.status-off {
-    background: #f3f4f6 !important;  /* 淺灰色背景 */
+    background: #f3f4f6 !important;
     border-color: #d1d5db;
     cursor: default;
     opacity: 0.7;
 }
 
 .admin-day.status-off:hover {
-    background: #e5e7eb !important;  /* 稍微深一點的灰色 */
+    background: #e5e7eb !important;
 }
 
-/* 公休日期的日期數字 */
 .admin-day.status-off .text-gray-700 {
-    color: #9ca3af !important;  /* 灰色文字 */
+    color: #9ca3af !important;
 }
 
 /* 過去日期 */
