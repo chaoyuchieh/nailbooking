@@ -139,10 +139,9 @@ window.fetchAdminCalendarData = async function() {
     }
 };
 
-// === 渲染行事曆 ===
-// === 渲染行事曆 (TimeTree 彩色標籤版) ===
+// === 渲染行事曆 (TimeTree 真實風格) ===
 window.renderAdminCalendar = function() {
-    console.log('🎨 渲染管理行事曆 (TimeTree 彩色標籤)...');
+    console.log('🎨 渲染管理行事曆 (TimeTree 風格)...');
     const grid = document.getElementById('admin-calendar-grid');
     if (!grid) return;
     
@@ -197,19 +196,19 @@ window.renderAdminCalendar = function() {
                 const status = (typeof booking === 'object' && booking.status) ? booking.status : 'confirmed';
                 
                 // 根據狀態決定顏色類別
-                let statusClass = 'status-confirmed';
+                let tagStatusClass = 'status-confirmed';
                 if (status === 'pending') {
-                    statusClass = 'status-pending';
+                    tagStatusClass = 'status-pending';
                 } else if (status === 'pending_payment') {
-                    statusClass = 'status-pending-payment';
+                    tagStatusClass = 'status-pending-payment';
                 } else if (status === 'rejected') {
-                    statusClass = 'status-rejected';
+                    tagStatusClass = 'status-rejected';
                 }
                 
-                // 截短名字（最多 4 個字）
-                const displayUser = user.length > 4 ? user.substring(0, 4) : user;
+                // 截短名字（最多 3 個字）
+                const displayUser = user.length > 3 ? user.substring(0, 3) : user;
                 
-                dayHTML += `<div class="booking-tag ${statusClass}" title="${time} ${user}">⏰ ${time} ${displayUser}</div>`;
+                dayHTML += `<div class="booking-tag ${tagStatusClass}" title="${time} ${user}">${time} ${displayUser}</div>`;
             });
             
             // 如果超過 2 筆，顯示 +N more
