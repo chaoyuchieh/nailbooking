@@ -216,8 +216,17 @@ window.renderAdminCalendar = function() {
                 else if (status === 'pending_payment') statusClass = 'status-pending-payment';
                 else if (status === 'rejected') statusClass = 'status-rejected';
                 
-                const shortName = user.length > 2 ? user.substring(0, 2) : user;
-                html += `<div class="booking-tag ${statusClass}" title="${time} ${user}">${time} ${shortName}</div>`;
+                // ✅ 智慧顯示：短名字顯示全部，長名字顯示前3字
+                let displayText;
+                if (user.length <= 3) {
+                    displayText = `${time} ${user}`;
+                } else if (user.length <= 5) {
+                    displayText = `${time} ${user.substring(0, 3)}`;
+                } else {
+                    displayText = `${time} ${user.substring(0, 2)}`;
+                }
+                
+                html += `<div class="booking-tag ${statusClass}" title="👤 ${user}\n⏰ ${time}\n📊 ${status}">${displayText}</div>`;
             });
             html += `</div>`;
         }
