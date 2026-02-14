@@ -224,11 +224,14 @@ window.renderAdminCalendar = function() {
         div.innerHTML = dayHTML;
         div.className = statusClass;
         
-        div.onclick = () => {
-        window.selectAdminDate(index);
-        window.renderAdminCalendar();  // 只在這裡呼叫一次
-    };
-};
+       div.onclick = () => {
+    window.selectAdminDate(index);
+    window.renderAdminCalendar();
+};        // ← 正確的括號位置
+
+grid.appendChild(div);
+});       // ← forEach 的正確結尾
+};        // ← 函數的正確結尾
 // === 選擇日期 ===
 window.selectAdminDate = function(index) {
     console.log('選擇日期:', index);
