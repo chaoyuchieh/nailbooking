@@ -436,23 +436,23 @@ window.renderCalendar = function() {
             div.onclick = () => window.selectDate(div, item.date, item.bookedSlots);
         }
         
-        grid.appendChild(div);
+       grid.appendChild(div);
     });
-};
-
-window.selectDate = function(el, date, slots) {
-    document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
-    el.classList.add('selected'); 
-    selectedDate = `${currentMonth+1}/${date}`;
-    selectedTime = null;
     
-    currentTimeHour = 10;
-    currentTimeMinute = 0;
-    currentDateBookedTimes = slots.map(s => typeof s === 'string' ? s : s.time);
-    
-    window.renderTimeSelector();
-    window.updateServiceEndTime();
-    window.validate();
+    // 顯示可預約範圍
+    const rangeInfo = document.getElementById('booking-range-info');
+    const rangeText = document.getElementById('booking-range-text');
+    if (rangeInfo && rangeText && bookingOpenRanges.ranges && bookingOpenRanges.ranges.length > 0) {
+        const parts = bookingOpenRanges.ranges.map(r => {
+            const s = `${r.start.getMonth() + 1}/${r.start.getDate()}`;
+            const e = `${r.end.getMonth() + 1}/${r.end.getDate()}`;
+            return `${s} ~ ${e}`;
+        });
+        rangeText.innerText = parts.join('、');
+        rangeInfo.classList.remove('hidden');
+    } else if (rangeInfo) {
+        rangeInfo.classList.add('hidden');
+    }
 };
 
 // ===== 時間選擇相關 =====
