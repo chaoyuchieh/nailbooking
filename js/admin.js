@@ -139,26 +139,25 @@ window.fetchAdminCalendarData = async function() {
     }
 };
 
-// === 渲染行事曆 (TimeTree 真實風格 - 橫向排列) ===
+// === 渲染行事曆 (優化後的日系精緻風格) ===
 window.renderAdminCalendar = function() {
-    console.log('🎨 渲染管理行事曆 (TimeTree 風格)...');
+    console.log('🎨 渲染管理行事曆 (精確字體比例版)...');
     const grid = document.getElementById('admin-calendar-grid');
     if (!grid) return;
     
     grid.innerHTML = '';
     
-    // 月初空白
+    // 月初空白格子
     const firstDay = new Date(adminYear, adminMonth, 1).getDay();
     for (let i = 0; i < firstDay; i++) {
         const emptyDiv = document.createElement('div');
-        emptyDiv.className = 'admin-day';
+        emptyDiv.className = 'admin-day opacity-50 bg-gray-50'; // 空白格稍微變暗
         grid.appendChild(emptyDiv);
     }
     
     const todayDate = new Date();
     todayDate.setHours(0, 0, 0, 0);
     
-    // 渲染每一天
     calendarData.forEach((item, index) => {
         const div = document.createElement('div');
         
@@ -167,17 +166,14 @@ window.renderAdminCalendar = function() {
         const isPastDate = itemDate < todayDate;
         
         const dateStr = `${adminYear}-${String(adminMonth + 1).padStart(2, '0')}-${String(item.date).padStart(2, '0')}`;
-        const isHoliday = item.status === 'booked' || closedDates.includes(dateStr);
+        const isClosed = item.status === 'booked' || closedDates.includes(dateStr);
         const hasBooking = item.bookedSlots && item.bookedSlots.length > 0;
         
-        // 構建日期數字
+        // 1. 構建日期數字 (CSS 會處理 18px)
         let dayHTML = `<div class="date-number">${item.date}</div>`;
         
-        // 根據狀態構建內容
-        let statusClass = 'admin-day';
-        
-        if (isHoliday) {
-            statusClass += ' status-off';
+        // 2. 構建標籤區域
+        if (isClosed) {
             dayHTML += `<div class="holiday-label">🚫 公休</div>`;
         } else if (hasBooking) {
             // 排序預約
@@ -189,41 +185,39 @@ window.renderAdminCalendar = function() {
             
             dayHTML += `<div class="booking-info">`;
             
-            // 顯示所有預約（橫向排列）
-            sorted.forEach((booking, idx) => {
+            sorted.forEach((booking) => {
                 const time = (typeof booking === 'string') ? booking : booking.time;
                 const user = (typeof booking === 'object' && booking.user) ? booking.user : 'Admin';
                 const status = (typeof booking === 'object' && booking.status) ? booking.status : 'confirmed';
                 
-                // 根據狀態決定顏色類別
+                // 狀態與顏色對應
                 let tagStatusClass = 'status-confirmed';
                 if (status === 'pending') {
-                    tagStatusClass = 'status-pending';
+                    tagStatusClass = 'status-pending'; // 對應粉色
                 } else if (status === 'pending_payment') {
-                    tagStatusClass = 'status-pending-payment';
+                    tagStatusClass = 'status-pending-payment'; // 對應橘色
                 } else if (status === 'rejected') {
-                    tagStatusClass = 'status-rejected';
+                    tagStatusClass = 'status-rejected'; // 對應灰色
                 }
                 
-                // 截短名字（最多 2-3 個字）
+                // 顯示邏輯：[時間] [名字截短]
                 const displayUser = user.length > 2 ? user.substring(0, 2) : user;
-                
-                dayHTML += `<div class="booking-tag ${tagStatusClass}" title="${time} ${user}">${time} ${displayUser}</div>`;
+                dayHTML += `<div class="booking-tag ${tagStatusClass}" title="${time} ${user}">
+                    ${time} ${displayUser}
+                </div>`;
             });
             
             dayHTML += `</div>`;
         }
         
-        if (isPastDate) {
-            statusClass += ' status-past';
-        }
-        
-        if (index === adminSelectedIndex) {
-            statusClass += ' selected';
-        }
+        // 3. 設定外層容器 Class
+        let containerClass = 'admin-day';
+        if (isPastDate) containerClass += ' status-past';
+        if (isClosed) containerClass += ' status-off';
+        if (index === adminSelectedIndex) containerClass += ' selected';
         
         div.innerHTML = dayHTML;
-        div.className = statusClass;
+        div.className = containerClass;
         div.onclick = () => window.selectAdminDate(index);
         grid.appendChild(div);
     });
