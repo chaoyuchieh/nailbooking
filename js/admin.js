@@ -601,7 +601,7 @@ async function updateBookingStatus(dateStr, bookingIndex, newStatus) {
         .from('calendar_slots')
         .select('*')
         .eq('date_id', dateStr)
-        .single();
+        .maybeSingle();
     
     if (fetchErr) throw fetchErr;
     
@@ -631,7 +631,7 @@ async function removeBooking(dateStr, bookingIndex) {
         .from('calendar_slots')
         .select('*')
         .eq('date_id', dateStr)
-        .single();
+        .maybeSingle();
     
     if (fetchErr) throw fetchErr;
     
