@@ -144,14 +144,22 @@ window.recheckFriendship = async function() {
 
 // ===== 選項選擇功能 =====
 
+// ===== 修復選項選擇功能 =====
+
 window.selectSingleOption = function(el, price, group, name) {
+    // ✅ 移除同組其他選項的 active class
     document.querySelectorAll(`button[data-group="${group}"]`).forEach(b => b.classList.remove('active'));
+    
+    // 如果選擇設計，清除相關規則
     if (group === 'design') {
         document.querySelectorAll('.rule-box').forEach(b => b.classList.add('hidden'));
         document.getElementById('keyword1').value = '';
         document.getElementById('keyword2').value = '';
     }
+    
+    // ✅ 為選中的按鈕加入 active class
     el.classList.add('active');
+    
     priceState[group] = price;
     
     if (group === 'design') {
@@ -165,7 +173,10 @@ window.selectSingleOption = function(el, price, group, name) {
 };
 
 window.toggleRemovalNeed = function(need, el) {
+    // ✅ 移除同組其他選項的 active class
     document.querySelectorAll(`button[data-group="removal-need"]`).forEach(b => b.classList.remove('active'));
+    
+    // ✅ 為選中的按鈕加入 active class
     el.classList.add('active');
     
     const removalOptions = document.getElementById('removal-options');
@@ -189,121 +200,95 @@ window.toggleRemovalNeed = function(need, el) {
     window.validate();
 };
 
-window.updateBigDiamondCount = function(n) {
-    if (bigDiamondCount + n >= 0) { 
-        bigDiamondCount += n; 
-        document.getElementById('big-diamond-count').innerText = bigDiamondCount; 
-        window.updateUI(); 
-    }
-};
-
-window.updateNailPolishRemovalCount = function(n) {
-    if (nailPolishRemovalCount + n >= 0) { 
-        nailPolishRemovalCount += n; 
-        document.getElementById('nail-polish-removal-count').innerText = nailPolishRemovalCount; 
-        window.updateUI(); 
-    }
-};
-
 window.toggleService = function(el, price, name) {
+    // ✅ 切換 active class
     if (el.classList.contains('active')) { 
-        el.classList.remove('active'); 
+        el.classList.remove('active');  // 移除選中狀態
         priceState.extras -= price;
         bookingDetails.extras = bookingDetails.extras.filter(e => e.name !== name);
     } else { 
-        el.classList.add('active'); 
+        el.classList.add('active');  // 加入選中狀態
         priceState.extras += price;
         bookingDetails.extras.push({ name: name || '加購項目', price: price });
     }
     window.updateUI();
 };
 
-window.toggleDesignRule = function(id, el) {
-    const rule = document.getElementById(id);
-    if (el.classList.contains('active')) rule.classList.remove('hidden');
-    else rule.classList.add('hidden');
+window.quickSelectTime = function(hour, minute) {
+    currentTimeHour = hour;
+    currentTimeMinute = minute;
+    
+    // ✅ 更新快速選擇按鈕的 active 狀態
+    document.querySelectorAll('#quick-time-slots button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    const timeDisplay = document.getElementById('selected-time-display');
+    timeDisplay.innerText = window.formatTime(currentTimeHour, currentTimeMinute);
+    
+    window.updateServiceEndTime();
+    window.checkTimeConflict();
+    
+    timeDisplay.classList.add('scale-110');
+    setTimeout(() => {
+        timeDisplay.classList.remove('scale-110');
+    }, 200);
 };
 
-window.updateExtensionCount = function(n) {
-    if (extensionCount + n >= 0) { 
-        extensionCount += n; 
-        document.getElementById('ext-count').innerText = extensionCount; 
-        window.updateUI(); 
+window.adjustTime = function(minutes) {
+    let totalMinutes = currentTimeHour * 60 + currentTimeMinute + minutes;
+    
+    const startMinutes = CONFIG.BUSINESS_HOURS.start.hour * 60 + CONFIG.BUSINESS_HOURS.start.minute;
+    const endMinutes = CONFIG.BUSINESS_HOURS.end.hour * 60 + CONFIG.BUSINESS_HOURS.end.minute;
+    
+    if (totalMinutes < startMinutes) {
+        currentTimeHour = CONFIG.BUSINESS_HOURS.start.hour;
+        currentTimeMinute = CONFIG.BUSINESS_HOURS.start.minute;
+    } else if (totalMinutes > endMinutes) {
+        currentTimeHour = CONFIG.BUSINESS_HOURS.end.hour;
+        currentTimeMinute = CONFIG.BUSINESS_HOURS.end.minute;
+    } else {
+        currentTimeHour = Math.floor(totalMinutes / 60);
+        currentTimeMinute = totalMinutes % 60;
     }
+    
+    // ✅ 更新快速選擇按鈕的 active 狀態
+    document.querySelectorAll('#quick-time-slots button').forEach(btn => {
+        const btnTime = btn.innerText;
+        const currentTime = window.formatTime(currentTimeHour, currentTimeMinute);
+        if (btnTime === currentTime) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+    
+    const timeDisplay = document.getElementById('selected-time-display');
+    timeDisplay.innerText = window.formatTime(currentTimeHour, currentTimeMinute);
+    
+    window.updateServiceEndTime();
+    window.checkTimeConflict();
 };
 
-window.updateRepairCount = function(n) {
-    if (repairCount + n >= 0) { 
-        repairCount += n; 
-        document.getElementById('repair-count').innerText = repairCount; 
-        window.updateUI(); 
-    }
-};
-
-window.updateUnlimitedJumpCount = function(n) {
-    if (unlimitedJumpCount + n >= 0) { 
-        unlimitedJumpCount += n; 
-        document.getElementById('unlimited-jump-count').innerText = unlimitedJumpCount; 
-        window.updateUI(); 
-    }
-};
-
-window.calculateTotal = function() {
-    return priceState.design + priceState.removal + priceState.extras + 
-           (unlimitedJumpCount * 100) + (extensionCount * 150) + (repairCount * 50) +
-           (bigDiamondCount * 50) + (nailPolishRemovalCount * 50);
-};
-
-window.updateUI = function() {
-    const total = window.calculateTotal();
-    const priceEl = document.getElementById('price-display');
-    priceEl.innerText = total;
-    if (total === 0) priceEl.classList.add('text-red-500'); 
-    else priceEl.classList.remove('text-red-500');
+window.selectDate = function(el, date, slots) {
+    // ✅ 清除其他日期的 selected 狀態
+    document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
+    
+    // ✅ 為選中的日期加入 selected 狀態
+    el.classList.add('selected'); 
+    
+    selectedDate = `${currentMonth+1}/${date}`;
+    selectedTime = null;
+    
+    currentTimeHour = 10;
+    currentTimeMinute = 0;
+    currentDateBookedTimes = slots.map(s => typeof s === 'string' ? s : s.time);
+    
+    window.renderTimeSelector();
+    window.updateServiceEndTime();
     window.validate();
 };
-
-window.validate = function() {
-    const check = document.getElementById('term-check').checked;
-    const total = window.calculateTotal();
-    const btn = document.getElementById('submit-btn');
-    const msgEl = document.getElementById('validation-msg');
-    
-    let errors = [];
-    if (!userProfile || !userProfile.userId) errors.push("需 LINE 登入");
-    if (total <= 0) errors.push("未選項目");
-    
-    const needRemovalBtn = document.getElementById('need-removal-yes');
-    if (needRemovalBtn && needRemovalBtn.classList.contains('active')) {
-        const hasRemovalSelected = Array.from(document.querySelectorAll('button[data-group="removal"]'))
-            .some(btn => btn.classList.contains('active'));
-        if (!hasRemovalSelected) {
-            errors.push("請選擇卸甲方式");
-        }
-    }
-    
-    if (bookingDetails.design.name === '任我做') {
-        const k1 = document.getElementById('keyword1').value.trim();
-        const k2 = document.getElementById('keyword2').value.trim();
-        if (!k1 || !k2) errors.push("任我做需填關鍵字");
-    }
-    
-    if (!selectedDate) errors.push("未選日期");
-    if (!selectedTime) errors.push("未選時間");
-    if (!check) errors.push("未勾選同意");
-
-    const isValid = errors.length === 0;
-
-    if (isValid) {
-        btn.classList.remove('opacity-50');
-        msgEl.innerText = '';
-    } else {
-        btn.classList.add('opacity-50');
-        msgEl.innerText = errors.join(' / ');
-    }
-    btn.disabled = false;
-};
-
 // ===== 預約提交 =====
 
 window.checkAndSubmit = async function() {
