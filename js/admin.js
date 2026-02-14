@@ -223,16 +223,17 @@ window.renderAdminCalendar = function() {
         
         div.innerHTML = dayHTML;
         div.className = statusClass;
-        div.onclick = () => window.selectAdminDate(index);
-        grid.appendChild(div);
-    });
+        
+        div.onclick = () => {
+        window.selectAdminDate(index);
+        window.renderAdminCalendar();  // 只在這裡呼叫一次
+    };
 };
 // === 選擇日期 ===
 window.selectAdminDate = function(index) {
     console.log('選擇日期:', index);
     adminSelectedIndex = index;
-    window.renderAdminCalendar();
-    
+
     const item = calendarData[index];
     document.getElementById('admin-edit-area').classList.remove('hidden');
     document.getElementById('admin-edit-date-title').innerText = `${adminMonth + 1} / ${item.date}`;
