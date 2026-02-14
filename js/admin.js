@@ -4,10 +4,10 @@ console.log('🚀 admin.js 開始載入...');
 
 // === 檢查依賴 ===
 if (typeof CONFIG === 'undefined') {
-    console.error('❌ CONFIG 未定義，請確認 config.js 已載入');
+    console.error('❌ CONFIG 未定義,請確認 config.js 已載入');
 }
 if (typeof supabaseClient === 'undefined') {
-    console.warn('⚠️ supabaseClient 未定義，將使用離線模式');
+    console.warn('⚠️ supabaseClient 未定義,將使用離線模式');
 }
 
 // === 管理後台專用變數 ===
@@ -31,15 +31,12 @@ window.doAdminLogin = function() {
         console.log('✅ 登入成功');
         sessionStorage.removeItem('manualLogout');
         
-        // 隱藏登入畫面
         document.getElementById('login-overlay').classList.add('hidden');
         
-        // 顯示管理面板
         const adminPanel = document.getElementById('admin-panel');
         adminPanel.classList.remove('hidden');
         adminPanel.style.display = 'flex';
         
-        // 初始化管理功能
         window.initAdminYearSelector();
         window.fetchAdminCalendarData();
     } else {
@@ -101,10 +98,8 @@ window.fetchAdminCalendarData = async function() {
     window.showLoading(true);
     
     try {
-        // 先初始化本月資料結構 (使用 common.js 的 initMockData)
         window.initMockData(true, adminYear, adminMonth);
         
-        // 如果有 Supabase，載入實際資料
         if (supabaseClient) {
             const { data, error } = await supabaseClient
                 .from('calendar_slots')
@@ -112,10 +107,8 @@ window.fetchAdminCalendarData = async function() {
                 
             if (error) throw error;
             
-            // 載入關閉日期 (使用 common.js 的函數)
             await window.loadClosedDates();
             
-            // 合併資料
             if (data) {
                 data.forEach(row => {
                     const parts = row.date_id.split('-');
@@ -130,7 +123,7 @@ window.fetchAdminCalendarData = async function() {
             }
         }
     } catch (err) {
-        console.log('⚠️ 無法載入資料，使用離線模式:', err.message);
+        console.log('⚠️ 無法載入資料,使用離線模式:', err.message);
     } finally {
         window.showLoading(false);
         window.renderAdminCalendar();
@@ -138,7 +131,8 @@ window.fetchAdminCalendarData = async function() {
         window.updateTodayBookingStats();
     }
 };
-// === 渲染行事曆 (TimeTree 真實風格 - 橫向排列) ===
+
+// === ✅ 修正後的渲染行事曆函數 ===
 window.renderAdminCalendar = function() {
     console.log('🎨 渲染管理行事曆...');
     const grid = document.getElementById('admin-calendar-grid');
@@ -146,7 +140,6 @@ window.renderAdminCalendar = function() {
     
     grid.innerHTML = '';
     
-    // 月初空白
     const firstDay = new Date(adminYear, adminMonth, 1).getDay();
     for (let i = 0; i < firstDay; i++) {
         const emptyDiv = document.createElement('div');
@@ -157,7 +150,6 @@ window.renderAdminCalendar = function() {
     const todayDate = new Date();
     todayDate.setHours(0, 0, 0, 0);
     
-    // 渲染每一天
     calendarData.forEach((item, index) => {
         const div = document.createElement('div');
         
@@ -169,17 +161,14 @@ window.renderAdminCalendar = function() {
         const isHoliday = item.status === 'booked' || closedDates.includes(dateStr);
         const hasBooking = item.bookedSlots && item.bookedSlots.length > 0;
         
-        // 構建日期數字
         let dayHTML = `<div class="date-number">${item.date}</div>`;
         
-        // 根據狀態構建內容
         let statusClass = 'admin-day';
         
         if (isHoliday) {
             statusClass += ' status-off';
             dayHTML += `<div class="holiday-label">🚫 公休</div>`;
         } else if (hasBooking) {
-            // 排序預約
             const sorted = [...item.bookedSlots].sort((a, b) => {
                 const ta = (typeof a === 'string' ? a : a.time);
                 const tb = (typeof b === 'string' ? b : b.time);
@@ -188,13 +177,11 @@ window.renderAdminCalendar = function() {
             
             dayHTML += `<div class="booking-info">`;
             
-            // 顯示所有預約（橫向排列）
-            sorted.forEach((booking, idx) => {
+            sorted.forEach((booking) => {
                 const time = (typeof booking === 'string') ? booking : booking.time;
                 const user = (typeof booking === 'object' && booking.user) ? booking.user : 'Admin';
                 const status = (typeof booking === 'object' && booking.status) ? booking.status : 'confirmed';
                 
-                // 根據狀態決定顏色類別
                 let tagStatusClass = 'status-confirmed';
                 if (status === 'pending') {
                     tagStatusClass = 'status-pending';
@@ -204,7 +191,6 @@ window.renderAdminCalendar = function() {
                     tagStatusClass = 'status-rejected';
                 }
                 
-                // 截短名字（最多 2-3 個字）
                 const displayUser = user.length > 2 ? user.substring(0, 2) : user;
                 
                 dayHTML += `<div class="booking-tag ${tagStatusClass}" title="${time} ${user}">${time} ${displayUser}</div>`;
@@ -224,14 +210,16 @@ window.renderAdminCalendar = function() {
         div.innerHTML = dayHTML;
         div.className = statusClass;
         
-       div.onclick = () => {
-    window.selectAdminDate(index);
-    window.renderAdminCalendar();
-};        // ← 正確的括號位置
+        // ✅ 修正: onclick 事件定義在這裡結束
+        div.onclick = () => {
+            window.selectAdminDate(index);
+            window.renderAdminCalendar();
+        };
+        
+        grid.appendChild(div);
+    }); // ✅ forEach 正確結尾
+}; // ✅ 函數正確結尾
 
-grid.appendChild(div);
-});       // ← forEach 的正確結尾
-};        // ← 函數的正確結尾
 // === 選擇日期 ===
 window.selectAdminDate = function(index) {
     console.log('選擇日期:', index);
@@ -241,27 +229,24 @@ window.selectAdminDate = function(index) {
     document.getElementById('admin-edit-area').classList.remove('hidden');
     document.getElementById('admin-edit-date-title').innerText = `${adminMonth + 1} / ${item.date}`;
     
-    // 更新關閉按鈕狀態
     const closeBtn = document.getElementById('admin-close-date-btn');
     const dateStr = `${adminYear}-${String(adminMonth + 1).padStart(2, '0')}-${String(item.date).padStart(2, '0')}`;
     const isClosed = closedDates.includes(dateStr) || item.status === 'booked';
     
     if (isClosed) {
-        closeBtn.textContent = '✓ 已關閉此日期（點擊重新開放）';
+        closeBtn.textContent = '✓ 已關閉此日期(點擊重新開放)';
         closeBtn.className = 'w-full px-3 py-2 rounded-lg text-xs font-bold transition-colors border-2 border-red-300 bg-red-50 text-red-600';
     } else {
         closeBtn.textContent = '手動關閉此日期';
         closeBtn.className = 'w-full px-3 py-2 rounded-lg text-xs font-bold transition-colors border-2 border-gray-300 text-gray-600 hover:bg-gray-50';
     }
     
-    // 顯示預約清單
     const listContainer = document.getElementById('admin-schedule-list');
     listContainer.innerHTML = '';
     
     if (item.status === 'booked' || closedDates.includes(dateStr)) {
         listContainer.innerHTML = `<div class="text-center p-4 bg-gray-100 rounded text-gray-500">🚫 本日已設為公休</div>`;
     } else if (item.bookedSlots && item.bookedSlots.length > 0) {
-        // 排序預約
         const sorted = [...item.bookedSlots].sort((a, b) => {
             const ta = (typeof a === 'string' ? a : a.time);
             const tb = (typeof b === 'string' ? b : b.time);
@@ -279,7 +264,6 @@ window.selectAdminDate = function(index) {
             const row = document.createElement('div');
             row.className = 'bg-white border-2 rounded-lg overflow-hidden mb-3 shadow-sm';
             
-            // 狀態樣式
             let statusBgClass = 'bg-gray-100';
             let statusTextClass = 'text-gray-700';
             let statusText = '已確認';
@@ -307,7 +291,6 @@ window.selectAdminDate = function(index) {
                 statusIcon = '✗';
             }
             
-            // 組合詳細資訊
             let detailsHtml = '';
             if (details) {
                 if (details.design && details.design.name) {
@@ -330,20 +313,17 @@ window.selectAdminDate = function(index) {
             }
             
             row.innerHTML = `
-                <!-- 狀態標籤 -->
                 <div class="${statusBgClass} px-3 py-2 flex justify-between items-center">
                     <span class="${statusTextClass} text-xs font-bold">${statusIcon} ${statusText}</span>
                     <span class="text-xs text-gray-500">${time}</span>
                 </div>
                 
-                <!-- 預約資訊 -->
                 <div class="p-3">
                     <div class="font-bold text-sm mb-1">${userName}</div>
                     ${detailsHtml}
-                    <div class="text-xs font-bold text-gray-800 mt-2">預估金額：$${totalPrice}</div>
+                    <div class="text-xs font-bold text-gray-800 mt-2">預估金額:$${totalPrice}</div>
                 </div>
                 
-                <!-- 審核按鈕區 -->
                 <div id="booking-actions-${bookingIndex}" class="p-3 bg-gray-50 border-t border-gray-200">
                     ${status === 'pending' ? `
                         <div class="grid grid-cols-2 gap-2 mb-2">
@@ -411,7 +391,6 @@ window.toggleDateClosed = function() {
         console.log('🚫 關閉日期:', dateStr);
     }
     
-    // 重新選擇以更新 UI
     window.selectAdminDate(adminSelectedIndex);
 };
 
@@ -443,13 +422,11 @@ window.updateTodayBookingStats = function() {
     let totalBookings = 0;
     calendarData.forEach(item => {
         if (item.bookedSlots) {
-            // 只計算狀態不是 'rejected' 的預約
             const activeBookings = item.bookedSlots.filter(b => b.status !== 'rejected');
             totalBookings += activeBookings.length;
         }
     });
     
-    // 只顯示本月預約總數
     statsEl.innerHTML = `
         <div class="flex justify-between items-center py-1">
             <span class="text-gray-500 text-xs">本月預約總數</span>
@@ -457,6 +434,7 @@ window.updateTodayBookingStats = function() {
         </div>
     `;
 };
+
 // === 統計詳情切換 ===
 window.toggleStatsDetail = function() {
     const detail = document.getElementById('stats-detail');
@@ -476,18 +454,16 @@ window.saveAdminSettings = async function() {
         return;
     }
     
-    if (!confirm('確定要儲存所有變更嗎？')) {
+    if (!confirm('確定要儲存所有變更嗎?')) {
         return;
     }
     
     window.showLoading(true);
     try {
-        // 儲存關閉日期 (使用 common.js 的函數)
         await window.saveClosedDates();
-        
-        alert('✅ 儲存成功！');
+        alert('✅ 儲存成功!');
     } catch (e) {
-        alert('❌ 儲存失敗：' + e.message);
+        alert('❌ 儲存失敗:' + e.message);
     } finally {
         window.showLoading(false);
     }
@@ -495,33 +471,28 @@ window.saveAdminSettings = async function() {
 
 // ===== 審核功能 =====
 
-// ===== 修復所有審核函數 - 改成只重新渲染，不重新載入資料 =====
-
-// 需要訂金 - 發送付款資訊
 window.approveBookingWithDeposit = async function(dateStr, bookingIndex, userId) {
-    if (!confirm('確定此預約需要訂金嗎？\n\n將發送付款資訊給顧客')) return;
+    if (!confirm('確定此預約需要訂金嗎?\n\n將發送付款資訊給顧客')) return;
     
     window.showLoading(true);
     try {
-        // 更新狀態為等待付款
         await updateBookingStatus(dateStr, bookingIndex, 'pending_payment');
         
-        // 發送付款資訊
         const booking = getBookingByDateAndIndex(dateStr, bookingIndex);
         await sendLineMessage(userId, `【需要支付訂金】
 
-您好 ${booking.user}，
-您的預約已審核通過！
+您好 ${booking.user},
+您的預約已審核通過!
 
-📅 預約日期：${dateStr}
-⏰ 預約時間：${booking.time}
-💰 預估金額：$${booking.totalPrice}
+📅 預約日期:${dateStr}
+⏰ 預約時間:${booking.time}
+💰 預估金額:$${booking.totalPrice}
 
 💳 請支付訂金 $500
-匯款資訊：
-銀行代碼：XXX
-帳號：XXXXXXXXXXXX
-戶名：XXX
+匯款資訊:
+銀行代碼:XXX
+帳號:XXXXXXXXXXXX
+戶名:XXX
 
 完成匯款後請回覆「已匯款」
 我們確認後會立即通知您
@@ -530,73 +501,64 @@ window.approveBookingWithDeposit = async function(dateStr, bookingIndex, userId)
 LOST.IN.GALLERY_`);
         
         alert('✅ 已發送付款資訊給顧客');
-        // ✅ 只重新渲染，不重新載入
         window.renderAdminCalendar();
         window.selectAdminDate(adminSelectedIndex);
     } catch (e) {
-        alert('❌ 操作失敗：' + e.message);
+        alert('❌ 操作失敗:' + e.message);
     } finally {
         window.showLoading(false);
     }
 };
 
-// 直接確認
 window.approveBookingDirectly = async function(dateStr, bookingIndex, userId) {
-    if (!confirm('確定直接確認此預約嗎？')) return;
+    if (!confirm('確定直接確認此預約嗎?')) return;
     
     window.showLoading(true);
     try {
-        // 更新狀態為已確認
         await updateBookingStatus(dateStr, bookingIndex, 'confirmed');
         
-        // 發送確認訊息
         const booking = getBookingByDateAndIndex(dateStr, bookingIndex);
         await sendLineMessage(userId, `【預約確認成功】✅
 
-您好 ${booking.user}，
-您的預約已確認完成！
+您好 ${booking.user},
+您的預約已確認完成!
 
-📅 預約日期：${dateStr}
-⏰ 預約時間：${booking.time}
-💰 預估金額：$${booking.totalPrice}
+📅 預約日期:${dateStr}
+⏰ 預約時間:${booking.time}
+💰 預估金額:$${booking.totalPrice}
 
-期待您的到來！
+期待您的到來!
 如需變更請提前告知
 
 ---
 LOST.IN.GALLERY_`);
         
         alert('✅ 預約已確認');
-        // ✅ 只重新渲染，不重新載入
         window.renderAdminCalendar();
         window.selectAdminDate(adminSelectedIndex);
     } catch (e) {
-        alert('❌ 操作失敗：' + e.message);
+        alert('❌ 操作失敗:' + e.message);
     } finally {
         window.showLoading(false);
     }
 };
 
-// 拒絕預約
 window.rejectBooking = async function(dateStr, bookingIndex, userId) {
-    if (!confirm('確定要拒絕此預約嗎？')) return;
+    if (!confirm('確定要拒絕此預約嗎?')) return;
     
     window.showLoading(true);
     try {
-        // 先取得預約資料
         const booking = getBookingByDateAndIndex(dateStr, bookingIndex);
         
-        // 刪除預約
         await removeBooking(dateStr, bookingIndex);
         
-        // 發送通知（不含原因）
         await sendLineMessage(userId, `【預約未通過】
 
-您好 ${booking.user}，
-很抱歉，您的預約無法受理
+您好 ${booking.user},
+很抱歉,您的預約無法受理
 
-📅 預約日期：${dateStr}
-⏰ 預約時間：${booking.time}
+📅 預約日期:${dateStr}
+⏰ 預約時間:${booking.time}
 
 如有疑問請聯繫我們
 感謝您的理解
@@ -605,19 +567,17 @@ window.rejectBooking = async function(dateStr, bookingIndex, userId) {
 LOST.IN.GALLERY_`);
         
         alert('✅ 已拒絕預約並通知顧客');
-        // ✅ 只重新渲染，不重新載入
         window.renderAdminCalendar();
         window.selectAdminDate(adminSelectedIndex);
     } catch (e) {
-        alert('❌ 操作失敗：' + e.message);
+        alert('❌ 操作失敗:' + e.message);
     } finally {
         window.showLoading(false);
     }
 };
 
-// 確認付款
 window.confirmPayment = async function(dateStr, bookingIndex, userId) {
-    if (!confirm('確認顧客已完成付款嗎？')) return;
+    if (!confirm('確認顧客已完成付款嗎?')) return;
     
     window.showLoading(true);
     try {
@@ -626,48 +586,45 @@ window.confirmPayment = async function(dateStr, bookingIndex, userId) {
         const booking = getBookingByDateAndIndex(dateStr, bookingIndex);
         await sendLineMessage(userId, `【付款確認成功】✅
 
-您好 ${booking.user}，
-我們已確認收到您的訂金！
+您好 ${booking.user},
+我們已確認收到您的訂金!
 
-📅 預約日期：${dateStr}
-⏰ 預約時間：${booking.time}
-💰 預估金額：$${booking.totalPrice}
+📅 預約日期:${dateStr}
+⏰ 預約時間:${booking.time}
+💰 預估金額:$${booking.totalPrice}
 
 預約已完成確認
-期待您的到來！
+期待您的到來!
 
 ---
 LOST.IN.GALLERY_`);
         
         alert('✅ 付款已確認');
-        // ✅ 只重新渲染，不重新載入
         window.renderAdminCalendar();
         window.selectAdminDate(adminSelectedIndex);
     } catch (e) {
-        alert('❌ 操作失敗：' + e.message);
+        alert('❌ 操作失敗:' + e.message);
     } finally {
         window.showLoading(false);
     }
 };
 
-// 取消預約
 window.cancelBooking = async function(dateStr, bookingIndex, userId) {
-    if (!confirm('確定要取消此預約嗎？')) return;
+    if (!confirm('確定要取消此預約嗎?')) return;
     
     window.showLoading(true);
     try {
-        // 先取得預約資料（在刪除前）
         const booking = getBookingByDateAndIndex(dateStr, bookingIndex);
         
         await removeBooking(dateStr, bookingIndex);
         
         await sendLineMessage(userId, `【預約已取消】
 
-您好 ${booking.user}，
+您好 ${booking.user},
 您的預約已被取消
 
-📅 預約日期：${dateStr}
-⏰ 預約時間：${booking.time}
+📅 預約日期:${dateStr}
+⏰ 預約時間:${booking.time}
 
 如需重新預約請聯繫我們
 造成不便敬請見諒
@@ -676,25 +633,23 @@ window.cancelBooking = async function(dateStr, bookingIndex, userId) {
 LOST.IN.GALLERY_`);
         
         alert('✅ 已取消預約');
-        // ✅ 只重新渲染，不重新載入
         window.renderAdminCalendar();
         window.selectAdminDate(adminSelectedIndex);
     } catch (e) {
-        alert('❌ 操作失敗：' + e.message);
+        alert('❌ 操作失敗:' + e.message);
     } finally {
         window.showLoading(false);
     }
 };
-// ===== 輔助函數 =====
 
-// 更新預約狀態
+// ===== ✅ 修正後的輔助函數 =====
+
 async function updateBookingStatus(dateStr, bookingIndex, newStatus) {
-    const dateId = dateStr;
-    
     const { data, error: fetchErr } = await supabaseClient
-    .from('calendar_slots')
-    .select('*')
-    .eq('date_id', dateStr);
+        .from('calendar_slots')
+        .select('*')
+        .eq('date_id', dateStr)
+        .single(); // ✅ 加上 .single() 確保返回單一物件
     
     if (fetchErr) throw fetchErr;
     
@@ -706,20 +661,17 @@ async function updateBookingStatus(dateStr, bookingIndex, newStatus) {
     const { error: updateErr } = await supabaseClient
         .from('calendar_slots')
         .update({ booked_slots: bookedSlots })
-        .eq('date_id', dateId);
+        .eq('date_id', dateStr);
     
     if (updateErr) throw updateErr;
 }
 
-// 刪除預約
 async function removeBooking(dateStr, bookingIndex) {
-    const dateId = dateStr;
-    
     const { data, error: fetchErr } = await supabaseClient
         .from('calendar_slots')
         .select('*')
-        .eq('date_id', dateId)
-        .single();
+        .eq('date_id', dateStr)
+        .single(); // ✅ 加上 .single()
     
     if (fetchErr) throw fetchErr;
     
@@ -729,12 +681,11 @@ async function removeBooking(dateStr, bookingIndex) {
     const { error: updateErr } = await supabaseClient
         .from('calendar_slots')
         .update({ booked_slots: bookedSlots })
-        .eq('date_id', dateId);
+        .eq('date_id', dateStr);
     
     if (updateErr) throw updateErr;
 }
 
-// 取得預約資料
 function getBookingByDateAndIndex(dateStr, bookingIndex) {
     const parts = dateStr.split('-');
     const month = parseInt(parts[1]);
@@ -747,7 +698,6 @@ function getBookingByDateAndIndex(dateStr, bookingIndex) {
     return null;
 }
 
-// 發送 LINE 訊息
 async function sendLineMessage(userId, message) {
     const response = await fetch('/api/send-line-message', {
         method: 'POST',
