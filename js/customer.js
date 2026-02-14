@@ -762,7 +762,8 @@ window.finalSubmit = async function() {
         const { data, error: fetchErr } = await supabaseClient
             .from('calendar_slots')
             .select('*')
-            .eq('date_id', dateId);
+            .eq('date_id', dateId)
+            .maybeSingle();
         
         if (fetchErr) {
             console.error('❌ 資料庫查詢錯誤:', fetchErr);
@@ -770,8 +771,8 @@ window.finalSubmit = async function() {
         }
         
         let booked = [];
-        if (data && data.length > 0) {
-            booked = data[0].booked_slots || [];
+        if (data) {
+            booked = data.booked_slots || [];  
             console.log('📋 找到現有記錄，已有', booked.length, '筆預約');
         } else {
             console.log('📝 這是新的日期，將建立記錄');
