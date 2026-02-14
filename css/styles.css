@@ -1,433 +1,109 @@
-/* ==========================================================
-   Nail Collector - 完整樣式表
-   ========================================================== */
-
-/* ========== 共用樣式 ========== */
+/* ========== 全域設定 ========== */
 body {
-    font-family: 'Noto Sans TC', sans-serif;
-    background-color: #f9fafb;
+    font-family: 'Helvetica Neue', Arial, "Hiragino Kaku Gothic ProN", "Noto Sans TC", sans-serif;
+    background-color: #f4f5f7;
     color: #333;
     -webkit-tap-highlight-color: transparent;
 }
 
-.rounded-custom {
-    border-radius: 24px;
+/* ---- 頂部導覽列 (日式草綠) ---- */
+.admin-header-bg {
+    background-color: #4eba6d !important;
 }
 
-.btn-toggle {
-    transition: all 0.2s;
-    background-color: #fff;
-    color: #666;
-    border: 1px solid #e5e7eb;
-}
-
-.btn-toggle.active {
-    background-color: #374151;
-    color: #fff;
-    border-color: #374151;
-}
-
-.fade-in {
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-.scale-110 {
-    transform: scale(1.1);
-    transition: transform 0.2s ease-in-out;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-5px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-
-/* ---- 全域 Loading 遮罩 ---- */
-#global-loading {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.95);
-    z-index: 9999;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    transition: opacity 0.3s;
-}
-
-
-/* ==========================================================
-   顧客端 - 日曆
-   ========================================================== */
-.calendar-day {
-    aspect-ratio: 1 / 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    border-radius: 50%;
-    font-size: 0.8rem;
-    position: relative;
-    background: #fff;
-}
-
-/* 已選取 */
-.calendar-day.selected {
-    background-color: #374151;
-    color: #fff;
-}
-
-/* 已被預約（滿） */
-.calendar-day.booked {
-    background-color: #d1d5db;
-    color: #6b7280;
-}
-
-/* 公休日 - 不可點擊 */
-.calendar-day.closed {
-    background-color: #d1d5db;
-    color: #6b7280;
-    cursor: not-allowed;
-    text-decoration: line-through;
-}
-
-/* 尚未開放預約 */
-.calendar-day.not-open {
-    background-color: #d1d5db;
-    color: #6b7280;
-    cursor: not-allowed;
-    position: relative;
-}
-
-.calendar-day.not-open::after {
-    content: '未開放';
-    position: absolute;
-    bottom: 2px;
-    font-size: 7px;
-    color: #4b5563;
-}
-
-
-/* ==========================================================
-   顧客端 - 預約操作元件
-   ========================================================== */
-.rule-box {
-    background-color: #e5e7eb;
-    border-radius: 16px;
-    padding: 12px;
-    font-size: 0.75rem;
-    color: #666;
-    margin-top: 8px;
-    line-height: 1.6;
-}
-
-.counter-btn {
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background-color: #e5e7eb;
-    color: #4b5563;
-    font-size: 12px;
-}
-
-.counter-btn:active {
-    background-color: #d1d5db;
-}
-
-#selected-time-display {
-    transition: all 0.2s ease-in-out;
-}
-
-#confirm-time-btn {
-    transition: all 0.3s ease-in-out;
-}
-
-
-/* ==========================================================
-   管理後台 - 日曆
-   ========================================================== */
-.admin-day {
-    padding: 12px 8px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: white;
-    border: 1px solid #e5e7eb;
-    min-height: 80px;
-    display: flex;
-    flex-direction: column;
-}
-
-.admin-day:hover {
-    background: #f9fafb;
-    border-color: #d1d5db;
-}
-
-/* 已選取 */
-.admin-day.selected {
-    background: #dbeafe;
-    border-color: #3b82f6;
-}
-
-/* 公休日 - 灰色背景 */
-.admin-day.status-off {
-    background: #f3f4f6 !important;
-    border-color: #d1d5db;
-    cursor: default;
-    opacity: 0.7;
-}
-
-.admin-day.status-off:hover {
-    background: #e5e7eb !important;
-}
-
-.admin-day.status-off .text-gray-700 {
-    color: #9ca3af !important;
-}
-
-/* 過去日期 */
-.admin-day.status-past {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.admin-day.status-past:hover {
-    background: white;
-    border-color: #e5e7eb;
-}/* ===== TimeTree 真實風格日曆（橫向排列） ===== */
-
+/* ========== 管理後台日曆核心 (TimeTree 風格) ========== */
 #admin-calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 0;
-    padding: 0;
-    background-color: #fafafa;
+    gap: 1px; /* 關鍵：格線寬度 */
+    background-color: #e0e0e0; /* 關鍵：格線顏色 */
     border: 1px solid #e0e0e0;
 }
 
-/* 日曆格子 - 固定大小，白色背景 */
 .admin-day {
     background-color: #ffffff;
-    border-right: 1px solid #e0e0e0;
-    border-bottom: 1px solid #e0e0e0;
-    padding: 10px 8px 8px 8px;
-    min-height: 120px;
+    min-height: 110px; /* 確保高度足以放多個標籤 */
+    padding: 6px 2px;
     display: flex;
     flex-direction: column;
+    align-items: center;
     cursor: pointer;
+    transition: background 0.2s;
     position: relative;
-    overflow: hidden;
-    transition: all 0.2s ease;
-    box-shadow: none;
 }
 
-/* 移除最右邊的邊框 */
-.admin-day:nth-child(7n) {
-    border-right: none;
-}
-
-/* ===== 日期數字 ===== */
+/* 日期數字：18px 關鍵設定 */
 .date-number {
-    font-size: 15px;
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 6px;
+    font-size: 18px !important;
+    font-weight: 600;
+    margin-bottom: 4px;
     line-height: 1;
-    flex-shrink: 0;
-    text-align: center;
+    font-family: Arial, sans-serif;
 }
 
-/* 週日紅色 */
-.admin-day:nth-child(7n+1) .date-number {
-    color: #e74c3c;
-}
+/* 週末顏色區分 (第1格是週日) */
+.admin-day:nth-child(7n+1) .date-number { color: #f26c68; } /* 週日紅 */
+.admin-day:nth-child(7n) .date-number { color: #4585d9; }   /* 週六藍 */
 
-/* 週六藍色 */
-.admin-day:nth-child(7n) .date-number {
-    color: #3498db;
-}
-
-/* ===== TimeTree 真實風格日曆（橫向排列） ===== */
-
-#admin-calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 0;
-    padding: 0;
-    background-color: #fafafa;
-    border: 1px solid #e0e0e0;
-}
-
-/* 日曆格子 - 固定大小，白色背景 */
-.admin-day {
-    background-color: #ffffff;
-    border-right: 1px solid #e0e0e0;
-    border-bottom: 1px solid #e0e0e0;
-    padding: 10px 8px 8px 8px;
-    min-height: 120px;
-    display: flex;
-    flex-direction: column;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.2s ease;
-    box-shadow: none;
-}
-
-/* 移除最右邊的邊框 */
-.admin-day:nth-child(7n) {
-    border-right: none;
-}
-
-/* ===== 日期數字 ===== */
-.date-number {
-    font-size: 15px;
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 6px;
-    line-height: 1;
-    flex-shrink: 0;
-    text-align: center;
-}
-
-/* 週日紅色 */
-.admin-day:nth-child(7n+1) .date-number {
-    color: #e74c3c;
-}
-
-/* 週六藍色 */
-.admin-day:nth-child(7n) .date-number {
-    color: #3498db;
-}
-
-/* ===== 預約標籤區域（橫向排列） ===== */
+/* 標籤容器 */
 .booking-info {
-    flex: 1;
-    overflow: hidden;
+    width: 100%;
     display: flex;
     flex-direction: column;
     gap: 2px;
-    flex-wrap: wrap;
-    justify-content: flex-start;
+    padding: 0 2px;
 }
 
-/* TimeTree 彩色標籤（橫向排列） */
+/* 預約標籤：10px 關鍵設定 */
 .booking-tag {
-    padding: 4px 8px;
-    border-radius: 3px;
-    font-size: 8px;
-    font-weight: 500;
+    font-size: 10px !important; 
+    font-weight: bold;
+    padding: 2px 4px;
+    border-radius: 2px;
     color: white;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     line-height: 1.2;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    display: inline-block;
-    max-width: 100%;
+    text-align: center;
 }
 
-/* 待審核 - 橙色 */
-.booking-tag.status-pending {
-    background-color: #ff9800;
-}
+/* 狀態顏色 (精準對照截圖) */
+.status-pending { background-color: #e75681 !important; }        /* 待審核：粉色 */
+.status-pending-payment { background-color: #f4b33e !important; } /* 待付款：橘色 */
+.status-confirmed { background-color: #20b261 !important; }       /* 已確認：綠色 */
+.status-rejected { background-color: #999999 !important; }        /* 已拒絕：灰色 */
 
-/* 等待付款 - 藍色 */
-.booking-tag.status-pending-payment {
-    background-color: #2196f3;
-}
-
-/* 已確認 - 綠色 */
-.booking-tag.status-confirmed {
-    background-color: #4caf50;
-}
-
-/* 已拒絕 - 紅色 */
-.booking-tag.status-rejected {
-    background-color: #f44336;
-}
-
-/* 更多預約提示 */
-.booking-more {
-    padding: 3px 6px;
-    font-size: 10px;
-    color: #999;
-    font-style: italic;
-    display: inline-block;
-}
-
-/* ===== 公休標籤 ===== */
+/* 公休標籤樣式 */
 .holiday-label {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
     font-size: 10px;
-    color: white;
-    background-color: #999;
-    padding: 3px 8px;
-    border-radius: 3px;
-    width: fit-content;
+    background: #f3f4f6;
+    color: #9ca3af;
+    padding: 2px 4px;
+    border-radius: 2px;
     margin-top: auto;
 }
 
-/* ===== 狀態樣式 ===== */
-
-/* 過期日期 - 淺灰色背景 */
-.admin-day.status-past {
-    background-color: #f5f5f5;
-    opacity: 0.7;
-}
-
-.admin-day.status-past .date-number {
-    color: #999 !important;
-}
-
-/* 公休日期 - 淺灰色背景 */
-.admin-day.status-off {
-    background-color: #f5f5f5;
-}
-
-.admin-day.status-off .date-number {
-    color: #999;
-}
-
-/* 選中狀態 - 藍色邊框 */
+/* 選中日期樣式 */
 .admin-day.selected {
-    border: 2px solid #2196f3;
-    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1), 0 2px 6px rgba(0, 0, 0, 0.1);
+    background-color: #fffceb; /* 輕微黃色底 */
+    box-shadow: inset 0 0 0 2px #4585d9; /* 內縮藍色框 */
+    z-index: 5;
 }
 
-/* ===== 響應式 ===== */
-@media (max-width: 768px) {
-    #admin-calendar-grid {
-        gap: 4px;
-        padding: 4px;
-    }
-    
-    .admin-day {
-        min-height: 100px;
-        padding: 6px;
-        border-radius: 6px;
-    }
-    
-    .date-number {
-        font-size: 14px;
-        margin-bottom: 6px;
-    }
-    
-    .booking-tag {
-        font-size: 9px;
-        padding: 4px 8px;
-        border-radius: 3px;
-    }
-    
-    .booking-info {
-        gap: 4px;
-    }
+/* 過去日期 & 非本月 */
+.admin-day.status-past {
+    background-color: #fafafa;
+}
+.admin-day.status-past .date-number {
+    color: #ccc !important;
+}
+
+/* 輔助類：淡入動畫 */
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
