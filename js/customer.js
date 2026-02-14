@@ -468,7 +468,7 @@ window.selectDate = function(el, date, slots) {
     window.renderTimeSelector();
     window.updateServiceEndTime();
     window.validate();
-};
+
     // 顯示可預約範圍
     const rangeInfo = document.getElementById('booking-range-info');
     const rangeText = document.getElementById('booking-range-text');
