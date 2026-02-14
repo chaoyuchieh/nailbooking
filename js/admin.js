@@ -139,7 +139,7 @@ window.fetchAdminCalendarData = async function() {
     }
 };
 
-// === 渲染行事曆 (TimeTree 真實風格) ===
+// === 渲染行事曆 (TimeTree 真實風格 - 橫向排列) ===
 window.renderAdminCalendar = function() {
     console.log('🎨 渲染管理行事曆 (TimeTree 風格)...');
     const grid = document.getElementById('admin-calendar-grid');
@@ -189,8 +189,8 @@ window.renderAdminCalendar = function() {
             
             dayHTML += `<div class="booking-info">`;
             
-            // 只顯示前 2 筆預約
-            sorted.slice(0, 2).forEach(booking => {
+            // 顯示所有預約（橫向排列）
+            sorted.forEach((booking, idx) => {
                 const time = (typeof booking === 'string') ? booking : booking.time;
                 const user = (typeof booking === 'object' && booking.user) ? booking.user : 'Admin';
                 const status = (typeof booking === 'object' && booking.status) ? booking.status : 'confirmed';
@@ -205,16 +205,11 @@ window.renderAdminCalendar = function() {
                     tagStatusClass = 'status-rejected';
                 }
                 
-                // 截短名字（最多 3 個字）
-                const displayUser = user.length > 3 ? user.substring(0, 3) : user;
+                // 截短名字（最多 2-3 個字）
+                const displayUser = user.length > 2 ? user.substring(0, 2) : user;
                 
                 dayHTML += `<div class="booking-tag ${tagStatusClass}" title="${time} ${user}">${time} ${displayUser}</div>`;
             });
-            
-            // 如果超過 2 筆，顯示 +N more
-            if (sorted.length > 2) {
-                dayHTML += `<div class="booking-more">+${sorted.length - 2} more</div>`;
-            }
             
             dayHTML += `</div>`;
         }
