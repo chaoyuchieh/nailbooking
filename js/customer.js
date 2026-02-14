@@ -468,7 +468,7 @@ window.selectDate = function(el, date, slots) {
     window.renderTimeSelector();
     window.updateServiceEndTime();
     window.validate();
-
+};
 
 
 // ===== 時間選擇相關 =====
