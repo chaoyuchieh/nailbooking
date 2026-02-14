@@ -626,7 +626,7 @@ async function updateBookingStatus(dateStr, bookingIndex, newStatus) {
     if (calendarData[index]) {
         calendarData[index].bookedSlots = bookedSlots;
     }
-}
+
 
 async function removeBooking(dateStr, bookingIndex) {
     const { data, error: fetchErr } = await supabaseClient
