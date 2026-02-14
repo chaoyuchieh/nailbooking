@@ -495,6 +495,8 @@ window.saveAdminSettings = async function() {
 
 // ===== 審核功能 =====
 
+// ===== 修復所有審核函數 - 改成只重新渲染，不重新載入資料 =====
+
 // 需要訂金 - 發送付款資訊
 window.approveBookingWithDeposit = async function(dateStr, bookingIndex, userId) {
     if (!confirm('確定此預約需要訂金嗎？\n\n將發送付款資訊給顧客')) return;
@@ -528,7 +530,8 @@ window.approveBookingWithDeposit = async function(dateStr, bookingIndex, userId)
 LOST.IN.GALLERY_`);
         
         alert('✅ 已發送付款資訊給顧客');
-        await window.fetchAdminCalendarData();
+        // ✅ 只重新渲染，不重新載入
+        window.renderAdminCalendar();
         window.selectAdminDate(adminSelectedIndex);
     } catch (e) {
         alert('❌ 操作失敗：' + e.message);
@@ -564,7 +567,8 @@ window.approveBookingDirectly = async function(dateStr, bookingIndex, userId) {
 LOST.IN.GALLERY_`);
         
         alert('✅ 預約已確認');
-        await window.fetchAdminCalendarData();
+        // ✅ 只重新渲染，不重新載入
+        window.renderAdminCalendar();
         window.selectAdminDate(adminSelectedIndex);
     } catch (e) {
         alert('❌ 操作失敗：' + e.message);
@@ -601,7 +605,8 @@ window.rejectBooking = async function(dateStr, bookingIndex, userId) {
 LOST.IN.GALLERY_`);
         
         alert('✅ 已拒絕預約並通知顧客');
-        await window.fetchAdminCalendarData();
+        // ✅ 只重新渲染，不重新載入
+        window.renderAdminCalendar();
         window.selectAdminDate(adminSelectedIndex);
     } catch (e) {
         alert('❌ 操作失敗：' + e.message);
@@ -635,7 +640,8 @@ window.confirmPayment = async function(dateStr, bookingIndex, userId) {
 LOST.IN.GALLERY_`);
         
         alert('✅ 付款已確認');
-        await window.fetchAdminCalendarData();
+        // ✅ 只重新渲染，不重新載入
+        window.renderAdminCalendar();
         window.selectAdminDate(adminSelectedIndex);
     } catch (e) {
         alert('❌ 操作失敗：' + e.message);
@@ -670,7 +676,8 @@ window.cancelBooking = async function(dateStr, bookingIndex, userId) {
 LOST.IN.GALLERY_`);
         
         alert('✅ 已取消預約');
-        await window.fetchAdminCalendarData();
+        // ✅ 只重新渲染，不重新載入
+        window.renderAdminCalendar();
         window.selectAdminDate(adminSelectedIndex);
     } catch (e) {
         alert('❌ 操作失敗：' + e.message);
@@ -678,7 +685,6 @@ LOST.IN.GALLERY_`);
         window.showLoading(false);
     }
 };
-
 // ===== 輔助函數 =====
 
 // 更新預約狀態
