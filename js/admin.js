@@ -682,10 +682,9 @@ async function updateBookingStatus(dateStr, bookingIndex, newStatus) {
     const dateId = dateStr;
     
     const { data, error: fetchErr } = await supabaseClient
-        .from('calendar_slots')
-        .select('*')
-        .eq('date_id', dateId)
-        .single();
+    .from('calendar_slots')
+    .select('*')
+    .eq('date_id', dateStr);
     
     if (fetchErr) throw fetchErr;
     
