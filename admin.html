@@ -102,22 +102,25 @@
                     </div>
                 </div>
 
-                <!-- 日曆 -->
-                <div class="bg-white p-3 rounded-xl shadow-sm mb-4 border border-gray-100">
-                    <p class="text-xs text-gray-500 mb-2 text-center">
-                        <i class="fas fa-hand-pointer mr-1"></i>點擊日期進行管理
-                    </p>
-                    <div class="grid grid-cols-7 gap-1 mb-2 text-center">
-                        <div class="text-[10px] text-red-400 font-bold">日</div>
-                        <div class="text-[10px] text-gray-400">一</div>
-                        <div class="text-[10px] text-gray-400">二</div>
-                        <div class="text-[10px] text-gray-400">三</div>
-                        <div class="text-[10px] text-gray-400">四</div>
-                        <div class="text-[10px] text-gray-400">五</div>
-                        <div class="text-[10px] text-blue-400 font-bold">六</div>
-                    </div>
-                    <div id="admin-calendar-grid"></div>
-                </div>
+               <!-- 在 admin.html 找到這一段，改成： -->
+
+<!-- 日曆 -->
+<div class="bg-white p-3 rounded-xl shadow-sm mb-4 border border-gray-100">
+    <p class="text-xs text-gray-500 mb-2 text-center">
+        <i class="fas fa-hand-pointer mr-1"></i>點擊日期進行管理
+    </p>
+    <div class="grid grid-cols-7 gap-0 mb-2 text-center">
+        <div class="text-[10px] text-red-400 font-bold">日</div>
+        <div class="text-[10px] text-gray-400">一</div>
+        <div class="text-[10px] text-gray-400">二</div>
+        <div class="text-[10px] text-gray-400">三</div>
+        <div class="text-[10px] text-gray-400">四</div>
+        <div class="text-[10px] text-gray-400">五</div>
+        <div class="text-[10px] text-blue-400 font-bold">六</div>
+    </div>
+    <!-- 移除 class="grid grid-cols-7 gap-1"，讓 CSS 控制 -->
+    <div id="admin-calendar-grid"></div>
+</div>
 
                 <!-- 日期編輯區 -->
                 <div id="admin-edit-area" class="hidden fade-in">
