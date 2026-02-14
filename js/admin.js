@@ -141,74 +141,55 @@ window.fetchAdminCalendarData = async function() {
 
 // === 渲染行事曆 (優化後的日系精緻風格) ===
 window.renderAdminCalendar = function() {
-    console.log('🎨 渲染管理行事曆 (精確字體比例版)...');
     const grid = document.getElementById('admin-calendar-grid');
     if (!grid) return;
-    
     grid.innerHTML = '';
     
-    // 月初空白格子
     const firstDay = new Date(adminYear, adminMonth, 1).getDay();
     for (let i = 0; i < firstDay; i++) {
         const emptyDiv = document.createElement('div');
-        emptyDiv.className = 'admin-day opacity-50 bg-gray-50'; // 空白格稍微變暗
+        emptyDiv.className = 'admin-day bg-gray-50/50';
         grid.appendChild(emptyDiv);
     }
     
-    const todayDate = new Date();
-    todayDate.setHours(0, 0, 0, 0);
-    
     calendarData.forEach((item, index) => {
         const div = document.createElement('div');
-        
-        const itemDate = new Date(adminYear, adminMonth, item.date);
-        itemDate.setHours(0, 0, 0, 0);
-        const isPastDate = itemDate < todayDate;
-        
         const dateStr = `${adminYear}-${String(adminMonth + 1).padStart(2, '0')}-${String(item.date).padStart(2, '0')}`;
         const isClosed = item.status === 'booked' || closedDates.includes(dateStr);
-        const hasBooking = item.bookedSlots && item.bookedSlots.length > 0;
+        const bookings = item.bookedSlots || [];
         
-        // 1. 構建日期數字 (CSS 會處理 18px)
-        let dayHTML = `<div class="date-number">${item.date}</div>`;
-        
-        // 2. 構建標籤區域
+        let html = '';
         if (isClosed) {
-            dayHTML += `<div class="holiday-label">🚫 公休</div>`;
-        } else if (hasBooking) {
-            // 排序預約
-            const sorted = [...item.bookedSlots].sort((a, b) => {
-                const ta = (typeof a === 'string' ? a : a.time);
-                const tb = (typeof b === 'string' ? b : b.time);
-                return ta.localeCompare(tb);
-            });
-            
-            dayHTML += `<div class="booking-info">`;
-            
-            sorted.forEach((booking) => {
-                const time = (typeof booking === 'string') ? booking : booking.time;
-                const user = (typeof booking === 'object' && booking.user) ? booking.user : 'Admin';
-                const status = (typeof booking === 'object' && booking.status) ? booking.status : 'confirmed';
-                
-                // 狀態與顏色對應
-                let tagStatusClass = 'status-confirmed';
-                if (status === 'pending') {
-                    tagStatusClass = 'status-pending'; // 對應粉色
-                } else if (status === 'pending_payment') {
-                    tagStatusClass = 'status-pending-payment'; // 對應橘色
-                } else if (status === 'rejected') {
-                    tagStatusClass = 'status-rejected'; // 對應灰色
-                }
-                
-                // 顯示邏輯：[時間] [名字截短]
-                const displayUser = user.length > 2 ? user.substring(0, 2) : user;
-                dayHTML += `<div class="booking-tag ${tagStatusClass}" title="${time} ${user}">
-                    ${time} ${displayUser}
-                </div>`;
-            });
-            
-            dayHTML += `</div>`;
+            // 公休模式：完全置中，顯示圖示與文字
+            div.className = `admin-day status-off ${index === adminSelectedIndex ? 'selected' : ''}`;
+            html = `
+                <div class="date-number opacity-30">${item.date}</div>
+                <div class="holiday-label">
+                    <i class="fas fa-moon opacity-40"></i>
+                    <span>公休</span>
+                </div>
+            `;
+        } else {
+            // 一般模式
+            div.className = `admin-day ${index === adminSelectedIndex ? 'selected' : ''}`;
+            html = `<div class="date-number">${item.date}</div>`;
+            if (bookings.length > 0) {
+                html += `<div class="booking-info">`;
+                bookings.forEach(b => {
+                    const name = typeof b === 'object' ? b.user : '客戶';
+                    const status = typeof b === 'object' ? b.status : 'confirmed';
+                    const shortName = name.substring(0, 2);
+                    html += `<div class="booking-tag status-${status.replace('_','-')}">${shortName}</div>`;
+                });
+                html += `</div>`;
+            }
         }
+        
+        div.innerHTML = html;
+        div.onclick = () => window.selectAdminDate(index);
+        grid.appendChild(div);
+    });
+};
         
         // 3. 設定外層容器 Class
         let containerClass = 'admin-day';
@@ -432,39 +413,22 @@ window.updateTodayBookingStats = function() {
     if (!statsEl) return;
     
     let totalBookings = 0;
-    let pendingCount = 0;
-    let confirmedCount = 0;
-    
     calendarData.forEach(item => {
         if (item.bookedSlots) {
-            item.bookedSlots.forEach(booking => {
-                totalBookings++;
-                const status = typeof booking === 'object' ? booking.status : 'approved';
-                if (status === 'pending' || status === 'pending_payment') {
-                    pendingCount++;
-                } else {
-                    confirmedCount++;
-                }
-            });
+            // 只計算狀態不是 'rejected' 的預約
+            const activeBookings = item.bookedSlots.filter(b => b.status !== 'rejected');
+            totalBookings += activeBookings.length;
         }
     });
     
+    // 只顯示本月預約總數
     statsEl.innerHTML = `
-        <div class="flex justify-between items-center text-xs">
-            <span class="text-gray-600">本月預約總數</span>
-            <span class="font-bold text-gray-800">${totalBookings} 筆</span>
-        </div>
-        <div class="flex justify-between items-center text-xs">
-            <span class="text-gray-600">待審核</span>
-            <span class="font-bold text-orange-600">${pendingCount} 筆</span>
-        </div>
-        <div class="flex justify-between items-center text-xs">
-            <span class="text-gray-600">已確認</span>
-            <span class="font-bold text-green-600">${confirmedCount} 筆</span>
+        <div class="flex justify-between items-center py-1">
+            <span class="text-gray-500 text-xs">本月預約總數</span>
+            <span class="font-bold text-gray-800 text-lg">${totalBookings} <span class="text-xs font-normal text-gray-400">人</span></span>
         </div>
     `;
 };
-
 // === 統計詳情切換 ===
 window.toggleStatsDetail = function() {
     const detail = document.getElementById('stats-detail');
