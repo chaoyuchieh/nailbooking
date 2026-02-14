@@ -1,8 +1,8 @@
 // config.js - 配置檔案
 
 const CONFIG = {
-    SUPABASE_URL: 'https://alkuncpbqslksxeorndz.supabase.co',
-    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsa3VuY3BicXNsa3N4ZW9ybmR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczMzg0MjIsImV4cCI6MjA4MjkxNDQyMn0.Q-HxirPEavixO-tW6hRp6Rz6fFLrWMqfCU3kEKcrRAg',
+    SUPABASE_URL: 'https://gjuhnggtywwuziqtymmg.supabase.co',
+    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqdWhuZ2d0eXd3dXppcXR5bW1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczMDU1NTMsImV4cCI6MjA4Mjg4MTU1M30.3Wv8jfSjYBZ0BMKWn4jh1wEkDuYgiB0j-mXCOpADmQc',
     LIFF_ID: '2008856015-4bLaPE5n',
     LINE_MESSAGE_API_URL: '/api/send-line-message',  // ← 加這行
     LINE_OFFICIAL_ID: '@229lgsmd',
