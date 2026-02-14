@@ -107,3 +107,35 @@ body {
     from { opacity: 0; }
     to   { opacity: 1; }
 }
+/* --- 日曆容器圓角 --- */
+.calendar-container {
+    border-radius: 12px; /* 這裡設定四周圓角 */
+    overflow: hidden;    /* 確保內部的格子不會超出圓角 */
+    border: 1px solid #e0e0e0;
+}
+
+/* --- 公休置中樣式 --- */
+.admin-day.status-off {
+    justify-content: center; /* 垂直置中 */
+    align-items: center;     /* 水平置中 */
+    background-color: #f8f9fa !important;
+}
+
+.holiday-label {
+    font-size: 11px;
+    color: #9ca3af;
+    font-weight: 500;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+/* --- 標籤顏色修正 --- */
+.status-pending { 
+    background-color: #f4b33e !important; /* 改為橘色 */
+}
+
+/* 其他標籤保持不變 */
+.status-pending-payment { background-color: #2196f3 !important; } /* 藍色 */
+.status-confirmed { background-color: #20b261 !important; }       /* 綠色 */
