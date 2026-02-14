@@ -469,21 +469,7 @@ window.selectDate = function(el, date, slots) {
     window.updateServiceEndTime();
     window.validate();
 
-    // 顯示可預約範圍
-    const rangeInfo = document.getElementById('booking-range-info');
-    const rangeText = document.getElementById('booking-range-text');
-    if (rangeInfo && rangeText && bookingOpenRanges.ranges && bookingOpenRanges.ranges.length > 0) {
-        const parts = bookingOpenRanges.ranges.map(r => {
-            const s = `${r.start.getMonth() + 1}/${r.start.getDate()}`;
-            const e = `${r.end.getMonth() + 1}/${r.end.getDate()}`;
-            return `${s} ~ ${e}`;
-        });
-        rangeText.innerText = parts.join('、');
-        rangeInfo.classList.remove('hidden');
-    } else if (rangeInfo) {
-        rangeInfo.classList.add('hidden');
-    }
-};
+
 
 // ===== 時間選擇相關 =====
 
