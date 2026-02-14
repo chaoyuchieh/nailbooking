@@ -138,67 +138,91 @@ window.fetchAdminCalendarData = async function() {
         window.updateTodayBookingStats();
     }
 };
-
-// === 渲染行事曆 (優化後的日系精緻風格) ===
+// === 渲染行事曆 (TimeTree 真實風格 - 橫向排列) ===
 window.renderAdminCalendar = function() {
+    console.log('🎨 渲染管理行事曆...');
     const grid = document.getElementById('admin-calendar-grid');
     if (!grid) return;
+    
     grid.innerHTML = '';
     
+    // 月初空白
     const firstDay = new Date(adminYear, adminMonth, 1).getDay();
     for (let i = 0; i < firstDay; i++) {
         const emptyDiv = document.createElement('div');
-        emptyDiv.className = 'admin-day bg-gray-50/50';
+        emptyDiv.className = 'admin-day';
         grid.appendChild(emptyDiv);
     }
     
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
+    
+    // 渲染每一天
     calendarData.forEach((item, index) => {
         const div = document.createElement('div');
-        const dateStr = `${adminYear}-${String(adminMonth + 1).padStart(2, '0')}-${String(item.date).padStart(2, '0')}`;
-        const isClosed = item.status === 'booked' || closedDates.includes(dateStr);
-        const bookings = item.bookedSlots || [];
         
-        let html = '';
-        if (isClosed) {
-            // 公休模式：完全置中，顯示圖示與文字
-            div.className = `admin-day status-off ${index === adminSelectedIndex ? 'selected' : ''}`;
-            html = `
-                <div class="date-number opacity-30">${item.date}</div>
-                <div class="holiday-label">
-                    <i class="fas fa-moon opacity-40"></i>
-                    <span>公休</span>
-                </div>
-            `;
-        } else {
-            // 一般模式
-            div.className = `admin-day ${index === adminSelectedIndex ? 'selected' : ''}`;
-            html = `<div class="date-number">${item.date}</div>`;
-            if (bookings.length > 0) {
-                html += `<div class="booking-info">`;
-                bookings.forEach(b => {
-                    const name = typeof b === 'object' ? b.user : '客戶';
-                    const status = typeof b === 'object' ? b.status : 'confirmed';
-                    const shortName = name.substring(0, 2);
-                    html += `<div class="booking-tag status-${status.replace('_','-')}">${shortName}</div>`;
-                });
-                html += `</div>`;
-            }
+        const itemDate = new Date(adminYear, adminMonth, item.date);
+        itemDate.setHours(0, 0, 0, 0);
+        const isPastDate = itemDate < todayDate;
+        
+        const dateStr = `${adminYear}-${String(adminMonth + 1).padStart(2, '0')}-${String(item.date).padStart(2, '0')}`;
+        const isHoliday = item.status === 'booked' || closedDates.includes(dateStr);
+        const hasBooking = item.bookedSlots && item.bookedSlots.length > 0;
+        
+        // 構建日期數字
+        let dayHTML = `<div class="date-number">${item.date}</div>`;
+        
+        // 根據狀態構建內容
+        let statusClass = 'admin-day';
+        
+        if (isHoliday) {
+            statusClass += ' status-off';
+            dayHTML += `<div class="holiday-label">🚫 公休</div>`;
+        } else if (hasBooking) {
+            // 排序預約
+            const sorted = [...item.bookedSlots].sort((a, b) => {
+                const ta = (typeof a === 'string' ? a : a.time);
+                const tb = (typeof b === 'string' ? b : b.time);
+                return ta.localeCompare(tb);
+            });
+            
+            dayHTML += `<div class="booking-info">`;
+            
+            // 顯示所有預約（橫向排列）
+            sorted.forEach((booking, idx) => {
+                const time = (typeof booking === 'string') ? booking : booking.time;
+                const user = (typeof booking === 'object' && booking.user) ? booking.user : 'Admin';
+                const status = (typeof booking === 'object' && booking.status) ? booking.status : 'confirmed';
+                
+                // 根據狀態決定顏色類別
+                let tagStatusClass = 'status-confirmed';
+                if (status === 'pending') {
+                    tagStatusClass = 'status-pending';
+                } else if (status === 'pending_payment') {
+                    tagStatusClass = 'status-pending-payment';
+                } else if (status === 'rejected') {
+                    tagStatusClass = 'status-rejected';
+                }
+                
+                // 截短名字（最多 2-3 個字）
+                const displayUser = user.length > 2 ? user.substring(0, 2) : user;
+                
+                dayHTML += `<div class="booking-tag ${tagStatusClass}" title="${time} ${user}">${time} ${displayUser}</div>`;
+            });
+            
+            dayHTML += `</div>`;
         }
         
-        div.innerHTML = html;
-        div.onclick = () => window.selectAdminDate(index);
-        grid.appendChild(div);
-    });
-};
+        if (isPastDate) {
+            statusClass += ' status-past';
+        }
         
-        // 3. 設定外層容器 Class
-        let containerClass = 'admin-day';
-        if (isPastDate) containerClass += ' status-past';
-        if (isClosed) containerClass += ' status-off';
-        if (index === adminSelectedIndex) containerClass += ' selected';
+        if (index === adminSelectedIndex) {
+            statusClass += ' selected';
+        }
         
         div.innerHTML = dayHTML;
-        div.className = containerClass;
+        div.className = statusClass;
         div.onclick = () => window.selectAdminDate(index);
         grid.appendChild(div);
     });
