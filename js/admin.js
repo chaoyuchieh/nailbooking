@@ -509,8 +509,8 @@ window.approveBookingWithDeposit = async function(dateStr, bookingIndex, userId)
         await sendLineMessage(userId, `【需要支付訂金】\n\n您好 ${booking.user}，\n您的預約已審核通過！\n\n📅 預約日期：${dateStr}\n⏰ 預約時間：${booking.time}\n💰 預估金額：$${booking.totalPrice}\n\n💳 請支付訂金 $500\n匯款資訊：\n銀行代碼：XXX\n帳號：XXXXXXXXXXXX\n戶名：XXX\n\n完成匯款後請回覆「已匯款」\n我們確認後會立即通知您`);
         
         alert('✅ 已發送付款資訊');
-        window.renderAdminCalendar();
-        window.selectAdminDate(adminSelectedIndex);
+await window.fetchAdminCalendarData();
+window.selectAdminDate(adminSelectedIndex);
     } catch (e) {
         alert('❌ 操作失敗：' + e.message);
     } finally {
@@ -528,8 +528,8 @@ window.approveBookingDirectly = async function(dateStr, bookingIndex, userId) {
         await sendLineMessage(userId, `【預約確認成功】✅\n\n您好 ${booking.user}，\n您的預約已確認完成！\n\n📅 預約日期：${dateStr}\n⏰ 預約時間：${booking.time}\n💰 預估金額：$${booking.totalPrice}\n\n期待您的到來！`);
         
         alert('✅ 預約已確認');
-        window.renderAdminCalendar();
-        window.selectAdminDate(adminSelectedIndex);
+await window.fetchAdminCalendarData();
+window.selectAdminDate(adminSelectedIndex);
     } catch (e) {
         alert('❌ 操作失敗：' + e.message);
     } finally {
@@ -566,8 +566,8 @@ window.confirmPayment = async function(dateStr, bookingIndex, userId) {
         await sendLineMessage(userId, `【付款確認成功】✅\n\n您好 ${booking.user}，\n我們已確認收到您的訂金！\n\n📅 預約日期：${dateStr}\n⏰ 預約時間：${booking.time}\n💰 預估金額：$${booking.totalPrice}\n\n預約已完成確認`);
         
         alert('✅ 付款已確認');
-        window.renderAdminCalendar();
-        window.selectAdminDate(adminSelectedIndex);
+await window.fetchAdminCalendarData();  // 改這行，從 DB 重新載入
+window.selectAdminDate(adminSelectedIndex);
     } catch (e) {
         alert('❌ 操作失敗：' + e.message);
     } finally {
@@ -604,6 +604,7 @@ async function updateBookingStatus(dateStr, bookingIndex, newStatus) {
         .maybeSingle();
     
     if (fetchErr) throw fetchErr;
+    if (!data) throw new Error('找不到該日期的資料');
     
     let bookedSlots = data.booked_slots || [];
     if (bookedSlots[bookingIndex]) {
@@ -616,6 +617,7 @@ async function updateBookingStatus(dateStr, bookingIndex, newStatus) {
         .eq('date_id', dateStr);
     
     if (updateErr) throw updateErr;
+}
     
     // 更新本地資料
     const parts = dateStr.split('-');
