@@ -5,7 +5,7 @@ const CONFIG = {
     SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqdWhuZ2d0eXd3dXppcXR5bW1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczMDU1NTMsImV4cCI6MjA4Mjg4MTU1M30.3Wv8jfSjYBZ0BMKWn4jh1wEkDuYgiB0j-mXCOpADmQc',
     LIFF_ID: '2008856015-4bLaPE5n',
     LINE_MESSAGE_API_URL: '/api/send-line-message',  // ← 加這行
-    LINE_OFFICIAL_ID: '@229lgsmd',
+    LINE_OFFICIAL_ID: '@ydz8706m',
     BUSINESS_HOURS: {
         start: { hour: 10, minute: 0 },
         end: { hour: 19, minute: 0 }
