@@ -390,7 +390,20 @@ window.fetchCalendarData = async function() {
         window.showLoading(false); 
     }
 };
-
+window.changeCustomerMonth = async function(delta) {
+    currentMonth += delta;
+    if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+    } else if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+    }
+    
+    await window.fetchCalendarData();
+    document.getElementById('calendar-title').innerText = `${MONTH_NAMES[currentMonth]} ${currentYear}`;
+    window.renderCalendar();
+};
 window.renderCalendar = function() {
     const grid = document.getElementById('calendar-grid'); 
     if (!grid) return;
