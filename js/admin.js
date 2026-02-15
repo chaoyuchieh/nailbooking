@@ -506,7 +506,7 @@ window.approveBookingWithDeposit = async function(dateStr, bookingIndex, userId)
     try {
         await updateBookingStatus(dateStr, bookingIndex, 'pending_payment');
         const booking = getBookingByDateAndIndex(dateStr, bookingIndex);
-        await sendLineMessage(userId, `【需要支付訂金】\n\n您好 ${booking.user}，\n您的預約已審核通過！\n\n📅 預約日期：${dateStr}\n⏰ 預約時間：${booking.time}\n💰 預估金額：$${booking.totalPrice}\n\n💳 請支付訂金 $500\n匯款資訊：\n銀行代碼：XXX\n帳號：XXXXXXXXXXXX\n戶名：XXX\n\n完成匯款後請回覆「已匯款」\n我們確認後會立即通知您`);
+        await sendLineMessage(userId, `【需要支付訂金】\n\n您好 ${booking.user}，\n您的預約已審核通過！\n\n📅 預約日期：${dateStr}\n⏰ 預約時間：${booking.time}\n💰 預估金額：$${booking.totalPrice}\n\n💳 請支付訂金 $500\n匯款資訊：\n銀行代碼：807\n帳號：20201800363188\n戶名：趙于萱\n\n完成匯款後請回覆「已匯款」\n我們確認後會立即通知您`);
         
         alert('✅ 已發送付款資訊');
 await window.fetchAdminCalendarData();
