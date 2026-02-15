@@ -49,7 +49,7 @@ window.calculateBookingRange = function() {
     if (lastMonth < 0) { lastMonth = 11; lastYear--; }
     
     // 上月15日中午12:00 → 開放本月1-15
-    const lastMonth15th = new Date(lastYear, lastMonth, 15, 12, 0, 0);
+    const lastMonth15th = new Date(Date.UTC(lastYear, lastMonth, 15, 4, 0, 0));
     if (now >= lastMonth15th) {
         openRanges.push({
             start: new Date(currentYear, currentMonth, 1),
@@ -58,7 +58,8 @@ window.calculateBookingRange = function() {
     }
     
     // 上月25日中午12:00 → 開放本月16-月底
-    const lastMonth25th = new Date(lastYear, lastMonth, 25, 12, 0, 0);
+   const lastMonth25th = new Date(Date.UTC(lastYear, lastMonth, 25, 4, 0, 0));
+
     if (now >= lastMonth25th) {
         openRanges.push({
             start: new Date(currentYear, currentMonth, 16),
@@ -67,7 +68,7 @@ window.calculateBookingRange = function() {
     }
     
     // 本月15日中午12:00 → 開放下月1-15
-    const thisMonth15th = new Date(currentYear, currentMonth, 15, 12, 0, 0);
+   const thisMonth15th = new Date(Date.UTC(currentYear, currentMonth, 15, 4, 0, 0));
     if (now >= thisMonth15th) {
         let nextMonth = currentMonth + 1;
         let nextYear = currentYear;
@@ -79,7 +80,7 @@ window.calculateBookingRange = function() {
     }
     
     // 本月25日中午12:00 → 開放下月16-月底
-    const thisMonth25th = new Date(currentYear, currentMonth, 25, 12, 0, 0);
+   const thisMonth25th = new Date(Date.UTC(currentYear, currentMonth, 25, 4, 0, 0));
     if (now >= thisMonth25th) {
         let nextMonth = currentMonth + 1;
         let nextYear = currentYear;
