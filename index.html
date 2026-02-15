@@ -216,9 +216,15 @@
                 <span class="w-4 h-[1px] bg-gray-300 mr-2"></span> 04 / Schedule 時間
             </h2>
             <div class="bg-white p-6 rounded-custom shadow-sm border border-gray-100">
-                <div class="flex justify-between items-end mb-4">
-                    <h3 id="calendar-title" class="text-xl font-bold text-gray-800"></h3>
-                    <span class="text-[10px] text-gray-400">● 可預約</span>
+                <div class="flex justify-between items-center mb-4">
+    <button onclick="changeCustomerMonth(-1)" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400">
+        <i class="fas fa-chevron-left text-xs"></i>
+    </button>
+    <h3 id="calendar-title" class="text-xl font-bold text-gray-800"></h3>
+    <button onclick="changeCustomerMonth(1)" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400">
+        <i class="fas fa-chevron-right text-xs"></i>
+    </button>
+</div>
                 </div>
                 <div id="booking-range-info" class="mb-3 p-2 bg-gray-50 rounded-lg text-[10px] text-gray-500 hidden">
                     📅 可預約：<span id="booking-range-text" class="font-bold text-gray-700"></span>
@@ -300,3 +306,4 @@
 </body>
 
 </html>
+
