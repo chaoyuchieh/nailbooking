@@ -27,74 +27,44 @@ let isFriend = false;
 
 window.calculateTotal = function() {
     let total = priceState.design + priceState.removal + priceState.extras;
-    
-    // 加上計數器項目
     total += extensionCount * 150;
     total += repairCount * 50;
     total += unlimitedJumpCount * 100;
     total += bigDiamondCount * 50;
     total += nailPolishRemovalCount * 50;
-    
     return total;
 };
 
 window.updateUI = function() {
     const total = window.calculateTotal();
     const display = document.getElementById('price-display');
-    if (display) {
-        display.innerText = total;
-    }
+    if (display) display.innerText = total;
     window.validate();
 };
 
 window.validate = function() {
-    const total = window.calculateTotal();
     const termCheck = document.getElementById('term-check')?.checked || false;
     const btn = document.getElementById('submit-btn');
     const msg = document.getElementById('validation-msg');
-    
     if (!btn || !msg) return;
     
     let errors = [];
-    
-    // 檢查是否選擇設計
-    if (priceState.design === 0) {
-        errors.push('請選擇造型');
-    }
-    
-    // 如果選擇「任我做」，檢查關鍵字
+    if (priceState.design === 0) errors.push('請選擇造型');
     if (bookingDetails.design.name === '任我做') {
         const k1 = document.getElementById('keyword1')?.value?.trim() || '';
         const k2 = document.getElementById('keyword2')?.value?.trim() || '';
-        if (!k1 || !k2) {
-            errors.push('任我做需填寫兩個關鍵字');
-        }
+        if (!k1 || !k2) errors.push('任我做需填寫兩個關鍵字');
     }
-    
-    // 檢查卸甲選擇
     const needRemovalBtn = document.getElementById('need-removal-yes');
     if (needRemovalBtn && needRemovalBtn.classList.contains('active')) {
         const hasRemovalSelected = Array.from(document.querySelectorAll('button[data-group="removal"]'))
             .some(btn => btn.classList.contains('active'));
-        if (!hasRemovalSelected) {
-            errors.push('請選擇卸甲方式');
-        }
+        if (!hasRemovalSelected) errors.push('請選擇卸甲方式');
     }
+    if (!selectedDate) errors.push('請選擇預約日期');
+    if (!selectedTime) errors.push('請選擇預約時間');
+    if (!termCheck) errors.push('請同意規範');
     
-    // 檢查日期時間
-    if (!selectedDate) {
-        errors.push('請選擇預約日期');
-    }
-    if (!selectedTime) {
-        errors.push('請選擇預約時間');
-    }
-    
-    // 檢查條款
-    if (!termCheck) {
-        errors.push('請同意規範');
-    }
-    
-    // 更新 UI
     if (errors.length > 0) {
         msg.innerText = errors[0];
         btn.classList.add('opacity-50');
@@ -115,25 +85,21 @@ window.updateExtensionCount = function(delta) {
     document.getElementById('ext-count').innerText = extensionCount;
     window.updateUI();
 };
-
 window.updateRepairCount = function(delta) {
     repairCount = Math.max(0, Math.min(10, repairCount + delta));
     document.getElementById('repair-count').innerText = repairCount;
     window.updateUI();
 };
-
 window.updateUnlimitedJumpCount = function(delta) {
     unlimitedJumpCount = Math.max(0, Math.min(10, unlimitedJumpCount + delta));
     document.getElementById('unlimited-jump-count').innerText = unlimitedJumpCount;
     window.updateUI();
 };
-
 window.updateBigDiamondCount = function(delta) {
     bigDiamondCount = Math.max(0, Math.min(10, bigDiamondCount + delta));
     document.getElementById('big-diamond-count').innerText = bigDiamondCount;
     window.updateUI();
 };
-
 window.updateNailPolishRemovalCount = function(delta) {
     nailPolishRemovalCount = Math.max(0, Math.min(10, nailPolishRemovalCount + delta));
     document.getElementById('nail-polish-removal-count').innerText = nailPolishRemovalCount;
@@ -145,15 +111,9 @@ window.updateNailPolishRemovalCount = function(delta) {
 window.toggleDesignRule = function(ruleId, btnElement) {
     const ruleBox = document.getElementById(ruleId);
     if (!ruleBox) return;
-    
-    // 隱藏所有規則框
     document.querySelectorAll('.rule-box').forEach(box => {
-        if (box.id !== ruleId) {
-            box.classList.add('hidden');
-        }
+        if (box.id !== ruleId) box.classList.add('hidden');
     });
-    
-    // 切換當前規則框
     if (btnElement.classList.contains('active')) {
         ruleBox.classList.remove('hidden');
     } else {
@@ -164,15 +124,8 @@ window.toggleDesignRule = function(ruleId, btnElement) {
 // ===== 選項選擇功能 =====
 
 window.selectSingleOption = function(el, price, group, name) {
-    // 移除同組其他選項的 active
-    document.querySelectorAll(`button[data-group="${group}"]`).forEach(b => {
-        b.classList.remove('active');
-    });
-    
-    // 為選中的按鈕加入 active
+    document.querySelectorAll(`button[data-group="${group}"]`).forEach(b => b.classList.remove('active'));
     el.classList.add('active');
-    
-    // 如果是設計類，清除規則框
     if (group === 'design') {
         document.querySelectorAll('.rule-box').forEach(b => b.classList.add('hidden'));
         const k1 = document.getElementById('keyword1');
@@ -180,57 +133,39 @@ window.selectSingleOption = function(el, price, group, name) {
         if (k1) k1.value = '';
         if (k2) k2.value = '';
     }
-    
     priceState[group] = price;
-    
     if (group === 'design') {
         bookingDetails.design = { name: name || '', price: price, keywords: [] };
     } else if (group === 'removal') {
         bookingDetails.removal = { name: name || '', price: price };
     }
-    
     window.updateUI();
 };
 
 window.toggleRemovalNeed = function(need, el) {
-    // 移除同組其他選項的 active
-    document.querySelectorAll(`button[data-group="removal-need"]`).forEach(b => {
-        b.classList.remove('active');
-    });
-    
-    // 為選中的按鈕加入 active
+    document.querySelectorAll(`button[data-group="removal-need"]`).forEach(b => b.classList.remove('active'));
     el.classList.add('active');
-    
     const removalOptions = document.getElementById('removal-options');
     const removalExtras = document.getElementById('removal-extras');
-    
     if (need) {
         removalOptions.classList.remove('hidden');
         removalExtras.classList.remove('hidden');
     } else {
         removalOptions.classList.add('hidden');
         removalExtras.classList.add('hidden');
-        
-        // 清除卸甲選擇
-        document.querySelectorAll(`button[data-group="removal"]`).forEach(b => {
-            b.classList.remove('active');
-        });
+        document.querySelectorAll(`button[data-group="removal"]`).forEach(b => b.classList.remove('active'));
         priceState.removal = 0;
         bookingDetails.removal = { name: '無須卸甲', price: 0 };
-        
-        // 重置計數器
         bigDiamondCount = 0;
         nailPolishRemovalCount = 0;
         document.getElementById('big-diamond-count').innerText = '0';
         document.getElementById('nail-polish-removal-count').innerText = '0';
-        
         window.updateUI();
     }
     window.validate();
 };
 
 window.toggleService = function(el, price, name) {
-    // 切換 active
     if (el.classList.contains('active')) { 
         el.classList.remove('active');
         priceState.extras -= price;
@@ -253,12 +188,10 @@ window.showLoginScreen = function() {
 window.loginWithLine = async function() {
     console.log('🔐 loginWithLine called');
     sessionStorage.removeItem('manualLogout');
-    
     if (!CONFIG.LIFF_ID || CONFIG.LIFF_ID === 'YOUR_LIFF_ID_HERE') {
         alert("請設定 LIFF ID");
         return;
     }
-    
     try {
         if (!liffInitialized) {
             console.log('🔄 初始化 LIFF...');
@@ -266,7 +199,6 @@ window.loginWithLine = async function() {
             liffInitialized = true;
             console.log('✅ LIFF 初始化成功');
         }
-        
         if (!liff.isLoggedIn()) {
             console.log('🔄 Redirecting to LINE login...');
             liff.login({ redirectUri: window.location.href });
@@ -292,7 +224,6 @@ window.updateUserStatus = function() {
     const friendWarningEl = document.getElementById('friend-warning');
     const statusEl = document.getElementById('user-status');
     const userNameEl = document.getElementById('user-name');
-    
     if (!userProfile || !userProfile.userId) {
         warningEl?.classList.remove('hidden');
         friendWarningEl?.classList.add('hidden');
@@ -322,20 +253,25 @@ window.updateUserStatus = function() {
     }
 };
 
+// ✅ 修改：好友檢查，處理 Bot 未綁定的錯誤
 window.checkFriendship = async function() {
     if (!liffInitialized || !liff.isLoggedIn()) {
         console.warn("⚠️ LIFF 未初始化或未登入，跳過好友檢查");
         isFriend = true;
         return true;
     }
-    
     try {
         const friendship = await liff.getFriendship();
         isFriend = friendship.friendFlag;
         console.log(isFriend ? "✅ 用戶已加為好友" : "❌ 用戶尚未加為好友");
         return isFriend;
     } catch (e) {
-        console.error("⚠️ 無法檢查好友狀態", e);
+        // Bot 未綁定 LIFF 時會出現此錯誤，屬正常情況，不顯示紅色錯誤
+        if (e.message && e.message.includes('no login bot')) {
+            console.warn("⚠️ LIFF 尚未綁定 Bot，跳過好友檢查");
+        } else {
+            console.warn("⚠️ 無法檢查好友狀態:", e.message);
+        }
         isFriend = true;
         return true;
     }
@@ -354,7 +290,6 @@ window.recheckFriendship = async function() {
     await window.checkFriendship();
     window.updateUserStatus();
     window.showLoading(false);
-    
     if (isFriend) {
         alert("✅ 已確認您是我們的好友！");
     } else {
@@ -369,9 +304,7 @@ window.fetchCalendarData = async function() {
     try {
         const { data, error } = await supabaseClient.from('calendar_slots').select('*');
         if (error) throw error;
-        
         await window.loadClosedDates();
-        
         window.initMockData(true, currentYear, currentMonth);
         data.forEach(row => {
             const parts = row.date_id.split('-');
@@ -393,14 +326,8 @@ window.fetchCalendarData = async function() {
 
 window.changeCustomerMonth = async function(delta) {
     currentMonth += delta;
-    if (currentMonth > 11) {
-        currentMonth = 0;
-        currentYear++;
-    } else if (currentMonth < 0) {
-        currentMonth = 11;
-        currentYear--;
-    }
-    
+    if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+    else if (currentMonth < 0) { currentMonth = 11; currentYear--; }
     await window.fetchCalendarData();
     document.getElementById('calendar-title').innerText = `${MONTH_NAMES[currentMonth]} ${currentYear}`;
     window.renderCalendar();
@@ -411,26 +338,18 @@ window.renderCalendar = function() {
     if (!grid) return;
     grid.innerHTML = '';
     const first = new Date(currentYear, currentMonth, 1).getDay();
-    
     window.calculateBookingRange();
-    
     for(let i=0; i<first; i++) grid.appendChild(document.createElement('div'));
-    
     calendarData.forEach(item => {
         const div = document.createElement('div');
         div.innerText = item.date;
-        
         const dateCheck = window.isDateBookable(currentYear, currentMonth, item.date);
-        
         let className = 'calendar-day';
         let clickable = false;
-        
         if (dateCheck.reason === 'closed') {
             className += ' closed';
             div.title = '此日期已關閉';
-            div.onclick = () => {
-                alert('🚫 此日期已關閉，無法預約\n\n如有需要請聯繫我們');
-            };
+            div.onclick = () => alert('🚫 此日期已關閉，無法預約\n\n如有需要請聯繫我們');
         } else if (dateCheck.reason === 'not-open') {
             className += ' not-open';
             div.title = '尚未開放預約';
@@ -444,17 +363,10 @@ window.renderCalendar = function() {
             clickable = true;
             div.title = '點擊預約';
         }
-        
         div.className = className;
-        
-        if(clickable) {
-            div.onclick = () => window.selectDate(div, item.date, item.bookedSlots);
-        }
-        
+        if(clickable) div.onclick = () => window.selectDate(div, item.date, item.bookedSlots);
         grid.appendChild(div);
     });
-    
-    // 顯示可預約範圍
     const rangeInfo = document.getElementById('booking-range-info');
     const rangeText = document.getElementById('booking-range-text');
     if (rangeInfo && rangeText && bookingOpenRanges.ranges && bookingOpenRanges.ranges.length > 0) {
@@ -475,11 +387,9 @@ window.selectDate = function(el, date, slots) {
     el.classList.add('selected'); 
     selectedDate = `${currentMonth+1}/${date}`;
     selectedTime = null;
-    
     currentTimeHour = 10;
     currentTimeMinute = 0;
     currentDateBookedTimes = slots.map(s => typeof s === 'string' ? s : s.time);
-    
     window.renderTimeSelector();
     window.updateServiceEndTime();
     window.validate();
@@ -490,24 +400,17 @@ window.selectDate = function(el, date, slots) {
 window.renderTimeSelector = function() {
     const container = document.getElementById('time-slots-container'); 
     container.classList.remove('hidden');
-    
     const quickSlotsGrid = document.getElementById('quick-time-slots');
     quickSlotsGrid.innerHTML = '';
-    
     const quickSlots = [];
-    for (let hour = 10; hour <= 18; hour++) {
-        quickSlots.push({ hour: hour, minute: 0 });
-    }
-    
+    for (let hour = 10; hour <= 18; hour++) quickSlots.push({ hour, minute: 0 });
     quickSlots.forEach(slot => {
         const timeStr = window.formatTime(slot.hour, slot.minute);
         const timeMinutes = slot.hour * 60 + slot.minute;
         const isConflict = window.isTimeConflict(timeMinutes);
-        
         const btn = document.createElement('button');
         btn.className = 'btn-toggle p-3 text-sm rounded-custom transition';
         btn.innerText = timeStr;
-        
         if (isConflict) {
             btn.className += ' opacity-50 cursor-not-allowed';
             btn.disabled = true;
@@ -515,13 +418,9 @@ window.renderTimeSelector = function() {
         } else {
             btn.onclick = () => window.quickSelectTime(slot.hour, slot.minute);
         }
-        
         quickSlotsGrid.appendChild(btn);
     });
-    
-    const timeDisplay = document.getElementById('selected-time-display');
-    timeDisplay.innerText = window.formatTime(currentTimeHour, currentTimeMinute);
-    
+    document.getElementById('selected-time-display').innerText = window.formatTime(currentTimeHour, currentTimeMinute);
     window.updateServiceEndTime();
     window.checkTimeConflict();
 };
@@ -529,30 +428,20 @@ window.renderTimeSelector = function() {
 window.quickSelectTime = function(hour, minute) {
     currentTimeHour = hour;
     currentTimeMinute = minute;
-    
-    document.querySelectorAll('#quick-time-slots button').forEach(btn => {
-        btn.classList.remove('active');
-    });
+    document.querySelectorAll('#quick-time-slots button').forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
-    
     const timeDisplay = document.getElementById('selected-time-display');
     timeDisplay.innerText = window.formatTime(currentTimeHour, currentTimeMinute);
-    
     window.updateServiceEndTime();
     window.checkTimeConflict();
-    
     timeDisplay.classList.add('scale-110');
-    setTimeout(() => {
-        timeDisplay.classList.remove('scale-110');
-    }, 200);
+    setTimeout(() => timeDisplay.classList.remove('scale-110'), 200);
 };
 
 window.adjustTime = function(minutes) {
     let totalMinutes = currentTimeHour * 60 + currentTimeMinute + minutes;
-    
     const startMinutes = CONFIG.BUSINESS_HOURS.start.hour * 60 + CONFIG.BUSINESS_HOURS.start.minute;
     const endMinutes = CONFIG.BUSINESS_HOURS.end.hour * 60 + CONFIG.BUSINESS_HOURS.end.minute;
-    
     if (totalMinutes < startMinutes) {
         currentTimeHour = CONFIG.BUSINESS_HOURS.start.hour;
         currentTimeMinute = CONFIG.BUSINESS_HOURS.start.minute;
@@ -563,70 +452,45 @@ window.adjustTime = function(minutes) {
         currentTimeHour = Math.floor(totalMinutes / 60);
         currentTimeMinute = totalMinutes % 60;
     }
-    
+    const currentTime = window.formatTime(currentTimeHour, currentTimeMinute);
     document.querySelectorAll('#quick-time-slots button').forEach(btn => {
-        const btnTime = btn.innerText;
-        const currentTime = window.formatTime(currentTimeHour, currentTimeMinute);
-        if (btnTime === currentTime) {
-            btn.classList.add('active');
-        } else {
-            btn.classList.remove('active');
-        }
+        btn.classList.toggle('active', btn.innerText === currentTime);
     });
-    
-    const timeDisplay = document.getElementById('selected-time-display');
-    timeDisplay.innerText = window.formatTime(currentTimeHour, currentTimeMinute);
-    
+    document.getElementById('selected-time-display').innerText = currentTime;
     window.updateServiceEndTime();
     window.checkTimeConflict();
 };
 
 window.updateServiceEndTime = function() {
-    const currentTimeMinutes = currentTimeHour * 60 + currentTimeMinute;
-    const endTimeMinutes = currentTimeMinutes + CONFIG.SERVICE_DURATION_MINUTES;
+    const endTimeMinutes = currentTimeHour * 60 + currentTimeMinute + CONFIG.SERVICE_DURATION_MINUTES;
     const endTime = window.minutesToTime(endTimeMinutes);
-    const endTimeStr = window.formatTime(endTime.hour, endTime.minute);
-    
     const serviceEndDisplay = document.getElementById('service-end-time');
-    if (serviceEndDisplay) {
-        serviceEndDisplay.innerText = `服務至 ${endTimeStr}`;
-    }
+    if (serviceEndDisplay) serviceEndDisplay.innerText = `服務至 ${window.formatTime(endTime.hour, endTime.minute)}`;
 };
 
 window.isTimeConflict = function(selectedTimeMinutes) {
-    const selectedStart = selectedTimeMinutes;
     const selectedEnd = selectedTimeMinutes + CONFIG.SERVICE_DURATION_MINUTES;
-    
     for (let bookedTimeStr of currentDateBookedTimes) {
         const bookedStart = window.timeToMinutes(bookedTimeStr);
         const bookedEnd = bookedStart + CONFIG.SERVICE_DURATION_MINUTES;
-        
-        if (window.checkTimeOverlap(selectedStart, selectedEnd, bookedStart, bookedEnd)) {
-            return true;
-        }
+        if (window.checkTimeOverlap(selectedTimeMinutes, selectedEnd, bookedStart, bookedEnd)) return true;
     }
-    
     return false;
 };
 
 window.checkTimeConflict = function() {
     const currentTimeMinutes = currentTimeHour * 60 + currentTimeMinute;
     const hasConflict = window.isTimeConflict(currentTimeMinutes);
-    
     const warning = document.getElementById('time-conflict-warning');
     const confirmBtn = document.getElementById('confirm-time-btn');
-    
     if (hasConflict) {
         const nextAvailableTime = window.findNextAvailableTime(currentTimeMinutes);
-        
         if (nextAvailableTime) {
-            const availTime = window.minutesToTime(nextAvailableTime);
-            const availTimeStr = window.formatTime(availTime.hour, availTime.minute);
-            warning.innerHTML = `⏰ 建議選擇：<strong>${availTimeStr}</strong> 或之後的時間`;
+            const t = window.minutesToTime(nextAvailableTime);
+            warning.innerHTML = `⏰ 建議選擇：<strong>${window.formatTime(t.hour, t.minute)}</strong> 或之後的時間`;
         } else {
             warning.innerHTML = `⚠️ 今日已無可用時段`;
         }
-        
         warning.classList.remove('hidden');
         confirmBtn.classList.add('opacity-50', 'cursor-not-allowed');
         confirmBtn.disabled = true;
@@ -639,67 +503,47 @@ window.checkTimeConflict = function() {
 
 window.findNextAvailableTime = function(fromTimeMinutes) {
     let latestEndTime = fromTimeMinutes;
-    
+    const selectedEnd = fromTimeMinutes + CONFIG.SERVICE_DURATION_MINUTES;
     for (let bookedTimeStr of currentDateBookedTimes) {
         const bookedStart = window.timeToMinutes(bookedTimeStr);
         const bookedEnd = bookedStart + CONFIG.SERVICE_DURATION_MINUTES;
-        const selectedStart = fromTimeMinutes;
-        const selectedEnd = fromTimeMinutes + CONFIG.SERVICE_DURATION_MINUTES;
-        
-        if (window.checkTimeOverlap(selectedStart, selectedEnd, bookedStart, bookedEnd)) {
-            if (bookedEnd > latestEndTime) {
-                latestEndTime = bookedEnd;
-            }
+        if (window.checkTimeOverlap(fromTimeMinutes, selectedEnd, bookedStart, bookedEnd)) {
+            if (bookedEnd > latestEndTime) latestEndTime = bookedEnd;
         }
     }
-    
     const businessEndMinutes = CONFIG.BUSINESS_HOURS.end.hour * 60 + CONFIG.BUSINESS_HOURS.end.minute;
-    
-    if (latestEndTime + CONFIG.SERVICE_DURATION_MINUTES <= businessEndMinutes) {
-        return latestEndTime;
-    }
-    
-    return null;
+    return (latestEndTime + CONFIG.SERVICE_DURATION_MINUTES <= businessEndMinutes) ? latestEndTime : null;
 };
 
 window.confirmTime = function() {
-    const timeStr = window.formatTime(currentTimeHour, currentTimeMinute);
     const currentTimeMinutes = currentTimeHour * 60 + currentTimeMinute;
-    
     if (window.isTimeConflict(currentTimeMinutes)) {
         const nextAvailableTime = window.findNextAvailableTime(currentTimeMinutes);
-        
         if (nextAvailableTime) {
-            const availTime = window.minutesToTime(nextAvailableTime);
-            const availTimeStr = window.formatTime(availTime.hour, availTime.minute);
-            alert(`❌ 此時段無法預約\n\n💡 建議選擇：${availTimeStr} 或之後的時間`);
+            const t = window.minutesToTime(nextAvailableTime);
+            alert(`❌ 此時段無法預約\n\n💡 建議選擇：${window.formatTime(t.hour, t.minute)} 或之後的時間`);
         } else {
             alert("❌ 今日已無可用時段\n\n請選擇其他日期");
         }
         return;
     }
-    
+    const timeStr = window.formatTime(currentTimeHour, currentTimeMinute);
     selectedTime = timeStr;
-    
     const endTimeMinutes = currentTimeMinutes + CONFIG.SERVICE_DURATION_MINUTES;
     const endTime = window.minutesToTime(endTimeMinutes);
     const endTimeStr = window.formatTime(endTime.hour, endTime.minute);
-    
     const timeDisplay = document.getElementById('selected-time-display');
     const confirmBtn = document.getElementById('confirm-time-btn');
-    
     timeDisplay.classList.add('text-green-600');
     confirmBtn.innerHTML = `✓ 已確認 (${timeStr}-${endTimeStr})`;
     confirmBtn.classList.add('bg-green-600');
     confirmBtn.classList.remove('bg-gray-800');
-    
     setTimeout(() => {
         timeDisplay.classList.remove('text-green-600');
         confirmBtn.innerHTML = '✓ 確認此時間';
         confirmBtn.classList.remove('bg-green-600');
         confirmBtn.classList.add('bg-gray-800');
     }, 2000);
-    
     window.validate();
 };
 
@@ -708,35 +552,20 @@ window.confirmTime = function() {
 window.checkAndSubmit = async function() {
     const check = document.getElementById('term-check').checked;
     const total = window.calculateTotal();
-    
     if (!userProfile || !userProfile.userId) {
         alert("❌ 請先使用 LINE 登入才能預約！");
         window.showLoginScreen();
         return;
     }
-    
     if (!isFriend) {
         alert("❌ 必須加入 LINE 官方帳號才能預約！\n\n原因：\n• 需要發送預約確認通知\n• 需要接收審核結果\n• 需要接收付款資訊\n\n請點擊下方「立即加入官方帳號」按鈕");
-        
-        document.getElementById('friend-warning').scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center' 
-        });
-        
         const friendWarning = document.getElementById('friend-warning');
+        friendWarning.scrollIntoView({ behavior: 'smooth', block: 'center' });
         friendWarning.classList.add('animate-pulse');
-        setTimeout(() => {
-            friendWarning.classList.remove('animate-pulse');
-        }, 2000);
-        
+        setTimeout(() => friendWarning.classList.remove('animate-pulse'), 2000);
         return;
     }
-    
-    if (total <= 0) { 
-        alert("❌ 您尚未選擇任何服務項目！"); 
-        return; 
-    }
-    
+    if (total <= 0) { alert("❌ 您尚未選擇任何服務項目！"); return; }
     const needRemovalBtn = document.getElementById('need-removal-yes');
     if (needRemovalBtn && needRemovalBtn.classList.contains('active')) {
         const hasRemovalSelected = Array.from(document.querySelectorAll('button[data-group="removal"]'))
@@ -747,7 +576,6 @@ window.checkAndSubmit = async function() {
             return;
         }
     }
-    
     if (bookingDetails.design.name === '任我做') {
         const k1 = document.getElementById('keyword1').value.trim();
         const k2 = document.getElementById('keyword2').value.trim();
@@ -757,11 +585,9 @@ window.checkAndSubmit = async function() {
             return;
         }
     }
-    
     if (!selectedDate) { alert("❌ 請選擇預約日期"); return; }
     if (!selectedTime) { alert("❌ 請選擇預約時段"); return; }
     if (!check) { alert("❌ 請先勾選同意規範"); return; }
-
     try {
         await window.finalSubmit();
     } catch (e) {
@@ -779,178 +605,97 @@ window.finalSubmit = async function() {
         alert("❌ 資料庫未連線");
         return;
     }
-    
     const btn = document.getElementById('submit-btn');
     const originalText = btn.innerHTML;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 處理中...';
     btn.disabled = true;
-
     try {
         const dateId = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(selectedDate.split('/')[1]).padStart(2, '0')}`;
         console.log('📅 查詢日期:', dateId);
-        
         const { data, error: fetchErr } = await supabaseClient
             .from('calendar_slots')
             .select('*')
             .eq('date_id', dateId)
             .maybeSingle();
-        
-        if (fetchErr) {
-            console.error('❌ 資料庫查詢錯誤:', fetchErr);
-            throw fetchErr;
-        }
-        
-        let booked = [];
-        if (data) {
-            booked = data.booked_slots || [];  
-            console.log('📋 找到現有記錄，已有', booked.length, '筆預約');
-        } else {
-            console.log('📝 這是新的日期，將建立記錄');
-        }
-        
+        if (fetchErr) throw fetchErr;
+        let booked = data ? (data.booked_slots || []) : [];
         if (booked.some(s => (typeof s === 'string' ? s : s.time) === selectedTime)) {
             throw new Error("該時段已被預約 😭");
         }
-        
-        let userName = userProfile.displayName;
-        let userId = userProfile.userId;
-        
         let details = {
             design: { ...bookingDetails.design },
             removal: { ...bookingDetails.removal },
             extras: [...bookingDetails.extras]
         };
-        
         if (bookingDetails.design.name === '任我做') {
             details.design.keywords = [
                 document.getElementById('keyword1').value.trim(),
                 document.getElementById('keyword2').value.trim()
             ];
         }
-        
-        if (unlimitedJumpCount > 0) details.extras.push({ 
-            name: '無限跳純色', 
-            count: unlimitedJumpCount, 
-            price: unlimitedJumpCount * 100 
-        });
-        if (extensionCount > 0) details.extras.push({ 
-            name: '延甲', 
-            count: extensionCount, 
-            price: extensionCount * 150 
-        });
-        if (repairCount > 0) details.extras.push({ 
-            name: '補甲', 
-            count: repairCount, 
-            price: repairCount * 50 
-        });
-        if (bigDiamondCount > 0) details.extras.push({ 
-            name: '大鑽/凹凸', 
-            count: bigDiamondCount, 
-            price: bigDiamondCount * 50 
-        });
-        if (nailPolishRemovalCount > 0) details.extras.push({ 
-            name: '卸指甲油', 
-            count: nailPolishRemovalCount, 
-            price: nailPolishRemovalCount * 50 
-        });
-        
+        if (unlimitedJumpCount > 0) details.extras.push({ name: '無限跳純色', count: unlimitedJumpCount, price: unlimitedJumpCount * 100 });
+        if (extensionCount > 0) details.extras.push({ name: '延甲', count: extensionCount, price: extensionCount * 150 });
+        if (repairCount > 0) details.extras.push({ name: '補甲', count: repairCount, price: repairCount * 50 });
+        if (bigDiamondCount > 0) details.extras.push({ name: '大鑽/凹凸', count: bigDiamondCount, price: bigDiamondCount * 50 });
+        if (nailPolishRemovalCount > 0) details.extras.push({ name: '卸指甲油', count: nailPolishRemovalCount, price: nailPolishRemovalCount * 50 });
         booked.push({
             time: selectedTime,
-            user: userName,
-            userId: userId,
+            user: userProfile.displayName,
+            userId: userProfile.userId,
             status: 'pending',
             bookingDetails: details,
             totalPrice: window.calculateTotal(),
             createdAt: new Date().toISOString()
         });
-
         console.log('💾 準備儲存預約:', booked[booked.length - 1]);
-
         const { error: saveErr } = await supabaseClient
             .from('calendar_slots')
-            .upsert({ 
-                date_id: dateId, 
-                booked_slots: booked, 
-                status: 'available' 
-            });
-            
-        if (saveErr) {
-            console.error('❌ 儲存錯誤:', saveErr);
-            throw saveErr;
-        }
-        
+            .upsert({ date_id: dateId, booked_slots: booked, status: 'available' });
+        if (saveErr) throw saveErr;
         console.log('✅ 預約儲存成功');
-        
+
+        // 組合訊息內容
         let detailMsg = '';
         if (details.design.name) {
             detailMsg += `\n🎨 造型：${details.design.name}`;
-            if (details.design.keywords && details.design.keywords.length > 0) {
-                detailMsg += ` (${details.design.keywords.join(', ')})`;
-            }
+            if (details.design.keywords?.length > 0) detailMsg += ` (${details.design.keywords.join(', ')})`;
         }
-        if (details.removal.name) {
-            detailMsg += `\n💅 卸甲：${details.removal.name}`;
-        }
+        if (details.removal.name) detailMsg += `\n💅 卸甲：${details.removal.name}`;
         if (details.extras.length > 0) {
-            detailMsg += `\n✨ 加購：${details.extras.map(e => {
-                if (e.count) return `${e.name} x${e.count}`;
-                return e.name;
-            }).join(', ')}`;
+            detailMsg += `\n✨ 加購：${details.extras.map(e => e.count ? `${e.name} x${e.count}` : e.name).join(', ')}`;
         }
-        
-        const successMsg = `【新預約申請】\n\n📋 預約資訊：\n\n👤 顧客：${userName}\n📅 日期：${selectedDate}\n⏰ 時間：${selectedTime}${detailMsg}\n💰 預估金額：$${window.calculateTotal()}\n\n⏳ 等待管理員審核中...\n審核通過後我們會立即通知您。\n\n---\nLOST.IN.GALLERY`;
+        const successMsg = `【新預約申請】\n\n👤 顧客：${userProfile.displayName}\n📅 日期：${selectedDate}\n⏰ 時間：${selectedTime}${detailMsg}\n💰 預估金額：$${window.calculateTotal()}\n\n⏳ 等待管理員審核中...\n審核通過後我們會立即通知您。\n\n---\nLOST.IN.GALLERY`;
 
-        // 1. 發通知給管理員（每次都會執行）
-        try {
-            console.log('📤 發送通知給管理員...');
-            await fetch('/api/send-line-message', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userId: CONFIG.ADMIN_LINE_USER_ID,
-                    message: successMsg
-                })
-            });
-            console.log('✅ 管理員通知發送成功');
-        } catch (e) {
-            console.warn("⚠️ 管理員通知發送失敗:", e);
-        }
-
-        // 2. 如果在 LINE App 內，也發一份給用戶自己看
+        // ✅ 只用 liff.sendMessages() 發訊息到官方帳號
+        // 客戶在 LINE App 內操作時，訊息會發送到官方帳號聊天室
         try {
             if (liffInitialized && liff.isInClient()) {
-                await liff.sendMessages([{
-                    type: 'text',
-                    text: successMsg
-                }]);
-                console.log('✅ 用戶端訊息發送成功');
+                await liff.sendMessages([{ type: 'text', text: successMsg }]);
+                console.log('✅ 訊息已發送到官方帳號');
+            } else {
+                console.warn('⚠️ 非 LINE App 環境，無法發送訊息（開發測試中屬正常）');
             }
         } catch (e) {
-            console.warn("⚠️ 用戶端訊息發送失敗:", e);
+            console.warn("⚠️ 訊息發送失敗:", e.message);
         }
 
-        // 3. 預約成功提示
+        // 預約成功提示
         btn.innerHTML = '✅ 預約已提交';
         btn.classList.add('bg-green-600');
         btn.classList.remove('bg-gray-800');
-        
         setTimeout(() => {
             alert("✅ 預約已提交！\n\n我們已收到您的預約申請，請稍候管理員審核。\n\n審核通知將透過 LINE 傳送給您。");
-            
             window.resetBookingForm();
             btn.innerHTML = originalText;
             btn.classList.add('bg-gray-800');
             btn.classList.remove('bg-green-600');
             btn.disabled = false;
         }, 1500);
-
     } catch (error) {
         console.error('❌ 預約失敗:', error);
-        
         btn.innerHTML = originalText;
         btn.disabled = false;
-        
-        if (error.message && error.message.includes('該時段已被預約')) {
+        if (error.message?.includes('該時段已被預約')) {
             alert("❌ 該時段已被其他用戶預約\n\n請選擇其他時間");
             await window.fetchCalendarData();
             window.renderCalendar();
@@ -962,44 +707,22 @@ window.finalSubmit = async function() {
 
 window.resetBookingForm = function() {
     priceState = { design: 0, removal: 0, extras: 0 };
-    bookingDetails = { 
-        design: { name: '', price: 0, keywords: [] },
-        removal: { name: '', price: 0 },
-        extras: []
-    };
-    
-    extensionCount = 0;
-    repairCount = 0;
-    unlimitedJumpCount = 0;
-    bigDiamondCount = 0;
-    nailPolishRemovalCount = 0;
-    
-    selectedDate = null;
-    selectedTime = null;
+    bookingDetails = { design: { name: '', price: 0, keywords: [] }, removal: { name: '', price: 0 }, extras: [] };
+    extensionCount = repairCount = unlimitedJumpCount = bigDiamondCount = nailPolishRemovalCount = 0;
+    selectedDate = selectedTime = null;
     currentTimeHour = 10;
     currentTimeMinute = 0;
-    
-    document.querySelectorAll('button[data-group]').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    document.querySelectorAll('.rule-box').forEach(box => {
-        box.classList.add('hidden');
-    });
-    document.querySelectorAll('.calendar-day').forEach(day => {
-        day.classList.remove('selected');
-    });
-    
+    document.querySelectorAll('button[data-group]').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.rule-box').forEach(box => box.classList.add('hidden'));
+    document.querySelectorAll('.calendar-day').forEach(day => day.classList.remove('selected'));
     const k1 = document.getElementById('keyword1');
     const k2 = document.getElementById('keyword2');
     if (k1) k1.value = '';
     if (k2) k2.value = '';
-    
     const timeContainer = document.getElementById('time-slots-container');
     if (timeContainer) timeContainer.classList.add('hidden');
-    
     const termCheck = document.getElementById('term-check');
     if (termCheck) termCheck.checked = false;
-    
     window.updateUI();
     window.validate();
 };
@@ -1008,9 +731,7 @@ window.resetBookingForm = function() {
 
 window.showLoading = function(show) {
     const loadingEl = document.getElementById('loading');
-    if (loadingEl) {
-        loadingEl.classList.toggle('hidden', !show);
-    }
+    if (loadingEl) loadingEl.classList.toggle('hidden', !show);
 };
 
 window.formatTime = function(hour, minute) {
@@ -1023,10 +744,7 @@ window.timeToMinutes = function(timeStr) {
 };
 
 window.minutesToTime = function(minutes) {
-    return {
-        hour: Math.floor(minutes / 60),
-        minute: minutes % 60
-    };
+    return { hour: Math.floor(minutes / 60), minute: minutes % 60 };
 };
 
 window.checkTimeOverlap = function(start1, end1, start2, end2) {
