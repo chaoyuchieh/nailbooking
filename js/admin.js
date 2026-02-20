@@ -519,6 +519,7 @@ window.selectAdminDate(adminSelectedIndex);
 };
 
 window.approveBookingDirectly = async function(dateStr, bookingIndex, userId) {
+     console.log('userId:', userId);
     if (!confirm('確定直接確認此預約嗎？')) return;
     
     window.showLoading(true);
