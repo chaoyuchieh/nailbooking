@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        // ✅ 每次自動取得新 Token，不會過期
+        // ✅ 每次自動取得新 Token不會過期
         const tokenRes = await fetch('https://api.line.me/oauth2/v3/token', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
