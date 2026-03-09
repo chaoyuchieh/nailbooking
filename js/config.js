@@ -4,7 +4,7 @@ const CONFIG = {
     LIFF_ID: '2009380924-KARfpWqM',
     LINE_MESSAGE_API_URL: '/api/send-line-message',
     LINE_OFFICIAL_ID: '@ydz8706m',
-    ADMIN_LINE_USER_ID: 'U57241a2c907fec7fe18196e1fd4d10ea',
+    ADMIN_LINE_USER_ID: 'U509ad7911b7732bd8f0c5a9396c03d6f',
     BUSINESS_HOURS: {
         start: { hour: 10, minute: 0 },
         end: { hour: 19, minute: 0 }
