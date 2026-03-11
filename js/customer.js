@@ -195,7 +195,10 @@ window.loginWithLine = async function() {
     try {
         if (!liffInitialized) {
             console.log('🔄 初始化 LIFF...');
-            await liff.init({ liffId: CONFIG.LIFF_ID });
+            await liff.init({ 
+                liffId: CONFIG.LIFF_ID,
+                withLoginOnExternalBrowser: true
+            });
             liffInitialized = true;
             console.log('✅ LIFF 初始化成功');
         }
@@ -253,7 +256,6 @@ window.updateUserStatus = function() {
     }
 };
 
-// ✅ 修改：好友檢查，處理 Bot 未綁定的錯誤
 window.checkFriendship = async function() {
     if (!liffInitialized || !liff.isLoggedIn()) {
         console.warn("⚠️ LIFF 未初始化或未登入，跳過好友檢查");
@@ -266,7 +268,6 @@ window.checkFriendship = async function() {
         console.log(isFriend ? "✅ 用戶已加為好友" : "❌ 用戶尚未加為好友");
         return isFriend;
     } catch (e) {
-        // Bot 未綁定 LIFF 時會出現此錯誤，屬正常情況，不顯示紅色錯誤
         if (e.message && e.message.includes('no login bot')) {
             console.warn("⚠️ LIFF 尚未綁定 Bot，跳過好友檢查");
         } else {
@@ -638,6 +639,7 @@ window.finalSubmit = async function() {
         if (repairCount > 0) details.extras.push({ name: '補甲', count: repairCount, price: repairCount * 50 });
         if (bigDiamondCount > 0) details.extras.push({ name: '大鑽/凹凸', count: bigDiamondCount, price: bigDiamondCount * 50 });
         if (nailPolishRemovalCount > 0) details.extras.push({ name: '卸指甲油', count: nailPolishRemovalCount, price: nailPolishRemovalCount * 50 });
+        
         booked.push({
             time: selectedTime,
             user: userProfile.displayName,
@@ -647,6 +649,7 @@ window.finalSubmit = async function() {
             totalPrice: window.calculateTotal(),
             createdAt: new Date().toISOString()
         });
+        
         console.log('💾 準備儲存預約:', booked[booked.length - 1]);
         const { error: saveErr } = await supabaseClient
             .from('calendar_slots')
@@ -666,17 +669,30 @@ window.finalSubmit = async function() {
         }
         const successMsg = `【新預約申請】\n\n👤 顧客：${userProfile.displayName}\n📅 日期：${selectedDate}\n⏰ 時間：${selectedTime}${detailMsg}\n💰 預估金額：$${window.calculateTotal()}\n\n⏳ 等待管理員審核中...\n審核通過後我們會立即通知您。\n\n---\nLOST.IN.GALLERY`;
 
-        // ✅ 只用 liff.sendMessages() 發訊息到官方帳號
-        // 客戶在 LINE App 內操作時，訊息會發送到官方帳號聊天室
+        // 1. 發通知給管理員（任何環境都會執行）
+        try {
+            console.log('📤 發送通知給管理員...');
+            await fetch('/api/send-line-message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: CONFIG.ADMIN_LINE_USER_ID,
+                    message: successMsg
+                })
+            });
+            console.log('✅ 管理員通知發送成功');
+        } catch (e) {
+            console.warn("⚠️ 管理員通知發送失敗:", e);
+        }
+
+        // 2. 如果在 LINE App 內，也發一份給客人
         try {
             if (liffInitialized && liff.isInClient()) {
                 await liff.sendMessages([{ type: 'text', text: successMsg }]);
-                console.log('✅ 訊息已發送到官方帳號');
-            } else {
-                console.warn('⚠️ 非 LINE App 環境，無法發送訊息（開發測試中屬正常）');
+                console.log('✅ 客人訊息發送成功');
             }
         } catch (e) {
-            console.warn("⚠️ 訊息發送失敗:", e.message);
+            console.warn("⚠️ 客人訊息發送失敗:", e.message);
         }
 
         // 預約成功提示
@@ -691,6 +707,7 @@ window.finalSubmit = async function() {
             btn.classList.remove('bg-green-600');
             btn.disabled = false;
         }, 1500);
+
     } catch (error) {
         console.error('❌ 預約失敗:', error);
         btn.innerHTML = originalText;
