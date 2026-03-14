@@ -367,6 +367,7 @@ window.selectAdminDate = function(index) {
             </button>
         `;
         listContainer.appendChild(addForm);
+    }
 };
 
 // === 關閉編輯區 ===
