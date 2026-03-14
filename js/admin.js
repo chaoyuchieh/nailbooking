@@ -27,7 +27,7 @@ window.doAdminLogin = function() {
         return;
     }
     
-    if (adminId === 'admin' && adminPwd === '1234') {
+    if (adminId === '4555yuyu@gmail.com' && adminPwd === 'Ly6r4sNR') {
         console.log('✅ 登入成功');
         sessionStorage.removeItem('manualLogout');
         
@@ -40,7 +40,7 @@ window.doAdminLogin = function() {
         window.initAdminYearSelector();
         window.fetchAdminCalendarData();
     } else {
-        alert('❌ 帳號或密碼錯誤\n\n正確帳號: admin\n正確密碼: 1234');
+        alert('❌ 帳號或密碼錯誤');
     }
 };
 
