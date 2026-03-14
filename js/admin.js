@@ -310,8 +310,10 @@ window.selectAdminDate = function(index) {
                 <div class="flex gap-2">
                     <input id="manual-name" type="text" placeholder="顧客姓名" value="${document.getElementById('manual-name')?.value || ''}"
                            class="flex-1 border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:border-gray-400">
-                    <input id="manual-time" type="time" step="900" value="${document.getElementById('manual-time')?.value || ''}"
-                           class="border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:border-gray-400">
+                <select id="manual-time" class="border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:border-gray-400">
+                    ${timeOptions(document.getElementById('manual-time')?.value)}
+                </select>                          
+                class="border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:border-gray-400">
                 </div>
             </div>
             <button onclick="saveManualBooking()"
