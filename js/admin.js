@@ -398,7 +398,63 @@ window.selectAdminDate = function(index) {
     } else {
         listContainer.innerHTML = `<div class="text-center p-4 bg-gray-50 rounded text-gray-400 text-sm">📅 本日尚無預約</div>`;
     }
-};
+};// ===== 封鎖時段區 =====
+const blockSection = document.createElement('div');
+blockSection.className = 'mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg';
+
+const blockedTimes = (item.bookedSlots || [])
+    .filter(b => b.status === 'blocked')
+    .map(b => b.time);
+
+const allSlots = [];
+for (let h = 10; h <= 18; h++) allSlots.push(`${String(h).padStart(2,'0')}:00`);
+
+blockSection.innerHTML = `
+    <p class="text-xs text-gray-500 mb-2 font-bold">🚫 封鎖特定時段</p>
+    <div class="grid grid-cols-3 gap-1" id="block-slots-grid"></div>
+`;
+listContainer.appendChild(blockSection);
+
+const blockGrid = blockSection.querySelector('#block-slots-grid');
+allSlots.forEach(timeStr => {
+    const isBlocked = blockedTimes.includes(timeStr);
+    const hasRealBooking = (item.bookedSlots || [])
+        .some(b => b.time === timeStr && b.status !== 'blocked');
+    const btn = document.createElement('button');
+    btn.className = `py-1 px-2 rounded text-xs font-bold transition ${
+        hasRealBooking ? 'bg-gray-200 text-gray-400 cursor-not-allowed' :
+        isBlocked ? 'bg-red-500 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-red-300'
+    }`;
+    btn.innerText = timeStr;
+    btn.disabled = hasRealBooking;
+    btn.title = hasRealBooking ? '此時段已有預約' : isBlocked ? '點擊解除封鎖' : '點擊封鎖';
+    if (!hasRealBooking) {
+        btn.onclick = () => toggleBlockedSlot(dateStr, timeStr);
+    }
+    blockGrid.appendChild(btn);
+});
+
+// ===== 手動新增預約（含日期）=====
+const addForm = document.createElement('div');
+addForm.className = 'mt-3 p-3 bg-gray-50 border border-dashed border-gray-300 rounded-lg';
+addForm.innerHTML = `
+    <p class="text-xs text-gray-500 mb-2 font-bold">＋ 手動新增預約</p>
+    <div class="flex flex-col gap-2 mb-2">
+        <input id="manual-date" type="date" value="${dateStr}"
+               class="border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:border-gray-400">
+        <div class="flex gap-2">
+            <input id="manual-name" type="text" placeholder="顧客姓名"
+                   class="flex-1 border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:border-gray-400">
+            <input id="manual-time" type="time" value="10:00"
+                   class="border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:border-gray-400">
+        </div>
+    </div>
+    <button onclick="saveManualBooking()"
+            class="w-full bg-gray-800 text-white py-2 rounded text-xs font-bold hover:bg-gray-700 transition">
+        新增預約
+    </button>
+`;
+listContainer.appendChild(addForm);
 
 // === 關閉編輯區 ===
 window.closeEditArea = function() {
@@ -594,7 +650,83 @@ window.cancelBooking = async function(dateStr, bookingIndex, userId) {
         window.showLoading(false);
     }
 };
+async function toggleBlockedSlot(dateStr, timeStr) {
+    window.showLoading(true);
+    try {
+        const { data, error: fetchErr } = await supabaseClient
+            .from('calendar_slots').select('*').eq('date_id', dateStr).maybeSingle();
+        if (fetchErr) throw fetchErr;
 
+        let bookedSlots = data?.booked_slots || [];
+        const idx = bookedSlots.findIndex(b => b.time === timeStr && b.status === 'blocked');
+
+        if (idx > -1) {
+            bookedSlots.splice(idx, 1); // 解除封鎖
+        } else {
+            bookedSlots.push({
+                time: timeStr,
+                user: '__blocked__',
+                userId: '',
+                status: 'blocked',
+                createdAt: new Date().toISOString()
+            });
+        }
+
+        const { error: saveErr } = await supabaseClient
+            .from('calendar_slots')
+            .upsert({ date_id: dateStr, booked_slots: bookedSlots, status: 'available' });
+        if (saveErr) throw saveErr;
+
+        await window.fetchAdminCalendarData();
+        window.selectAdminDate(adminSelectedIndex);
+    } catch(e) {
+        alert('❌ 操作失敗：' + e.message);
+    } finally {
+        window.showLoading(false);
+    }
+}
+
+window.saveManualBooking = async function() {
+    const dateStr = document.getElementById('manual-date')?.value;
+    const name = document.getElementById('manual-name')?.value?.trim();
+    const time = document.getElementById('manual-time')?.value;
+
+    if (!dateStr) { alert('請選擇日期'); return; }
+    if (!name) { alert('請填寫顧客姓名'); return; }
+    if (!time) { alert('請選擇時間'); return; }
+
+    window.showLoading(true);
+    try {
+        const { data, error: fetchErr } = await supabaseClient
+            .from('calendar_slots').select('*').eq('date_id', dateStr).maybeSingle();
+        if (fetchErr) throw fetchErr;
+
+        let bookedSlots = data?.booked_slots || [];
+        if (bookedSlots.some(b => b.time === time && b.status !== 'blocked')) {
+            alert('此時段已有預約'); return;
+        }
+
+        bookedSlots.push({
+            time, user: name, userId: '',
+            status: 'confirmed',
+            bookingDetails: null, totalPrice: 0,
+            createdAt: new Date().toISOString()
+        });
+
+        const { error: saveErr } = await supabaseClient
+            .from('calendar_slots')
+            .upsert({ date_id: dateStr, booked_slots: bookedSlots, status: 'available' });
+        if (saveErr) throw saveErr;
+
+        alert(`✅ 已新增 ${dateStr} ${time} ${name} 的預約`);
+        await window.fetchAdminCalendarData();
+        window.selectAdminDate(adminSelectedIndex);
+    } catch(e) {
+        alert('❌ 新增失敗：' + e.message);
+    } finally {
+        window.showLoading(false);
+    }
+};
 // ===== 輔助函數 =====
 
 async function updateBookingStatus(dateStr, bookingIndex, newStatus) {
