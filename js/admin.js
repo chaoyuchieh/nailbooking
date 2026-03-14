@@ -10,6 +10,17 @@ let adminYear = new Date().getFullYear();
 let adminMonth = new Date().getMonth();
 let adminSelectedIndex = null;
 
+// === 時間選項生成器 ===
+function timeOptions(selected = '') {
+    let opts = '<option value="">選擇時間</option>';
+    for (let h = 10; h <= 18; h++)
+        for (let m of [0, 15, 30, 45]) {
+            const v = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+            opts += `<option value="${v}" ${selected === v ? 'selected' : ''}>${v}</option>`;
+        }
+    return opts;
+}
+
 // === 登入相關 ===
 window.doAdminLogin = function() {
     const adminId = document.getElementById('admin-id')?.value?.trim();
