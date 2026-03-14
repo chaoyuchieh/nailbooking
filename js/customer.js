@@ -409,16 +409,25 @@ window.selectDate = function(el, date, slots) {
 
 // ===== 時間選擇相關 =====
 
+function getAvailableSlots(year, month, day) {
+    const dow = new Date(year, month, day).getDay();
+    const isWeekend = dow === 0 || dow === 6;
+    return isWeekend
+        ? ['11:00', '13:30', '16:00', '18:30']
+        : ['12:00', '15:00', '18:00'];
+}
+
 window.renderTimeSelector = function() {
-    const container = document.getElementById('time-slots-container'); 
+    const container = document.getElementById('time-slots-container');
     container.classList.remove('hidden');
     const quickSlotsGrid = document.getElementById('quick-time-slots');
     quickSlotsGrid.innerHTML = '';
-    const quickSlots = [];
-    for (let hour = 10; hour <= 18; hour++) quickSlots.push({ hour, minute: 0 });
-    quickSlots.forEach(slot => {
-        const timeStr = window.formatTime(slot.hour, slot.minute);
-        const timeMinutes = slot.hour * 60 + slot.minute;
+
+    const dayNum = parseInt(selectedDate.split('/')[1]);
+    const slots = getAvailableSlots(currentYear, currentMonth, dayNum);
+
+    slots.forEach(timeStr => {
+        const timeMinutes = window.timeToMinutes(timeStr);
         const isConflict = window.isTimeConflict(timeMinutes);
         const btn = document.createElement('button');
         btn.className = 'btn-toggle p-3 text-sm rounded-custom transition';
@@ -428,20 +437,24 @@ window.renderTimeSelector = function() {
             btn.disabled = true;
             btn.title = '此時段與現有預約衝突';
         } else {
-            btn.onclick = () => window.quickSelectTime(slot.hour, slot.minute);
+            btn.onclick = (e) => {
+                const [h, m] = timeStr.split(':').map(Number);
+                window.quickSelectTime(h, m, e);
+            };
         }
         quickSlotsGrid.appendChild(btn);
     });
-    document.getElementById('selected-time-display').innerText = window.formatTime(currentTimeHour, currentTimeMinute);
+
+    document.getElementById('selected-time-display').innerText = '';
     window.updateServiceEndTime();
     window.checkTimeConflict();
 };
 
-window.quickSelectTime = function(hour, minute) {
+window.quickSelectTime = function(hour, minute, e) {
     currentTimeHour = hour;
     currentTimeMinute = minute;
     document.querySelectorAll('#quick-time-slots button').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+    (e?.target || event?.target)?.classList.add('active');
     const timeDisplay = document.getElementById('selected-time-display');
     timeDisplay.innerText = window.formatTime(currentTimeHour, currentTimeMinute);
     window.updateServiceEndTime();
