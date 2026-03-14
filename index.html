@@ -243,30 +243,14 @@
                         <p class="text-xs text-gray-500 mb-2 text-center">快速選擇</p>
                         <div id="quick-time-slots" class="grid grid-cols-3 gap-2"></div>
                     </div>
-                    
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <p class="text-xs text-gray-500 mb-3 text-center">精確調整 (±10分鐘)</p>
-                        <div class="flex items-center justify-center gap-4">
-                            <button onclick="adjustTime(-10)" class="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition">
-                                <i class="fas fa-minus text-gray-700"></i>
-                            </button>
-                            <div class="text-center">
-                                <div id="selected-time-display" class="text-3xl font-bold text-gray-800">10:00</div>
-                                <div id="service-end-time" class="text-xs text-gray-500 mt-1">服務至 12:30</div>
-                            </div>
-                            <button onclick="adjustTime(10)" class="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition">
-                                <i class="fas fa-plus text-gray-700"></i>
-                            </button>
-                        </div>
-                        <div class="mt-4 flex justify-center">
-                            <button onclick="confirmTime()" id="confirm-time-btn" class="bg-gray-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-gray-700 transition">
-                                ✓ 確認此時間
-                            </button>
-                        </div>
-                        <div id="time-conflict-warning" class="hidden mt-3 p-3 bg-blue-50 border border-blue-300 rounded text-xs text-blue-700 text-center">
-                            ⏰ 建議選擇時間
-                        </div>
-                    </div>
+                    <div class="mt-3 flex justify-center">
+    <button onclick="confirmTime()" id="confirm-time-btn" class="bg-gray-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-gray-700 transition">
+        ✓ 確認此時間
+    </button>
+</div>
+<div id="time-conflict-warning" class="hidden mt-3 p-3 bg-blue-50 border border-blue-300 rounded text-xs text-blue-700 text-center">
+    ⏰ 建議選擇時間
+</div>
                 </div>
             </div>
         </section>
