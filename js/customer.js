@@ -19,6 +19,7 @@ let selectedTime = null;
 let currentTimeHour = 10;
 let currentTimeMinute = 0;
 let currentDateBookedTimes = [];
+let currentDateBlockedTimes = [];
 let userProfile = null;
 let liffInitialized = false;
 let isFriend = false;
@@ -385,12 +386,22 @@ window.renderCalendar = function() {
 
 window.selectDate = function(el, date, slots) {
     document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
-    el.classList.add('selected'); 
+    el.classList.add('selected');
     selectedDate = `${currentMonth+1}/${date}`;
     selectedTime = null;
     currentTimeHour = 10;
     currentTimeMinute = 0;
-    currentDateBookedTimes = slots.map(s => typeof s === 'string' ? s : s.time);
+
+    // Real + manual bookings → full 2.5hr overlap
+    currentDateBookedTimes = slots
+        .filter(s => typeof s === 'string' || s.status !== 'blocked')
+        .map(s => typeof s === 'string' ? s : s.time);
+
+    // Admin grid blocks → exact time only
+    currentDateBlockedTimes = slots
+        .filter(s => typeof s === 'object' && s.status === 'blocked')
+        .map(s => s.time);
+
     window.renderTimeSelector();
     window.updateServiceEndTime();
     window.validate();
@@ -471,11 +482,21 @@ window.updateServiceEndTime = function() {
 
 window.isTimeConflict = function(selectedTimeMinutes) {
     const selectedEnd = selectedTimeMinutes + CONFIG.SERVICE_DURATION_MINUTES;
-    for (let bookedTimeStr of currentDateBookedTimes) {
-        const bookedStart = window.timeToMinutes(bookedTimeStr);
+
+    // Real/manual bookings — full duration overlap
+    for (let t of currentDateBookedTimes) {
+        const bookedStart = window.timeToMinutes(t);
         const bookedEnd = bookedStart + CONFIG.SERVICE_DURATION_MINUTES;
         if (window.checkTimeOverlap(selectedTimeMinutes, selectedEnd, bookedStart, bookedEnd)) return true;
     }
+
+    // Admin grid blocks — exact hour match only
+    const selectedStr = window.formatTime(
+        Math.floor(selectedTimeMinutes / 60),
+        selectedTimeMinutes % 60
+    );
+    if (currentDateBlockedTimes.includes(selectedStr)) return true;
+
     return false;
 };
 
