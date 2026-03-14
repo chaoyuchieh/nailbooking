@@ -139,18 +139,25 @@ window.renderAdminCalendar = function() {
         const dateStr = `${adminYear}-${String(adminMonth + 1).padStart(2, '0')}-${String(item.date).padStart(2, '0')}`;
         const isClosed = item.status === 'booked' || (closedDates && closedDates.includes(dateStr));
         const realBookings = (item.bookedSlots || []).filter(b => b.status !== 'blocked');
+        const blockedBookings = (item.bookedSlots || []).filter(b => b.status === 'blocked');
         const hasBooking = realBookings.length > 0;
+        const hasBlocked = blockedBookings.length > 0;
+
         let html = `<div class="date-number">${item.date}</div>`;
+
         if (isClosed) {
             dayDiv.classList.add('status-off');
             html += `<div class="holiday-label">🚫 公休</div>`;
-        } else if (hasBooking) {
+        } else if (hasBooking || hasBlocked) {
             const sorted = [...realBookings].sort((a, b) => {
                 const tA = typeof a === 'string' ? a : a.time;
                 const tB = typeof b === 'string' ? b : b.time;
                 return tA.localeCompare(tB);
             });
+
             html += `<div class="booking-info">`;
+
+            // Real bookings
             sorted.forEach(booking => {
                 const time = typeof booking === 'string' ? booking : booking.time;
                 const user = typeof booking === 'object' && booking.user ? booking.user : 'Admin';
@@ -165,8 +172,17 @@ window.renderAdminCalendar = function() {
                 else displayText = `${time} ${user.substring(0, 2)}`;
                 html += `<div class="booking-tag ${statusClass}" title="👤 ${user}\n⏰ ${time}\n📊 ${status}">${displayText}</div>`;
             });
+
+            // Blocked slots
+            [...blockedBookings]
+                .sort((a, b) => a.time.localeCompare(b.time))
+                .forEach(b => {
+                    html += `<div class="booking-tag" style="background:#9ca3af;" title="🚫 封鎖時段：${b.time}">🚫 ${b.time}</div>`;
+                });
+
             html += `</div>`;
         }
+
         if (isPast) dayDiv.classList.add('status-past');
         if (index === adminSelectedIndex) dayDiv.classList.add('selected');
         dayDiv.innerHTML = html;
