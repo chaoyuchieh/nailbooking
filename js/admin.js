@@ -300,28 +300,28 @@ window.selectAdminDate = function(index) {
         });
 
         // ===== 手動新增預約 =====
+
         const addForm = document.createElement('div');
-        addForm.className = 'mt-3 p-3 bg-gray-50 border border-dashed border-gray-300 rounded-lg';
-        addForm.innerHTML = `
-            <p class="text-xs text-gray-500 mb-2 font-bold">＋ 手動新增預約</p>
-            <div class="flex flex-col gap-2 mb-2">
-                <input id="manual-date" type="date" value="${dateStr}"
-                       class="border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:border-gray-400">
-                <div class="flex gap-2">
-                    <input id="manual-name" type="text" placeholder="顧客姓名" value="${document.getElementById('manual-name')?.value || ''}"
-                           class="flex-1 border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:border-gray-400">
-                <select id="manual-time" class="border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:border-gray-400">
-                    ${timeOptions(document.getElementById('manual-time')?.value)}
-                </select>                          
-                class="border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:border-gray-400">
-                </div>
-            </div>
-            <button onclick="saveManualBooking()"
-                    class="w-full bg-gray-800 text-white py-2 rounded text-xs font-bold hover:bg-gray-700 transition">
-                新增預約
-            </button>
-        `;
-        listContainer.appendChild(addForm);
+                addForm.className = 'mt-3 p-3 bg-gray-50 border border-dashed border-gray-300 rounded-lg';
+                addForm.innerHTML = `
+                    <p class="text-xs text-gray-500 mb-2 font-bold">＋ 手動新增預約</p>
+                    <div class="flex flex-col gap-2 mb-2">
+                        <input id="manual-date" type="date" value="${dateStr}"
+                               class="border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:border-gray-400">
+                        <div class="flex gap-2">
+                            <input id="manual-name" type="text" placeholder="顧客姓名" value="${document.getElementById('manual-name')?.value || ''}"
+                                   class="flex-1 border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:border-gray-400">
+                            <select id="manual-time" class="border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:border-gray-400">
+                                ${timeOptions(document.getElementById('manual-time')?.value)}
+                            </select>
+                        </div>
+                    </div>
+                    <button onclick="saveManualBooking()"
+                            class="w-full bg-gray-800 text-white py-2 rounded text-xs font-bold hover:bg-gray-700 transition">
+                        新增預約
+                    </button>
+                `;
+                listContainer.appendChild(addForm);
     }
 };
 
