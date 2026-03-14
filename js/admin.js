@@ -21,6 +21,20 @@ function timeOptions(selected = '') {
     return opts;
 }
 
+function dayTimeOptions(dateStr, selected = '') {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dow = new Date(y, m - 1, d).getDay();
+    const isWeekend = dow === 0 || dow === 6;
+    const slots = isWeekend
+        ? ['11:00', '13:30', '16:00', '18:30']
+        : ['12:00', '15:00', '18:00'];
+    let opts = '<option value="">選擇時間</option>';
+    slots.forEach(v => {
+        opts += `<option value="${v}" ${selected === v ? 'selected' : ''}>${v}</option>`;
+    });
+    return opts;
+}
+
 // === 登入相關 ===
 window.doAdminLogin = function() {
     const adminId = document.getElementById('admin-id')?.value?.trim();
@@ -302,8 +316,11 @@ window.selectAdminDate = function(index) {
         const blockSection = document.createElement('div');
         blockSection.className = 'mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg';
         const blockedTimes = (item.bookedSlots || []).filter(b => b.status === 'blocked').map(b => b.time);
-        const allSlots = [];
-        for (let h = 10; h <= 18; h++) allSlots.push(`${String(h).padStart(2,'0')}:00`);
+        const dow = new Date(adminYear, adminMonth, item.date).getDay();
+        const isWeekend = dow === 0 || dow === 6;
+        const allSlots = isWeekend
+            ? ['11:00', '13:30', '16:00', '18:30']
+            : ['12:00', '15:00', '18:00'];
         blockSection.innerHTML = `
             <p class="text-xs text-gray-500 mb-2 font-bold">🚫 封鎖特定時段</p>
             <div class="grid grid-cols-3 gap-1" id="block-slots-grid"></div>
@@ -328,28 +345,28 @@ window.selectAdminDate = function(index) {
 
         // ===== 手動新增預約 =====
 
-        const addForm = document.createElement('div');
-                addForm.className = 'mt-3 p-3 bg-gray-50 border border-dashed border-gray-300 rounded-lg';
-                addForm.innerHTML = `
-                    <p class="text-xs text-gray-500 mb-2 font-bold">＋ 手動新增預約</p>
-                    <div class="flex flex-col gap-2 mb-2">
-                        <input id="manual-date" type="date" value="${dateStr}"
-                               class="border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:border-gray-400">
-                        <div class="flex gap-2">
-                            <input id="manual-name" type="text" placeholder="顧客姓名" value="${document.getElementById('manual-name')?.value || ''}"
-                                   class="flex-1 border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:border-gray-400">
-                            <select id="manual-time" class="border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:border-gray-400">
-                                ${timeOptions(document.getElementById('manual-time')?.value)}
-                            </select>
-                        </div>
-                    </div>
-                    <button onclick="saveManualBooking()"
-                            class="w-full bg-gray-800 text-white py-2 rounded text-xs font-bold hover:bg-gray-700 transition">
-                        新增預約
-                    </button>
-                `;
-                listContainer.appendChild(addForm);
-    }
+       const addForm = document.createElement('div');
+        addForm.className = 'mt-3 p-3 bg-gray-50 border border-dashed border-gray-300 rounded-lg';
+        addForm.innerHTML = `
+            <p class="text-xs text-gray-500 mb-2 font-bold">＋ 手動新增預約</p>
+            <div class="flex flex-col gap-2 mb-2">
+                <input id="manual-date" type="date" value="${dateStr}"
+                       onchange="document.getElementById('manual-time').innerHTML = dayTimeOptions(this.value)"
+                       class="border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:border-gray-400">
+                <div class="flex gap-2">
+                    <input id="manual-name" type="text" placeholder="顧客姓名" value="${document.getElementById('manual-name')?.value || ''}"
+                           class="flex-1 border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:border-gray-400">
+                    <select id="manual-time" class="border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:border-gray-400">
+                        ${dayTimeOptions(dateStr, document.getElementById('manual-time')?.value)}
+                    </select>
+                </div>
+            </div>
+            <button onclick="saveManualBooking()"
+                    class="w-full bg-gray-800 text-white py-2 rounded text-xs font-bold hover:bg-gray-700 transition">
+                新增預約
+            </button>
+        `;
+        listContainer.appendChild(addForm);
 };
 
 // === 關閉編輯區 ===
