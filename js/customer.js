@@ -695,19 +695,15 @@ window.finalSubmit = async function() {
             console.warn("⚠️ 客人訊息發送失敗:", e.message);
         }
 
-        // 預約成功提示
-        btn.innerHTML = '✅ 預約已提交';
-        btn.classList.add('bg-green-600');
-        btn.classList.remove('bg-gray-800');
         setTimeout(() => {
-            alert("✅ 預約已提交！\n\n我們已收到您的預約申請，請稍候管理員審核。\n\n審核通知將透過 LINE 傳送給您。");
-            window.resetBookingForm();
-            btn.innerHTML = originalText;
-            btn.classList.add('bg-gray-800');
-            btn.classList.remove('bg-green-600');
-            btn.disabled = false;
-        }, 1500);
-
+    window.showToast("✅ 預約已提交！\n\n我們已收到您的預約申請\n請稍候管理員審核。\n\n審核通知將透過 LINE 傳送給您。");
+    window.resetBookingForm();
+    btn.innerHTML = originalText;
+    btn.classList.add('bg-gray-800');
+    btn.classList.remove('bg-green-600');
+    btn.disabled = false;
+}, 1500);
+        
     } catch (error) {
         console.error('❌ 預約失敗:', error);
         btn.innerHTML = originalText;
