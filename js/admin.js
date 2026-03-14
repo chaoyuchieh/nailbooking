@@ -443,7 +443,10 @@ window.rejectBooking = async function(dateStr, bookingIndex, userId) {
     try {
         const booking = getBookingByDateAndIndex(dateStr, bookingIndex);
         await removeBooking(dateStr, bookingIndex);
-        await sendLineMessage(userId, `【預約未通過】\n\n您好 ${booking.user}，\n很抱歉，您的預約無法受理\n\n📅 預約日期：${dateStr}\n⏰ 預約時間：${booking.time}\n\n如有疑問請聯繫我們`);
+        // If user exists, we send message to user. Otherwise, we do not send message
+        if (userId && userId.trim() !== '') {
+            await sendLineMessage(userId, `【預約未通過】\n\n您好 ${booking.user}，\n很抱歉，您的預約無法受理\n\n📅 預約日期：${dateStr}\n⏰ 預約時間：${booking.time}\n\n如有疑問請聯繫我們`);
+        }
         alert('✅ 已拒絕預約');
         await window.fetchAdminCalendarData();
         window.selectAdminDate(adminSelectedIndex);
@@ -477,7 +480,10 @@ window.cancelBooking = async function(dateStr, bookingIndex, userId) {
     try {
         const booking = getBookingByDateAndIndex(dateStr, bookingIndex);
         await removeBooking(dateStr, bookingIndex);
-        await sendLineMessage(userId, `【預約已取消】\n\n您好 ${booking.user}，\n您的預約已被取消\n\n📅 預約日期：${dateStr}\n⏰ 預約時間：${booking.time}\n\n如需重新預約請聯繫我們`);
+        // If user exists, we send message to user. Otherwise, we do not send message
+        if (userId && userId.trim() !== '') {
+            await sendLineMessage(userId, `【預約已取消】\n\n您好 ${booking.user}，\n您的預約已被取消\n\n📅 預約日期：${dateStr}\n⏰ 預約時間：${booking.time}\n\n如需重新預約請聯繫我們`);
+        }
         alert('✅ 已取消預約');
         await window.fetchAdminCalendarData();
         window.selectAdminDate(adminSelectedIndex);
