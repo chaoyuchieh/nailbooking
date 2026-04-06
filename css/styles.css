@@ -88,10 +88,6 @@ body {
     cursor: pointer;
     transition: all 0.2s;
     font-size: 16px;
-}
-
-/* ✅ 可以預約的日期 - 淺灰色 */
-.calendar-day {
     background: #f8f9fa;
     color: #212529;
 }
@@ -106,17 +102,18 @@ body {
     color: white !important;
 }
 
-/* ✅ 已過期/公休/手動關閉 - 深灰色 */
-.calendar-day.booked,
-.calendar-day.closed {
-    background: #6c757d !important;
+/* ✅ 已過期 / 公休 - 灰色 */
+.calendar-day.booked {
+    background: #adb5bd !important;
     color: white !important;
     cursor: not-allowed;
-    opacity: 0.7;
+    opacity: 0.8;
 }
 
-/* ✅ 手動關閉日期可以點擊查看提示 */
+/* ✅ 手動關閉 - 淡紅色（與公休明顯區分） */
 .calendar-day.closed {
+    background: #f8d7da !important;
+    color: #842029 !important;
     cursor: pointer;
 }
 
@@ -129,7 +126,6 @@ body {
 
 /* ========== 管理後台專用樣式 ========== */
 
-/* 日曆容器 */
 .calendar-container {
     border-radius: 12px;
     overflow: hidden;
@@ -137,7 +133,6 @@ body {
     background: #e0e0e0;
 }
 
-/* 日曆網格 - 關鍵設定 */
 #admin-calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -145,7 +140,6 @@ body {
     background-color: #e0e0e0;
 }
 
-/* 日期格子基礎樣式 */
 .admin-day {
     background-color: #ffffff;
     min-height: 100px;
@@ -163,7 +157,6 @@ body {
     background-color: #f8f9fa;
 }
 
-/* 日期數字 - 18px 固定大小 */
 .date-number {
     font-size: 18px !important;
     font-weight: 600;
@@ -173,16 +166,14 @@ body {
     flex-shrink: 0;
 }
 
-/* 週末顏色 */
 .admin-day:nth-child(7n+1) .date-number {
-    color: #f26c68; /* 週日紅 */
+    color: #f26c68;
 }
 
 .admin-day:nth-child(7n) .date-number {
-    color: #4585d9; /* 週六藍 */
+    color: #4585d9;
 }
 
-/* 預約資訊容器 */
 .booking-info {
     width: 100%;
     display: flex;
@@ -192,7 +183,6 @@ body {
     flex: 1;
 }
 
-/* 預約標籤 - 10px 固定大小 */
 .booking-tag {
     font-size: 10px !important;
     font-weight: 700;
@@ -214,24 +204,22 @@ body {
     position: relative;
 }
 
-/* 預約狀態顏色 */
 .status-pending {
-    background-color: #f4b33e !important; /* 待審核: 橘色 */
+    background-color: #f4b33e !important;
 }
 
 .status-pending-payment {
-    background-color: #2196f3 !important; /* 待付款: 藍色 */
+    background-color: #2196f3 !important;
 }
 
 .status-confirmed {
-    background-color: #20b261 !important; /* 已確認: 綠色 */
+    background-color: #20b261 !important;
 }
 
 .status-rejected {
-    background-color: #999999 !important; /* 已拒絕: 灰色 */
+    background-color: #999999 !important;
 }
 
-/* 公休狀態 */
 .admin-day.status-off {
     background-color: #f8f9fa !important;
     justify-content: center;
@@ -244,7 +232,6 @@ body {
     text-align: center;
 }
 
-/* 過去日期 */
 .admin-day.status-past {
     background-color: #fafafa;
 }
@@ -257,7 +244,6 @@ body {
     opacity: 0.5;
 }
 
-/* 選中狀態 */
 .admin-day.selected {
     background-color: #fffceb !important;
     box-shadow: inset 0 0 0 2px #4585d9;
@@ -270,18 +256,92 @@ body {
 }
 
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 .hidden {
     display: none !important;
+}
+
+/* ========== ○/× 時段格 ========== */
+.avail-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.avail-table tbody tr {
+    border-top: 1px dashed #e5e7eb;
+}
+
+.avail-table tbody tr:last-child {
+    border-bottom: 1px dashed #e5e7eb;
+}
+
+.avail-table th {
+    font-size: 11px;
+    color: #9ca3af;
+    text-align: center;
+    padding: 4px 2px 8px;
+}
+
+.avail-table .time-lbl {
+    font-size: 11px;
+    color: #9ca3af;
+    text-align: right;
+    padding: 6px 10px 6px 0;
+    white-space: nowrap;
+}
+
+.avail-table td {
+    text-align: center;
+    padding: 5px 1px;
+}
+
+/* 空心圓（只有外框） */
+.slot-ring {
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2.5px solid #2563eb;
+    cursor: pointer;
+    transition: background 0.12s;
+    vertical-align: middle;
+}
+
+.slot-ring:hover {
+    background: #eff6ff;
+}
+
+.slot-ring.sel {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+}
+
+/* × 灰色，與圓同大小 */
+.slot-x {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+    color: #c0c0c0;
+    vertical-align: middle;
+    cursor: not-allowed;
+}
+
+/* 時段格選取提示 */
+.grid-selected-info {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: #eff6ff;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #1d4ed8;
+    text-align: center;
+    font-weight: 500;
 }
 
 /* ========== 響應式調整 ========== */
@@ -290,11 +350,9 @@ body {
         min-height: 80px;
         padding: 4px 2px;
     }
-    
     .date-number {
         font-size: 16px !important;
     }
-    
     .booking-tag {
         font-size: 9px !important;
         padding: 2px 4px;
