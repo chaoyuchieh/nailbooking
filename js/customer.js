@@ -1,28 +1,29 @@
-// customer.js - 客戶端功能 (最終修正版)
+// customer.js - 客戶端功能
 
 console.log('🚀 customer.js 開始載入...');
 
 // ===== 客戶端全域變數 =====
 let priceState = { design: 0, removal: 0, extras: 0 };
-let bookingDetails = { 
+let bookingDetails = {
     design: { name: '', price: 0, keywords: [] },
     removal: { name: '', price: 0 },
     extras: []
 };
-let extensionCount = 0; 
+let extensionCount = 0;
 let repairCount = 0;
 let unlimitedJumpCount = 0;
 let bigDiamondCount = 0;
 let nailPolishRemovalCount = 0;
-let selectedDate = null; 
+let selectedDate = null;
 let selectedTime = null;
 let currentTimeHour = 10;
 let currentTimeMinute = 0;
 let currentDateBookedTimes = [];
-let currentDateBlockedTimes = [];
 let userProfile = null;
 let liffInitialized = false;
 let isFriend = false;
+let calendarViewMode = 'month'; // 'month' | 'grid'
+let isThinking = false;         // 任我做「還在思考」狀態
 
 // ===== 價格計算與 UI 更新 =====
 
@@ -44,28 +45,37 @@ window.updateUI = function() {
 };
 
 window.validate = function() {
+    const total = window.calculateTotal();
     const termCheck = document.getElementById('term-check')?.checked || false;
     const btn = document.getElementById('submit-btn');
     const msg = document.getElementById('validation-msg');
     if (!btn || !msg) return;
-    
+
     let errors = [];
+
     if (priceState.design === 0) errors.push('請選擇造型');
+
     if (bookingDetails.design.name === '任我做') {
         const k1 = document.getElementById('keyword1')?.value?.trim() || '';
         const k2 = document.getElementById('keyword2')?.value?.trim() || '';
-        if (!k1 || !k2) errors.push('任我做需填寫兩個關鍵字');
+        if (!k1) {
+            errors.push('任我做至少需填寫一個關鍵字');
+        } else if (!isThinking && !k2) {
+            errors.push('請填寫關鍵字 2，或點「還在思考」');
+        }
     }
+
     const needRemovalBtn = document.getElementById('need-removal-yes');
     if (needRemovalBtn && needRemovalBtn.classList.contains('active')) {
         const hasRemovalSelected = Array.from(document.querySelectorAll('button[data-group="removal"]'))
             .some(btn => btn.classList.contains('active'));
         if (!hasRemovalSelected) errors.push('請選擇卸甲方式');
     }
+
     if (!selectedDate) errors.push('請選擇預約日期');
     if (!selectedTime) errors.push('請選擇預約時間');
     if (!termCheck) errors.push('請同意規範');
-    
+
     if (errors.length > 0) {
         msg.innerText = errors[0];
         btn.classList.add('opacity-50');
@@ -86,21 +96,25 @@ window.updateExtensionCount = function(delta) {
     document.getElementById('ext-count').innerText = extensionCount;
     window.updateUI();
 };
+
 window.updateRepairCount = function(delta) {
     repairCount = Math.max(0, Math.min(10, repairCount + delta));
     document.getElementById('repair-count').innerText = repairCount;
     window.updateUI();
 };
+
 window.updateUnlimitedJumpCount = function(delta) {
     unlimitedJumpCount = Math.max(0, Math.min(10, unlimitedJumpCount + delta));
     document.getElementById('unlimited-jump-count').innerText = unlimitedJumpCount;
     window.updateUI();
 };
+
 window.updateBigDiamondCount = function(delta) {
     bigDiamondCount = Math.max(0, Math.min(10, bigDiamondCount + delta));
     document.getElementById('big-diamond-count').innerText = bigDiamondCount;
     window.updateUI();
 };
+
 window.updateNailPolishRemovalCount = function(delta) {
     nailPolishRemovalCount = Math.max(0, Math.min(10, nailPolishRemovalCount + delta));
     document.getElementById('nail-polish-removal-count').innerText = nailPolishRemovalCount;
@@ -133,6 +147,14 @@ window.selectSingleOption = function(el, price, group, name) {
         const k2 = document.getElementById('keyword2');
         if (k1) k1.value = '';
         if (k2) k2.value = '';
+        // 重置思考中狀態
+        isThinking = false;
+        const thinkingBtn = document.getElementById('thinking-btn');
+        if (thinkingBtn) thinkingBtn.textContent = '💭 還在思考';
+        const k2wrap = document.getElementById('keyword2-wrap');
+        if (k2wrap) k2wrap.classList.remove('hidden');
+        const hint = document.getElementById('thinking-hint');
+        if (hint) hint.classList.add('hidden');
     }
     priceState[group] = price;
     if (group === 'design') {
@@ -167,16 +189,189 @@ window.toggleRemovalNeed = function(need, el) {
 };
 
 window.toggleService = function(el, price, name) {
-    if (el.classList.contains('active')) { 
+    if (el.classList.contains('active')) {
         el.classList.remove('active');
         priceState.extras -= price;
         bookingDetails.extras = bookingDetails.extras.filter(e => e.name !== name);
-    } else { 
+    } else {
         el.classList.add('active');
         priceState.extras += price;
         bookingDetails.extras.push({ name: name || '加購項目', price: price });
     }
     window.updateUI();
+};
+
+// ===== 任我做「還在思考」切換 =====
+
+window.toggleThinking = function() {
+    isThinking = !isThinking;
+    const btn    = document.getElementById('thinking-btn');
+    const k2wrap = document.getElementById('keyword2-wrap');
+    const hint   = document.getElementById('thinking-hint');
+    const k1     = document.getElementById('keyword1');
+
+    if (isThinking) {
+        btn.textContent = '✏️ 自己填';
+        btn.classList.add('bg-yellow-600', 'border-yellow-500', 'text-white');
+        k2wrap.classList.add('hidden');
+        hint.classList.remove('hidden');
+        k1.placeholder = '給我一個方向就好～';
+    } else {
+        btn.textContent = '💭 還在思考';
+        btn.classList.remove('bg-yellow-600', 'border-yellow-500', 'text-white');
+        k2wrap.classList.remove('hidden');
+        hint.classList.add('hidden');
+        k1.placeholder = '輸入關鍵字 1';
+    }
+    window.validate();
+};
+
+// ===== 月曆 / 時段 切換 =====
+
+window.setCalendarView = function(mode) {
+    calendarViewMode = mode;
+
+    const monthBtn  = document.getElementById('view-month-btn');
+    const gridBtn   = document.getElementById('view-grid-btn');
+    const monthView = document.getElementById('calendar-month-view');
+    const gridView  = document.getElementById('calendar-grid-view');
+
+    if (mode === 'month') {
+        monthBtn.className = 'text-xs px-4 py-1.5 rounded-full bg-gray-800 text-white font-bold transition';
+        gridBtn.className  = 'text-xs px-4 py-1.5 rounded-full bg-gray-100 text-gray-500 font-bold transition';
+        monthView.classList.remove('hidden');
+        gridView.classList.add('hidden');
+    } else {
+        gridBtn.className  = 'text-xs px-4 py-1.5 rounded-full bg-gray-800 text-white font-bold transition';
+        monthBtn.className = 'text-xs px-4 py-1.5 rounded-full bg-gray-100 text-gray-500 font-bold transition';
+        gridView.classList.remove('hidden');
+        monthView.classList.add('hidden');
+        window.renderTimeGrid();
+    }
+};
+
+// ===== 渲染 ○/× 時段格 =====
+
+window.renderTimeGrid = function() {
+    const table = document.getElementById('time-avail-grid');
+    if (!table) return;
+
+    window.calculateBookingRange();
+
+    // 取接下來 7 天
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(todayDate);
+        d.setDate(todayDate.getDate() + i);
+        days.push(d);
+    }
+
+    const dayNames   = ['日', '一', '二', '三', '四', '五', '六'];
+    const dayColors  = ['color:#d1443a;', '', '', '', '', '', 'color:#4585d9;'];
+    const hours      = [10, 11, 12, 13, 14, 15, 16, 17, 18];
+    const businessEnd = CONFIG.BUSINESS_HOURS.end.hour * 60; // 1140
+
+    // Header
+    let html = '<thead><tr><th></th>';
+    days.forEach(day => {
+        const isToday = day.toDateString() === todayDate.toDateString();
+        const col = day.getDay();
+        const colorStyle = isToday ? 'color:#2563eb; font-weight:500;' : dayColors[col];
+        html += `<th style="${colorStyle}">
+            <div>${dayNames[col]}</div>
+            <div>${day.getDate()}</div>
+        </th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    // 每個時段 row
+    hours.forEach(hour => {
+        html += `<tr><td class="time-lbl">${hour}:00</td>`;
+        days.forEach((day, ci) => {
+            const y  = day.getFullYear();
+            const m  = day.getMonth();
+            const dt = day.getDate();
+
+            const dateCheck = window.isDateBookable(y, m, dt);
+
+            // 取當天已預約時段
+            let bookedSlots = [];
+            if (y === currentYear && m === currentMonth) {
+                const item = calendarData.find(c => c.date === dt);
+                if (item) bookedSlots = (item.bookedSlots || []).map(s => typeof s === 'string' ? s : s.time);
+            }
+
+            const slotStart = hour * 60;
+            const slotEnd   = slotStart + CONFIG.SERVICE_DURATION_MINUTES;
+
+            let isConflict = slotEnd > businessEnd;
+            if (!isConflict) {
+                for (const t of bookedSlots) {
+                    const bStart = window.timeToMinutes(t);
+                    const bEnd   = bStart + CONFIG.SERVICE_DURATION_MINUTES;
+                    if (window.checkTimeOverlap(slotStart, slotEnd, bStart, bEnd)) {
+                        isConflict = true;
+                        break;
+                    }
+                }
+            }
+
+            if (dateCheck.bookable && !isConflict) {
+                html += `<td><span class="slot-ring" id="sg_${ci}_${hour}"
+                    onclick="selectFromGrid(${y},${m},${dt},${hour},${ci})"></span></td>`;
+            } else {
+                html += `<td><span class="slot-x">×</span></td>`;
+            }
+        });
+        html += '</tr>';
+    });
+
+    html += '</tbody>';
+    table.innerHTML = html;
+};
+
+// ===== 從時段格點擊選取 =====
+
+window.selectFromGrid = function(year, month, day, hour, ci) {
+    // 清除前一個選取
+    document.querySelectorAll('.slot-ring.sel').forEach(s => s.classList.remove('sel'));
+    const el = document.getElementById(`sg_${ci}_${hour}`);
+    if (el) el.classList.add('sel');
+
+    // 設定選取的日期與時間
+    selectedDate      = `${month + 1}/${day}`;
+    currentTimeHour   = hour;
+    currentTimeMinute = 0;
+    selectedTime      = window.formatTime(hour, 0);
+
+    // 更新衝突檢查用的 booked 清單
+    if (year === currentYear && month === currentMonth) {
+        const item = calendarData.find(c => c.date === day);
+        currentDateBookedTimes = item
+            ? (item.bookedSlots || []).map(s => typeof s === 'string' ? s : s.time)
+            : [];
+    } else {
+        currentDateBookedTimes = [];
+    }
+
+    // 計算結束時間
+    const endMin = hour * 60 + CONFIG.SERVICE_DURATION_MINUTES;
+    const endStr = window.formatTime(Math.floor(endMin / 60), endMin % 60);
+
+    // 顯示選取資訊
+    const info = document.getElementById('grid-selected-info');
+    if (info) {
+        info.textContent = `✅ 已選取：${month + 1}/${day}（${window.formatTime(hour, 0)} – ${endStr}）`;
+        info.classList.remove('hidden');
+    }
+
+    // 同步時間選擇器顯示
+    const timeDisplay = document.getElementById('selected-time-display');
+    if (timeDisplay) timeDisplay.innerText = window.formatTime(hour, 0);
+    window.updateServiceEndTime();
+    window.validate();
 };
 
 // ===== 登入相關 =====
@@ -195,19 +390,12 @@ window.loginWithLine = async function() {
     }
     try {
         if (!liffInitialized) {
-            console.log('🔄 初始化 LIFF...');
-            await liff.init({ 
-                liffId: CONFIG.LIFF_ID,
-                withLoginOnExternalBrowser: true
-            });
+            await liff.init({ liffId: CONFIG.LIFF_ID });
             liffInitialized = true;
-            console.log('✅ LIFF 初始化成功');
         }
         if (!liff.isLoggedIn()) {
-            console.log('🔄 Redirecting to LINE login...');
             liff.login({ redirectUri: window.location.href });
         } else {
-            console.log('✅ Already logged in, getting profile...');
             userProfile = await liff.getProfile();
             await window.checkFriendship();
             document.getElementById('login-overlay').classList.add('hidden');
@@ -224,56 +412,36 @@ window.loginWithLine = async function() {
 };
 
 window.updateUserStatus = function() {
-    const warningEl = document.getElementById('line-login-warning');
+    const warningEl      = document.getElementById('line-login-warning');
     const friendWarningEl = document.getElementById('friend-warning');
-    const statusEl = document.getElementById('user-status');
-    const userNameEl = document.getElementById('user-name');
+    const statusEl       = document.getElementById('user-status');
+    const userNameEl     = document.getElementById('user-name');
+
     if (!userProfile || !userProfile.userId) {
         warningEl?.classList.remove('hidden');
         friendWarningEl?.classList.add('hidden');
-        if (statusEl) {
-            statusEl.innerText = '⚠️ 訪客模式（無法預約）';
-            statusEl.classList.add('text-red-500', 'font-bold');
-        }
+        if (statusEl) { statusEl.innerText = '⚠️ 訪客模式（無法預約）'; statusEl.classList.add('text-red-500', 'font-bold'); }
         if (userNameEl) userNameEl.innerText = '訪客';
     } else if (!isFriend) {
         warningEl?.classList.add('hidden');
         friendWarningEl?.classList.remove('hidden');
-        if (statusEl) {
-            statusEl.innerText = '⚠️ 建議加入 LINE 官方帳號';
-            statusEl.classList.add('text-orange-500', 'font-bold');
-            statusEl.classList.remove('text-green-600', 'text-red-500');
-        }
+        if (statusEl) { statusEl.innerText = '⚠️ 建議加入 LINE 官方帳號'; statusEl.classList.add('text-orange-500', 'font-bold'); statusEl.classList.remove('text-green-600', 'text-red-500'); }
         if (userNameEl) userNameEl.innerText = userProfile.displayName;
     } else {
         warningEl?.classList.add('hidden');
         friendWarningEl?.classList.add('hidden');
-        if (statusEl) {
-            statusEl.innerText = '✓ LINE 帳號已連結';
-            statusEl.classList.remove('text-red-500', 'text-orange-500');
-            statusEl.classList.add('text-green-600');
-        }
+        if (statusEl) { statusEl.innerText = '✓ LINE 帳號已連結'; statusEl.classList.remove('text-red-500', 'text-orange-500'); statusEl.classList.add('text-green-600'); }
         if (userNameEl) userNameEl.innerText = userProfile.displayName;
     }
 };
 
 window.checkFriendship = async function() {
-    if (!liffInitialized || !liff.isLoggedIn()) {
-        console.warn("⚠️ LIFF 未初始化或未登入，跳過好友檢查");
-        isFriend = true;
-        return true;
-    }
+    if (!liffInitialized || !liff.isLoggedIn()) { isFriend = true; return true; }
     try {
         const friendship = await liff.getFriendship();
         isFriend = friendship.friendFlag;
-        console.log(isFriend ? "✅ 用戶已加為好友" : "❌ 用戶尚未加為好友");
         return isFriend;
     } catch (e) {
-        if (e.message && e.message.includes('no login bot')) {
-            console.warn("⚠️ LIFF 尚未綁定 Bot，跳過好友檢查");
-        } else {
-            console.warn("⚠️ 無法檢查好友狀態:", e.message);
-        }
         isFriend = true;
         return true;
     }
@@ -292,11 +460,8 @@ window.recheckFriendship = async function() {
     await window.checkFriendship();
     window.updateUserStatus();
     window.showLoading(false);
-    if (isFriend) {
-        alert("✅ 已確認您是我們的好友！");
-    } else {
-        alert("❌ 尚未偵測到好友關係");
-    }
+    if (isFriend) { alert("✅ 已確認您是我們的好友！"); }
+    else { alert("❌ 尚未偵測到好友關係"); }
 };
 
 // ===== 行事曆相關 =====
@@ -312,17 +477,17 @@ window.fetchCalendarData = async function() {
             const parts = row.date_id.split('-');
             if (parseInt(parts[0]) === currentYear && parseInt(parts[1]) === currentMonth + 1) {
                 const d = parseInt(parts[2]);
-                if (calendarData[d-1]) {
-                    calendarData[d-1].status = row.status;
-                    calendarData[d-1].bookedSlots = row.booked_slots || [];
+                if (calendarData[d - 1]) {
+                    calendarData[d - 1].status = row.status;
+                    calendarData[d - 1].bookedSlots = row.booked_slots || [];
                 }
             }
         });
-    } catch (err) { 
+    } catch (err) {
         console.log('⚠️ 無法載入資料，使用預設資料:', err.message);
-        window.initMockData(false, currentYear, currentMonth); 
-    } finally { 
-        window.showLoading(false); 
+        window.initMockData(false, currentYear, currentMonth);
+    } finally {
+        window.showLoading(false);
     }
 };
 
@@ -333,21 +498,24 @@ window.changeCustomerMonth = async function(delta) {
     await window.fetchCalendarData();
     document.getElementById('calendar-title').innerText = `${MONTH_NAMES[currentMonth]} ${currentYear}`;
     window.renderCalendar();
+    // 如果在 grid view，也重新渲染
+    if (calendarViewMode === 'grid') window.renderTimeGrid();
 };
 
 window.renderCalendar = function() {
-    const grid = document.getElementById('calendar-grid'); 
+    const grid = document.getElementById('calendar-grid');
     if (!grid) return;
     grid.innerHTML = '';
     const first = new Date(currentYear, currentMonth, 1).getDay();
     window.calculateBookingRange();
-    for(let i=0; i<first; i++) grid.appendChild(document.createElement('div'));
+    for (let i = 0; i < first; i++) grid.appendChild(document.createElement('div'));
+
     calendarData.forEach(item => {
         const div = document.createElement('div');
         div.innerText = item.date;
         const dateCheck = window.isDateBookable(currentYear, currentMonth, item.date);
         let className = 'calendar-day';
-        let clickable = false;
+
         if (dateCheck.reason === 'closed') {
             className += ' closed';
             div.title = '此日期已關閉';
@@ -362,20 +530,20 @@ window.renderCalendar = function() {
             className += ' booked';
             div.title = '本日公休';
         } else if (dateCheck.bookable && item.status === 'available') {
-            clickable = true;
             div.title = '點擊預約';
+            div.onclick = () => window.selectDate(div, item.date, item.bookedSlots);
         }
+
         div.className = className;
-        if(clickable) div.onclick = () => window.selectDate(div, item.date, item.bookedSlots);
         grid.appendChild(div);
     });
+
+    // 顯示可預約範圍
     const rangeInfo = document.getElementById('booking-range-info');
     const rangeText = document.getElementById('booking-range-text');
-    if (rangeInfo && rangeText && bookingOpenRanges.ranges && bookingOpenRanges.ranges.length > 0) {
+    if (rangeInfo && rangeText && bookingOpenRanges.ranges?.length > 0) {
         const parts = bookingOpenRanges.ranges.map(r => {
-            const s = `${r.start.getMonth() + 1}/${r.start.getDate()}`;
-            const e = `${r.end.getMonth() + 1}/${r.end.getDate()}`;
-            return `${s} ~ ${e}`;
+            return `${r.start.getMonth() + 1}/${r.start.getDate()} ~ ${r.end.getMonth() + 1}/${r.end.getDate()}`;
         });
         rangeText.innerText = parts.join('、');
         rangeInfo.classList.remove('hidden');
@@ -387,21 +555,11 @@ window.renderCalendar = function() {
 window.selectDate = function(el, date, slots) {
     document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
     el.classList.add('selected');
-    selectedDate = `${currentMonth+1}/${date}`;
+    selectedDate = `${currentMonth + 1}/${date}`;
     selectedTime = null;
     currentTimeHour = 10;
     currentTimeMinute = 0;
-
-    // Real + manual bookings → full 2.5hr overlap
-    currentDateBookedTimes = slots
-        .filter(s => typeof s === 'string' || s.status !== 'blocked')
-        .map(s => typeof s === 'string' ? s : s.time);
-
-    // Admin grid blocks → exact time only
-    currentDateBlockedTimes = slots
-        .filter(s => typeof s === 'object' && s.status === 'blocked')
-        .map(s => s.time);
-
+    currentDateBookedTimes = slots.map(s => typeof s === 'string' ? s : s.time);
     window.renderTimeSelector();
     window.updateServiceEndTime();
     window.validate();
@@ -409,26 +567,17 @@ window.selectDate = function(el, date, slots) {
 
 // ===== 時間選擇相關 =====
 
-function getAvailableSlots(year, month, day) {
-    const dow = new Date(year, month, day).getDay();
-    const isWeekend = dow === 0 || dow === 6;
-    return isWeekend
-        ? ['11:00', '13:30', '16:00', '18:30']
-        : ['12:00', '15:00', '18:00'];
-}
-
 window.renderTimeSelector = function() {
     const container = document.getElementById('time-slots-container');
     container.classList.remove('hidden');
     const quickSlotsGrid = document.getElementById('quick-time-slots');
     quickSlotsGrid.innerHTML = '';
+    const quickSlots = [];
+    for (let hour = 10; hour <= 18; hour++) quickSlots.push({ hour, minute: 0 });
 
-    const dayNum = parseInt(selectedDate.split('/')[1]);
-    const slots = getAvailableSlots(currentYear, currentMonth, dayNum);
-
-    slots.forEach(timeStr => {
-        const timeMinutes = window.timeToMinutes(timeStr);
-        const isConflict = window.isTimeConflict(timeMinutes);
+    quickSlots.forEach(slot => {
+        const timeStr = window.formatTime(slot.hour, slot.minute);
+        const isConflict = window.isTimeConflict(slot.hour * 60);
         const btn = document.createElement('button');
         btn.className = 'btn-toggle p-3 text-sm rounded-custom transition';
         btn.innerText = timeStr;
@@ -437,91 +586,70 @@ window.renderTimeSelector = function() {
             btn.disabled = true;
             btn.title = '此時段與現有預約衝突';
         } else {
-            btn.onclick = (e) => {
-                const [h, m] = timeStr.split(':').map(Number);
-                window.quickSelectTime(h, m, e);
-            };
+            btn.onclick = () => window.quickSelectTime(slot.hour, slot.minute);
         }
         quickSlotsGrid.appendChild(btn);
     });
 
-    document.getElementById('selected-time-display').innerText = '';
+    document.getElementById('selected-time-display').innerText = window.formatTime(currentTimeHour, currentTimeMinute);
     window.updateServiceEndTime();
     window.checkTimeConflict();
 };
 
-window.quickSelectTime = function(hour, minute, e) {
+window.quickSelectTime = function(hour, minute) {
     currentTimeHour = hour;
     currentTimeMinute = minute;
     document.querySelectorAll('#quick-time-slots button').forEach(btn => btn.classList.remove('active'));
-    (e?.target || event?.target)?.classList.add('active');
-    const timeDisplay = document.getElementById('selected-time-display');
-    timeDisplay.innerText = window.formatTime(currentTimeHour, currentTimeMinute);
+    event.target.classList.add('active');
+    document.getElementById('selected-time-display').innerText = window.formatTime(currentTimeHour, currentTimeMinute);
     window.updateServiceEndTime();
     window.checkTimeConflict();
-    timeDisplay.classList.add('scale-110');
-    setTimeout(() => timeDisplay.classList.remove('scale-110'), 200);
 };
 
 window.adjustTime = function(minutes) {
     let totalMinutes = currentTimeHour * 60 + currentTimeMinute + minutes;
     const startMinutes = CONFIG.BUSINESS_HOURS.start.hour * 60 + CONFIG.BUSINESS_HOURS.start.minute;
-    const endMinutes = CONFIG.BUSINESS_HOURS.end.hour * 60 + CONFIG.BUSINESS_HOURS.end.minute;
-    if (totalMinutes < startMinutes) {
-        currentTimeHour = CONFIG.BUSINESS_HOURS.start.hour;
-        currentTimeMinute = CONFIG.BUSINESS_HOURS.start.minute;
-    } else if (totalMinutes > endMinutes) {
-        currentTimeHour = CONFIG.BUSINESS_HOURS.end.hour;
-        currentTimeMinute = CONFIG.BUSINESS_HOURS.end.minute;
-    } else {
-        currentTimeHour = Math.floor(totalMinutes / 60);
-        currentTimeMinute = totalMinutes % 60;
-    }
-    const currentTime = window.formatTime(currentTimeHour, currentTimeMinute);
+    const endMinutes   = CONFIG.BUSINESS_HOURS.end.hour * 60   + CONFIG.BUSINESS_HOURS.end.minute;
+    if (totalMinutes < startMinutes) { currentTimeHour = CONFIG.BUSINESS_HOURS.start.hour; currentTimeMinute = CONFIG.BUSINESS_HOURS.start.minute; }
+    else if (totalMinutes > endMinutes) { currentTimeHour = CONFIG.BUSINESS_HOURS.end.hour; currentTimeMinute = CONFIG.BUSINESS_HOURS.end.minute; }
+    else { currentTimeHour = Math.floor(totalMinutes / 60); currentTimeMinute = totalMinutes % 60; }
+
     document.querySelectorAll('#quick-time-slots button').forEach(btn => {
-        btn.classList.toggle('active', btn.innerText === currentTime);
+        btn.classList.toggle('active', btn.innerText === window.formatTime(currentTimeHour, currentTimeMinute));
     });
-    document.getElementById('selected-time-display').innerText = currentTime;
+    document.getElementById('selected-time-display').innerText = window.formatTime(currentTimeHour, currentTimeMinute);
     window.updateServiceEndTime();
     window.checkTimeConflict();
 };
 
 window.updateServiceEndTime = function() {
-    const endTimeMinutes = currentTimeHour * 60 + currentTimeMinute + CONFIG.SERVICE_DURATION_MINUTES;
-    const endTime = window.minutesToTime(endTimeMinutes);
-    const serviceEndDisplay = document.getElementById('service-end-time');
-    if (serviceEndDisplay) serviceEndDisplay.innerText = `服務至 ${window.formatTime(endTime.hour, endTime.minute)}`;
+    const endMin = currentTimeHour * 60 + currentTimeMinute + CONFIG.SERVICE_DURATION_MINUTES;
+    const end = window.minutesToTime(endMin);
+    const el = document.getElementById('service-end-time');
+    if (el) el.innerText = `服務至 ${window.formatTime(end.hour, end.minute)}`;
 };
 
 window.isTimeConflict = function(selectedTimeMinutes) {
-    const selectedEnd = selectedTimeMinutes + CONFIG.SERVICE_DURATION_MINUTES;
-
-    // Real/manual bookings — full duration overlap
-    for (let t of currentDateBookedTimes) {
-        const bookedStart = window.timeToMinutes(t);
-        const bookedEnd = bookedStart + CONFIG.SERVICE_DURATION_MINUTES;
-        if (window.checkTimeOverlap(selectedTimeMinutes, selectedEnd, bookedStart, bookedEnd)) return true;
+    const selectedStart = selectedTimeMinutes;
+    const selectedEnd   = selectedTimeMinutes + CONFIG.SERVICE_DURATION_MINUTES;
+    for (const bookedTimeStr of currentDateBookedTimes) {
+        const bookedStart = window.timeToMinutes(bookedTimeStr);
+        const bookedEnd   = bookedStart + CONFIG.SERVICE_DURATION_MINUTES;
+        if (window.checkTimeOverlap(selectedStart, selectedEnd, bookedStart, bookedEnd)) return true;
     }
-
-    // Admin grid blocks — exact hour match only
-    const selectedStr = window.formatTime(
-        Math.floor(selectedTimeMinutes / 60),
-        selectedTimeMinutes % 60
-    );
-    if (currentDateBlockedTimes.includes(selectedStr)) return true;
-
     return false;
 };
 
 window.checkTimeConflict = function() {
     const currentTimeMinutes = currentTimeHour * 60 + currentTimeMinute;
     const hasConflict = window.isTimeConflict(currentTimeMinutes);
-    const warning = document.getElementById('time-conflict-warning');
+    const warning    = document.getElementById('time-conflict-warning');
     const confirmBtn = document.getElementById('confirm-time-btn');
+
     if (hasConflict) {
-        const nextAvailableTime = window.findNextAvailableTime(currentTimeMinutes);
-        if (nextAvailableTime) {
-            const t = window.minutesToTime(nextAvailableTime);
+        const next = window.findNextAvailableTime(currentTimeMinutes);
+        if (next) {
+            const t = window.minutesToTime(next);
             warning.innerHTML = `⏰ 建議選擇：<strong>${window.formatTime(t.hour, t.minute)}</strong> 或之後的時間`;
         } else {
             warning.innerHTML = `⚠️ 今日已無可用時段`;
@@ -538,39 +666,32 @@ window.checkTimeConflict = function() {
 
 window.findNextAvailableTime = function(fromTimeMinutes) {
     let latestEndTime = fromTimeMinutes;
-    const selectedEnd = fromTimeMinutes + CONFIG.SERVICE_DURATION_MINUTES;
-    for (let bookedTimeStr of currentDateBookedTimes) {
+    for (const bookedTimeStr of currentDateBookedTimes) {
         const bookedStart = window.timeToMinutes(bookedTimeStr);
-        const bookedEnd = bookedStart + CONFIG.SERVICE_DURATION_MINUTES;
-        if (window.checkTimeOverlap(fromTimeMinutes, selectedEnd, bookedStart, bookedEnd)) {
+        const bookedEnd   = bookedStart + CONFIG.SERVICE_DURATION_MINUTES;
+        if (window.checkTimeOverlap(fromTimeMinutes, fromTimeMinutes + CONFIG.SERVICE_DURATION_MINUTES, bookedStart, bookedEnd)) {
             if (bookedEnd > latestEndTime) latestEndTime = bookedEnd;
         }
     }
-    const businessEndMinutes = CONFIG.BUSINESS_HOURS.end.hour * 60 + CONFIG.BUSINESS_HOURS.end.minute;
-    return (latestEndTime + CONFIG.SERVICE_DURATION_MINUTES <= businessEndMinutes) ? latestEndTime : null;
+    const businessEnd = CONFIG.BUSINESS_HOURS.end.hour * 60 + CONFIG.BUSINESS_HOURS.end.minute;
+    return latestEndTime + CONFIG.SERVICE_DURATION_MINUTES <= businessEnd ? latestEndTime : null;
 };
 
 window.confirmTime = function() {
-    const currentTimeMinutes = currentTimeHour * 60 + currentTimeMinute;
-    if (window.isTimeConflict(currentTimeMinutes)) {
-        const nextAvailableTime = window.findNextAvailableTime(currentTimeMinutes);
-        if (nextAvailableTime) {
-            const t = window.minutesToTime(nextAvailableTime);
-            alert(`❌ 此時段無法預約\n\n💡 建議選擇：${window.formatTime(t.hour, t.minute)} 或之後的時間`);
-        } else {
-            alert("❌ 今日已無可用時段\n\n請選擇其他日期");
-        }
+    const timeStr = window.formatTime(currentTimeHour, currentTimeMinute);
+    if (window.isTimeConflict(currentTimeHour * 60 + currentTimeMinute)) {
+        const next = window.findNextAvailableTime(currentTimeHour * 60 + currentTimeMinute);
+        if (next) { const t = window.minutesToTime(next); alert(`❌ 此時段無法預約\n\n💡 建議選擇：${window.formatTime(t.hour, t.minute)} 或之後的時間`); }
+        else { alert("❌ 今日已無可用時段\n\n請選擇其他日期"); }
         return;
     }
-    const timeStr = window.formatTime(currentTimeHour, currentTimeMinute);
     selectedTime = timeStr;
-    const endTimeMinutes = currentTimeMinutes + CONFIG.SERVICE_DURATION_MINUTES;
-    const endTime = window.minutesToTime(endTimeMinutes);
-    const endTimeStr = window.formatTime(endTime.hour, endTime.minute);
+    const endMin = currentTimeHour * 60 + currentTimeMinute + CONFIG.SERVICE_DURATION_MINUTES;
+    const endStr = window.formatTime(Math.floor(endMin / 60), endMin % 60);
     const timeDisplay = document.getElementById('selected-time-display');
-    const confirmBtn = document.getElementById('confirm-time-btn');
+    const confirmBtn  = document.getElementById('confirm-time-btn');
     timeDisplay.classList.add('text-green-600');
-    confirmBtn.innerHTML = `✓ 已確認 (${timeStr}-${endTimeStr})`;
+    confirmBtn.innerHTML = `✓ 已確認 (${timeStr}-${endStr})`;
     confirmBtn.classList.add('bg-green-600');
     confirmBtn.classList.remove('bg-gray-800');
     setTimeout(() => {
@@ -585,95 +706,71 @@ window.confirmTime = function() {
 // ===== 預約提交 =====
 
 window.checkAndSubmit = async function() {
-    const check = document.getElementById('term-check').checked;
-    const total = window.calculateTotal();
-    if (!userProfile || !userProfile.userId) {
-        alert("❌ 請先使用 LINE 登入才能預約！");
-        window.showLoginScreen();
-        return;
-    }
+    if (!userProfile || !userProfile.userId) { alert("❌ 請先使用 LINE 登入才能預約！"); window.showLoginScreen(); return; }
     if (!isFriend) {
-        alert("❌ 必須加入 LINE 官方帳號才能預約！\n\n原因：\n• 需要發送預約確認通知\n• 需要接收審核結果\n• 需要接收付款資訊\n\n請點擊下方「立即加入官方帳號」按鈕");
-        const friendWarning = document.getElementById('friend-warning');
-        friendWarning.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        friendWarning.classList.add('animate-pulse');
-        setTimeout(() => friendWarning.classList.remove('animate-pulse'), 2000);
+        alert("❌ 必須加入 LINE 官方帳號才能預約！");
+        document.getElementById('friend-warning').scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
     }
-    if (total <= 0) { alert("❌ 您尚未選擇任何服務項目！"); return; }
+    if (window.calculateTotal() <= 0) { alert("❌ 您尚未選擇任何服務項目！"); return; }
+
     const needRemovalBtn = document.getElementById('need-removal-yes');
-    if (needRemovalBtn && needRemovalBtn.classList.contains('active')) {
-        const hasRemovalSelected = Array.from(document.querySelectorAll('button[data-group="removal"]'))
-            .some(btn => btn.classList.contains('active'));
-        if (!hasRemovalSelected) {
-            alert("❌ 您選擇了需要卸甲，請選擇卸甲方式！");
-            document.getElementById('removal-options').scrollIntoView({ behavior: 'smooth', block: 'center' });
-            return;
-        }
+    if (needRemovalBtn?.classList.contains('active')) {
+        const hasRemovalSelected = Array.from(document.querySelectorAll('button[data-group="removal"]')).some(btn => btn.classList.contains('active'));
+        if (!hasRemovalSelected) { alert("❌ 您選擇了需要卸甲，請選擇卸甲方式！"); document.getElementById('removal-options').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
     }
+
     if (bookingDetails.design.name === '任我做') {
         const k1 = document.getElementById('keyword1').value.trim();
-        const k2 = document.getElementById('keyword2').value.trim();
-        if (!k1 || !k2) {
-            alert("❌ 任我做需要填寫兩個關鍵字！");
-            document.getElementById('keyword1').focus();
-            return;
+        if (!k1) { alert("❌ 任我做需要填寫至少一個關鍵字！"); document.getElementById('keyword1').focus(); return; }
+        if (!isThinking) {
+            const k2 = document.getElementById('keyword2').value.trim();
+            if (!k2) { alert("❌ 請填寫關鍵字 2，或點「還在思考」！"); document.getElementById('keyword2').focus(); return; }
         }
     }
+
     if (!selectedDate) { alert("❌ 請選擇預約日期"); return; }
     if (!selectedTime) { alert("❌ 請選擇預約時段"); return; }
-    if (!check) { alert("❌ 請先勾選同意規範"); return; }
-    try {
-        await window.finalSubmit();
-    } catch (e) {
-        alert("發生錯誤：" + e.message);
-    }
+    if (!document.getElementById('term-check').checked) { alert("❌ 請先勾選同意規範"); return; }
+
+    try { await window.finalSubmit(); } catch (e) { alert("發生錯誤：" + e.message); }
 };
 
 window.finalSubmit = async function() {
-    if (!userProfile || !userProfile.userId) {
-        alert("❌ 安全驗證失敗");
-        window.showLoginScreen();
-        return;
-    }
-    if (!supabaseClient) {
-        alert("❌ 資料庫未連線");
-        return;
-    }
+    if (!userProfile?.userId) { alert("❌ 安全驗證失敗"); window.showLoginScreen(); return; }
+    if (!supabaseClient) { alert("❌ 資料庫未連線"); return; }
+
     const btn = document.getElementById('submit-btn');
     const originalText = btn.innerHTML;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 處理中...';
     btn.disabled = true;
+
     try {
         const dateId = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(selectedDate.split('/')[1]).padStart(2, '0')}`;
-        console.log('📅 查詢日期:', dateId);
-        const { data, error: fetchErr } = await supabaseClient
-            .from('calendar_slots')
-            .select('*')
-            .eq('date_id', dateId)
-            .maybeSingle();
+        const { data, error: fetchErr } = await supabaseClient.from('calendar_slots').select('*').eq('date_id', dateId).maybeSingle();
         if (fetchErr) throw fetchErr;
+
         let booked = data ? (data.booked_slots || []) : [];
-        if (booked.some(s => (typeof s === 'string' ? s : s.time) === selectedTime)) {
-            throw new Error("該時段已被預約 😭");
-        }
+        if (booked.some(s => (typeof s === 'string' ? s : s.time) === selectedTime)) throw new Error("該時段已被預約 😭");
+
         let details = {
-            design: { ...bookingDetails.design },
+            design:  { ...bookingDetails.design },
             removal: { ...bookingDetails.removal },
-            extras: [...bookingDetails.extras]
+            extras:  [...bookingDetails.extras]
         };
+
         if (bookingDetails.design.name === '任我做') {
-            details.design.keywords = [
-                document.getElementById('keyword1').value.trim(),
-                document.getElementById('keyword2').value.trim()
-            ];
+            const k1 = document.getElementById('keyword1').value.trim();
+            const k2 = isThinking ? '（讓我發揮）' : document.getElementById('keyword2').value.trim();
+            details.design.keywords = [k1, k2];
         }
+
         if (unlimitedJumpCount > 0) details.extras.push({ name: '無限跳純色', count: unlimitedJumpCount, price: unlimitedJumpCount * 100 });
-        if (extensionCount > 0) details.extras.push({ name: '延甲', count: extensionCount, price: extensionCount * 150 });
-        if (repairCount > 0) details.extras.push({ name: '補甲', count: repairCount, price: repairCount * 50 });
-        if (bigDiamondCount > 0) details.extras.push({ name: '大鑽/凹凸', count: bigDiamondCount, price: bigDiamondCount * 50 });
+        if (extensionCount > 0)     details.extras.push({ name: '延甲', count: extensionCount, price: extensionCount * 150 });
+        if (repairCount > 0)        details.extras.push({ name: '補甲', count: repairCount, price: repairCount * 50 });
+        if (bigDiamondCount > 0)    details.extras.push({ name: '大鑽/凹凸', count: bigDiamondCount, price: bigDiamondCount * 50 });
         if (nailPolishRemovalCount > 0) details.extras.push({ name: '卸指甲油', count: nailPolishRemovalCount, price: nailPolishRemovalCount * 50 });
-        
+
         booked.push({
             time: selectedTime,
             user: userProfile.displayName,
@@ -683,63 +780,39 @@ window.finalSubmit = async function() {
             totalPrice: window.calculateTotal(),
             createdAt: new Date().toISOString()
         });
-        
-        console.log('💾 準備儲存預約:', booked[booked.length - 1]);
-        const { error: saveErr } = await supabaseClient
-            .from('calendar_slots')
-            .upsert({ date_id: dateId, booked_slots: booked, status: 'available' });
+
+        const { error: saveErr } = await supabaseClient.from('calendar_slots').upsert({ date_id: dateId, booked_slots: booked, status: 'available' });
         if (saveErr) throw saveErr;
-        console.log('✅ 預約儲存成功');
 
-        // 組合訊息內容
         let detailMsg = '';
-        if (details.design.name) {
-            detailMsg += `\n🎨 造型：${details.design.name}`;
-            if (details.design.keywords?.length > 0) detailMsg += ` (${details.design.keywords.join(', ')})`;
-        }
+        if (details.design.name) { detailMsg += `\n🎨 造型：${details.design.name}`; if (details.design.keywords?.length > 0) detailMsg += ` (${details.design.keywords.join(', ')})`; }
         if (details.removal.name) detailMsg += `\n💅 卸甲：${details.removal.name}`;
-        if (details.extras.length > 0) {
-            detailMsg += `\n✨ 加購：${details.extras.map(e => e.count ? `${e.name} x${e.count}` : e.name).join(', ')}`;
-        }
-        const successMsg = `【新預約申請】\n\n👤 顧客：${userProfile.displayName}\n📅 日期：${selectedDate}\n⏰ 時間：${selectedTime}${detailMsg}\n💰 預估金額：$${window.calculateTotal()}\n\n⏳ 等待管理員審核中...\n審核通過後我們會立即通知您。\n\n---\nLOST.IN.GALLERY`;
+        if (details.extras.length > 0) detailMsg += `\n✨ 加購：${details.extras.map(e => e.count ? `${e.name} x${e.count}` : e.name).join(', ')}`;
 
-        // 1. 發通知給管理員（任何環境都會執行）
-        try {
-            console.log('📤 發送通知給管理員...');
-            await fetch('/api/send-line-message', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userId: CONFIG.ADMIN_LINE_USER_ID,
-                    message: successMsg
-                })
-            });
-            console.log('✅ 管理員通知發送成功');
-        } catch (e) {
-            console.warn("⚠️ 管理員通知發送失敗:", e);
-        }
+        const successMsg = `【新預約申請】\n\n📋 預約資訊：\n\n👤 顧客：${userProfile.displayName}\n📅 日期：${selectedDate}\n⏰ 時間：${selectedTime}${detailMsg}\n💰 預估金額：$${window.calculateTotal()}\n\n⏳ 等待管理員審核中...\n審核通過後我們會立即通知您。\n\n---\nLOST.IN.GALLERY`;
 
-        // 2. 如果在 LINE App 內，也發一份給客人
         try {
-            if (liffInitialized && liff.isInClient()) {
-                await liff.sendMessages([{ type: 'text', text: successMsg }]);
-                console.log('✅ 客人訊息發送成功');
-            }
-        } catch (e) {
-            console.warn("⚠️ 客人訊息發送失敗:", e.message);
-        }
+            await fetch('/api/send-line-message', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: CONFIG.ADMIN_LINE_USER_ID, message: successMsg }) });
+        } catch (e) { console.warn("⚠️ 管理員通知發送失敗:", e); }
+
+        try {
+            if (liffInitialized && liff.isInClient()) await liff.sendMessages([{ type: 'text', text: successMsg }]);
+        } catch (e) { console.warn("⚠️ 用戶端訊息發送失敗:", e); }
+
+        btn.innerHTML = '✅ 預約已提交';
+        btn.classList.add('bg-green-600');
+        btn.classList.remove('bg-gray-800');
 
         setTimeout(() => {
-    window.showToast("✅ 預約已提交！\n\n我們已收到您的預約申請\n請稍候管理員審核。\n\n審核通知將透過 LINE 傳送給您。");
-    window.resetBookingForm();
-    btn.innerHTML = originalText;
-    btn.classList.add('bg-gray-800');
-    btn.classList.remove('bg-green-600');
-    btn.disabled = false;
-}, 1500);
-        
+            alert("✅ 預約已提交！\n\n我們已收到您的預約申請，請稍候管理員審核。\n\n審核通知將透過 LINE 傳送給您。");
+            window.resetBookingForm();
+            btn.innerHTML = originalText;
+            btn.classList.add('bg-gray-800');
+            btn.classList.remove('bg-green-600');
+            btn.disabled = false;
+        }, 1500);
+
     } catch (error) {
-        console.error('❌ 預約失敗:', error);
         btn.innerHTML = originalText;
         btn.disabled = false;
         if (error.message?.includes('該時段已被預約')) {
@@ -759,17 +832,29 @@ window.resetBookingForm = function() {
     selectedDate = selectedTime = null;
     currentTimeHour = 10;
     currentTimeMinute = 0;
+
+    // 重置思考中狀態
+    isThinking = false;
+    const thinkingBtn = document.getElementById('thinking-btn');
+    if (thinkingBtn) { thinkingBtn.textContent = '💭 還在思考'; thinkingBtn.classList.remove('bg-yellow-600', 'border-yellow-500', 'text-white'); }
+    document.getElementById('keyword2-wrap')?.classList.remove('hidden');
+    document.getElementById('thinking-hint')?.classList.add('hidden');
+    document.getElementById('grid-selected-info')?.classList.add('hidden');
+
     document.querySelectorAll('button[data-group]').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.rule-box').forEach(box => box.classList.add('hidden'));
     document.querySelectorAll('.calendar-day').forEach(day => day.classList.remove('selected'));
-    const k1 = document.getElementById('keyword1');
-    const k2 = document.getElementById('keyword2');
-    if (k1) k1.value = '';
-    if (k2) k2.value = '';
-    const timeContainer = document.getElementById('time-slots-container');
-    if (timeContainer) timeContainer.classList.add('hidden');
-    const termCheck = document.getElementById('term-check');
-    if (termCheck) termCheck.checked = false;
+    document.querySelectorAll('.slot-ring.sel').forEach(s => s.classList.remove('sel'));
+
+    const k1 = document.getElementById('keyword1'); if (k1) k1.value = '';
+    const k2 = document.getElementById('keyword2'); if (k2) k2.value = '';
+    document.getElementById('time-slots-container')?.classList.add('hidden');
+    const termCheck = document.getElementById('term-check'); if (termCheck) termCheck.checked = false;
+
+    ['ext-count','repair-count','unlimited-jump-count','big-diamond-count','nail-polish-removal-count'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.innerText = '0';
+    });
+
     window.updateUI();
     window.validate();
 };
@@ -777,8 +862,8 @@ window.resetBookingForm = function() {
 // ===== 輔助函數 =====
 
 window.showLoading = function(show) {
-    const loadingEl = document.getElementById('loading');
-    if (loadingEl) loadingEl.classList.toggle('hidden', !show);
+    const el = document.getElementById('global-loading');
+    if (el) el.style.display = show ? 'flex' : 'none';
 };
 
 window.formatTime = function(hour, minute) {
