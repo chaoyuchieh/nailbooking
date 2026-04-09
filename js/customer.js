@@ -506,37 +506,60 @@ window.renderCalendar = function() {
     const grid = document.getElementById('calendar-grid');
     if (!grid) return;
     grid.innerHTML = '';
-    const first = new Date(currentYear, currentMonth, 1).getDay();
     window.calculateBookingRange();
+    
+    const titleEl = document.getElementById('calendar-title');
+    if (titleEl) titleEl.innerText = `${MONTH_NAMES[currentMonth]} ${currentYear}`;
+
+    const first = new Date(currentYear, currentMonth, 1).getDay();
     for (let i = 0; i < first; i++) grid.appendChild(document.createElement('div'));
 
     calendarData.forEach(item => {
         const div = document.createElement('div');
         div.innerText = item.date;
         const dateCheck = window.isDateBookable(currentYear, currentMonth, item.date);
+        
         let className = 'calendar-day';
 
-        if (dateCheck.reason === 'closed') {
-            className += ' closed';
-            div.title = '此日期已關閉';
-            div.onclick = () => alert('🚫 此日期已關閉，無法預約\n\n如有需要請聯繫我們');
-        } else if (dateCheck.reason === 'not-open') {
-            className += ' not-open';
-            div.title = '尚未開放預約';
-        } else if (dateCheck.reason === 'past' || item.status === 'past') {
-            className += ' booked';
-            div.title = '已過期';
-        } else if (item.status === 'booked') {
-            className += ' booked';
-            div.title = '本日公休';
-        } else if (dateCheck.bookable && item.status === 'available') {
-            div.title = '點擊預約';
+        // --- 核心邏輯判斷順序 ---
+        
+        // 1. 先判斷是否為「已過期」 (今天以前的日子)
+        if (dateCheck.reason === 'past') {
+            className += ' past'; // 顯示灰色
+        } 
+        // 2. 再判斷是否為「公休」或「後台關閉」
+        else if (dateCheck.reason === 'closed' || item.status === 'booked') {
+            className += ' booked'; // 顯示紅色
+            const label = document.createElement('span');
+            label.innerText = '公休';
+            label.className = 'holiday-label';
+            div.appendChild(label);
+        } 
+        // 3. 判斷是否為「尚未開放預約」
+        else if (dateCheck.reason === 'not-open') {
+            className += ' past'; // 顯示灰色
+        } 
+        // 4. 最後才是「可預約」
+        else if (dateCheck.bookable && item.status === 'available') {
+            className += ' available'; // 顯示外框
             div.onclick = () => window.selectDate(div, item.date, item.bookedSlots);
         }
 
         div.className = className;
         grid.appendChild(div);
     });
+
+    // 顯示開放範圍文字
+    const rangeInfo = document.getElementById('booking-range-info');
+    const rangeText = document.getElementById('booking-range-text');
+    if (rangeInfo && rangeText && bookingOpenRanges.ranges?.length > 0) {
+        const parts = bookingOpenRanges.ranges.map(r => 
+            `${r.start.getMonth() + 1}/${r.start.getDate()}~${r.end.getMonth() + 1}/${r.end.getDate()}`
+        );
+        rangeText.innerText = parts.join('、');
+        rangeInfo.classList.remove('hidden');
+    }
+};
 
     // 顯示可預約範圍
     const rangeInfo = document.getElementById('booking-range-info');
