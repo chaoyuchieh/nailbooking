@@ -252,16 +252,9 @@ window.setCalendarView = function(mode) {
     const monthView = document.getElementById('calendar-month-view');
     const gridView  = document.getElementById('calendar-grid-view');
 
-    if (mode === 'month') {
-        monthBtn.className = 'text-xs px-4 py-1.5 rounded-full bg-gray-800 text-white font-bold transition';
-        gridBtn.className  = 'text-xs px-4 py-1.5 rounded-full bg-gray-100 text-gray-500 font-bold transition';
-        monthView.classList.remove('hidden');
-        gridView.classList.add('hidden');
-    } else {
-        gridBtn.className  = 'text-xs px-4 py-1.5 rounded-full bg-gray-800 text-white font-bold transition';
-        monthBtn.className = 'text-xs px-4 py-1.5 rounded-full bg-gray-100 text-gray-500 font-bold transition';
-        gridView.classList.remove('hidden');
-        monthView.classList.add('hidden');
+    if (mode === 'grid') {
+        // 切換到時段表時，強制重新抓取一次資料庫
+        await window.fetchCalendarData(); 
         window.renderTimeGrid();
     }
 };
