@@ -205,24 +205,40 @@ window.toggleService = function(el, price, name) {
 
 window.toggleThinking = function() {
     isThinking = !isThinking;
+    
     const btn    = document.getElementById('thinking-btn');
-    const k2wrap = document.getElementById('keyword2-wrap');
-    const hint   = document.getElementById('thinking-hint');
-    const k1     = document.getElementById('keyword1');
+    const k1Wrap = document.getElementById('keyword1')?.closest('div'); // 取得關鍵字1的容器
+    const k2Wrap = document.getElementById('keyword2-wrap');            // 關鍵字2的容器
+    const hint   = document.getElementById('thinking-hint');            // 提示文字
 
     if (isThinking) {
-        btn.textContent = '✏️ 自己填';
+        // --- 狀態：還在思考 (隱藏選單) ---
+        btn.textContent = '💭 還在思考 ';
         btn.classList.add('bg-yellow-600', 'border-yellow-500', 'text-white');
-        k2wrap.classList.add('hidden');
-        hint.classList.remove('hidden');
-        k1.placeholder = '給我一個方向就好～';
+        
+        // 隱藏所有關鍵字輸入區域
+        if (k1Wrap) k1Wrap.classList.add('hidden');
+        if (k2Wrap) k2Wrap.classList.add('hidden');
+        
+        // 顯示提示
+        if (hint) {
+            hint.innerText = "💡 已選擇「💭 還在思考」，無需填寫關鍵字。";
+            hint.classList.remove('hidden');
+        }
     } else {
+        // --- 狀態：取消思考 (顯示選單) ---
         btn.textContent = '💭 還在思考';
         btn.classList.remove('bg-yellow-600', 'border-yellow-500', 'text-white');
-        k2wrap.classList.remove('hidden');
-        hint.classList.add('hidden');
-        k1.placeholder = '輸入關鍵字 1';
+        
+        // 重新顯示輸入區域
+        if (k1Wrap) k1Wrap.classList.remove('hidden');
+        if (k2Wrap) k2Wrap.classList.remove('hidden');
+        
+        // 隱藏提示
+        if (hint) hint.classList.add('hidden');
     }
+    
+    // 每次切換都要重新驗證表單按鈕狀態
     window.validate();
 };
 
@@ -720,14 +736,26 @@ window.checkAndSubmit = async function() {
         if (!hasRemovalSelected) { alert("❌ 您選擇了需要卸甲，請選擇卸甲方式！"); document.getElementById('removal-options').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
     }
 
-    if (bookingDetails.design.name === '任我做') {
+    // 在 window.checkAndSubmit 內找到這段
+if (bookingDetails.design.name === '任我做') {
+    // 只有在「沒有點擊還在思考」的情況下，才執行攔截檢查
+    if (!isThinking) {
         const k1 = document.getElementById('keyword1').value.trim();
-        if (!k1) { alert("❌ 任我做需要填寫至少一個關鍵字！"); document.getElementById('keyword1').focus(); return; }
-        if (!isThinking) {
-            const k2 = document.getElementById('keyword2').value.trim();
-            if (!k2) { alert("❌ 請填寫關鍵字 2，或點「還在思考」！"); document.getElementById('keyword2').focus(); return; }
+        if (!k1) { 
+            alert("❌ 任我做需要填寫至少一個關鍵字！"); 
+            document.getElementById('keyword1').focus(); 
+            return; 
+        }
+        
+        const k2 = document.getElementById('keyword2').value.trim();
+        if (!k2) { 
+            alert("❌ 請填寫關鍵字 2，或點「還在思考」！"); 
+            document.getElementById('keyword2').focus(); 
+            return; 
         }
     }
+}
+    
 
     if (!selectedDate) { alert("❌ 請選擇預約日期"); return; }
     if (!selectedTime) { alert("❌ 請選擇預約時段"); return; }
