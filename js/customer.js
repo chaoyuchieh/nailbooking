@@ -336,93 +336,77 @@ window.changeCustomerMonth = async function(delta) {
 };
 
 window.renderCalendar = function() {
-    const grid = document.getElementById('calendar-grid');
+    const grid = document.getElementById('calendar-grid'); 
     if (!grid) return;
     grid.innerHTML = '';
-    window.calculateBookingRange();
-    
-    const titleEl = document.getElementById('calendar-title');
-    if (titleEl) titleEl.innerText = `${MONTH_NAMES[currentMonth]} ${currentYear}`;
-
     const first = new Date(currentYear, currentMonth, 1).getDay();
-    for (let i = 0; i < first; i++) grid.appendChild(document.createElement('div'));
-
+    window.calculateBookingRange();
+    for(let i=0; i<first; i++) grid.appendChild(document.createElement('div'));
     calendarData.forEach(item => {
         const div = document.createElement('div');
         div.innerText = item.date;
         const dateCheck = window.isDateBookable(currentYear, currentMonth, item.date);
-        
         let className = 'calendar-day';
-        let isFullyBooked = false;
-
-        // --- 新增：檢查該日期是否還有可用時段 ---
-        // 只有在日期原本是 available 的情況下才檢查，節省效能
-        if (dateCheck.bookable && item.status === 'available') {
-            const bookedSlots = (item.bookedSlots || []).map(s => typeof s === 'string' ? s : s.time);
-            
-            // 定義當天所有可能的起始時段 (10:00 - 18:00)
-            const possibleHours = [10, 11, 12, 13, 14, 15, 16, 17, 18];
-            const businessEnd = CONFIG.BUSINESS_HOURS.end.hour * 60 + CONFIG.BUSINESS_HOURS.end.minute;
-            
-            // 檢查是否「所有時段」都衝突
-            const hasAnyAvailableSlot = possibleHours.some(hour => {
-                const slotStart = hour * 60;
-                const slotEnd = slotStart + CONFIG.SERVICE_DURATION_MINUTES;
-                
-                // 超出營業時間
-                if (slotEnd > businessEnd) return false;
-                
-                // 檢查是否與已預約時段重疊
-                const isConflict = bookedSlots.some(bookedTimeStr => {
-                    const bStart = window.timeToMinutes(bookedTimeStr);
-                    const bEnd = bStart + CONFIG.SERVICE_DURATION_MINUTES;
-                    return window.checkTimeOverlap(slotStart, slotEnd, bStart, bEnd);
-                });
-                
-                return !isConflict; // 只要有一個時段不衝突，這天就是可選的
-            });
-
-            if (!hasAnyAvailableSlot) {
-                isFullyBooked = true;
-            }
+        let clickable = false;
+        if (dateCheck.reason === 'closed') {
+            className += ' closed';
+            div.title = '此日期已關閉';
+            div.onclick = () => alert('🚫 此日期已關閉，無法預約\n\n如有需要請聯繫我們');
+        } else if (dateCheck.reason === 'not-open') {
+            className += ' not-open';
+            div.title = '尚未開放預約';
+        } else if (dateCheck.reason === 'past' || item.status === 'past') {
+            className += ' booked';
+            div.title = '已過期';
+        } else if (item.status === 'booked') {
+            className += ' booked';
+            div.title = '本日公休';
+        } else if (dateCheck.bookable && item.status === 'available') {
+            clickable = true;
+            div.title = '點擊預約';
         }
-
-        // --- 核心邏輯判斷順序 ---
-        
-        // 1. 過期 或 無可用時段 -> 變灰色
-        if (dateCheck.reason === 'past' || isFullyBooked) {
-            className += ' past';
-            div.title = isFullyBooked ? '該日預約已滿' : '已過期';
-        } 
-        // 2. 管理員設為公休
-        else if (dateCheck.reason === 'closed' || item.status === 'booked') {
-            className += ' booked'; // 紅色
-            const label = document.createElement('span');
-            label.innerText = '公休';
-            label.className = 'holiday-label';
-            div.appendChild(label);
-        } 
-        // 3. 尚未開放
-        else if (dateCheck.reason === 'not-open') {
-            className += ' past';
-        } 
-        // 4. 正常可預約 -> 顯示外框
-        else if (dateCheck.bookable && item.status === 'available') {
-            className += ' available';
-            div.onclick = () => window.selectDate(div, item.date, item.bookedSlots);
-        }
-
         div.className = className;
+        if(clickable) div.onclick = () => window.selectDate(div, item.date, item.bookedSlots);
         grid.appendChild(div);
     });
-
-    // 開放範圍文字更新...
+    const rangeInfo = document.getElementById('booking-range-info');
     const rangeText = document.getElementById('booking-range-text');
-    if (rangeText && bookingOpenRanges.ranges?.length > 0) {
-        rangeText.innerText = bookingOpenRanges.ranges.map(r => `${r.start.getMonth()+1}/${r.start.getDate()}~${r.end.getMonth()+1}/${r.end.getDate()}`).join('、');
-        document.getElementById('booking-range-info')?.classList.remove('hidden');
+    if (rangeInfo && rangeText && bookingOpenRanges.ranges && bookingOpenRanges.ranges.length > 0) {
+        const parts = bookingOpenRanges.ranges.map(r => {
+            const s = `${r.start.getMonth() + 1}/${r.start.getDate()}`;
+            const e = `${r.end.getMonth() + 1}/${r.end.getDate()}`;
+            return `${s} ~ ${e}`;
+        });
+        rangeText.innerText = parts.join('、');
+        rangeInfo.classList.remove('hidden');
+    } else if (rangeInfo) {
+        rangeInfo.classList.add('hidden');
     }
 };
+
+window.selectDate = function(el, date, slots) {
+    document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedDate = `${currentMonth+1}/${date}`;
+    selectedTime = null;
+    currentTimeHour = 10;
+    currentTimeMinute = 0;
+
+    // Real + manual bookings → full 2.5hr overlap
+    currentDateBookedTimes = slots
+        .filter(s => typeof s === 'string' || s.status !== 'blocked')
+        .map(s => typeof s === 'string' ? s : s.time);
+
+    // Admin grid blocks → exact time only
+    currentDateBlockedTimes = slots
+        .filter(s => typeof s === 'object' && s.status === 'blocked')
+        .map(s => s.time);
+
+    window.renderTimeSelector();
+    window.updateServiceEndTime();
+    window.validate();
+};
+
 // ===== 時間選擇相關 =====
 
 function getAvailableSlots(year, month, day) {
