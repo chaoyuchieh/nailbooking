@@ -356,3 +356,36 @@ body {
         padding: 2px 4px;
     }
 }
+
+/* 1. 可預約：增加深色外框 */
+.calendar-day.available {
+    border: 1.5px solid #1f2937 !important;
+    background-color: #ffffff !important;
+    color: #1f2937 !important;
+    font-weight: bold;
+}
+
+/* 2. 公休：紅色背景 */
+.calendar-day.booked {
+    background-color: #fee2e2 !important;
+    color: #ef4444 !important;
+    cursor: not-allowed;
+    border: none !important;
+}
+
+/* 3. 已過期/未開放：灰色背景 */
+.calendar-day.past {
+    background-color: #f3f4f6 !important;
+    color: #d1d5db !important;
+    cursor: not-allowed;
+    border: none !important;
+}
+
+/* 公休小字樣式 */
+.holiday-label {
+    font-size: 9px;
+    display: block;
+    line-height: 1;
+    margin-top: 2px;
+    font-weight: normal;
+}
