@@ -1,330 +1,347 @@
-// customer.js - 收藏家預約系統客戶端功能
-console.log('🚀 customer.js 開始載入...');
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nail Collector | 預約系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="./css/styles.css" rel="stylesheet">
+</head>
+<body class="bg-white pb-40">
+    <!-- Loading 指示器 -->
+    <div id="global-loading" style="display: none;">
+        <div class="w-8 h-8 border-4 border-gray-300 border-t-gray-800 rounded-full animate-spin"></div>
+        <p class="mt-2 text-xs text-gray-500 font-bold">載入中...</p>
+    </div>
 
-// ===== 0. 全域常數與修正 (解決打不開的問題) =====
-const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-// ===== 1. 客戶端全域變數 =====
-let priceState = { design: 0, removal: 0, extras: 0 };
-let bookingDetails = {
-    design: { name: '', price: 0, keywords: [] },
-    removal: { name: '', price: 0 },
-    extras: []
-};
-let extensionCount = 0;
-let repairCount = 0;
-let unlimitedJumpCount = 0;
-let bigDiamondCount = 0;
-let nailPolishRemovalCount = 0;
-let selectedDate = null;
-let selectedTime = null;
-let currentTimeHour = 10;
-let currentTimeMinute = 0;
-let currentDateBookedTimes = [];
-let userProfile = null;
-let liffInitialized = false;
-let isFriend = false;
-let calendarViewMode = 'month'; 
-let isThinking = false;          // 任我做「還在思考」狀態
-
-// ===== 2. 價格計算與 UI 更新 =====
-
-window.calculateTotal = function() {
-    let total = priceState.design + priceState.removal + priceState.extras;
-    total += extensionCount * 150;
-    total += repairCount * 50;
-    total += unlimitedJumpCount * 100;
-    total += bigDiamondCount * 50;
-    total += nailPolishRemovalCount * 50;
-    return total;
-};
-
-window.updateUI = function() {
-    const total = window.calculateTotal();
-    const display = document.getElementById('price-display');
-    if (display) display.innerText = total;
-    window.validate();
-};
-
-window.validate = function() {
-    const total = window.calculateTotal();
-    const termCheck = document.getElementById('term-check')?.checked || false;
-    const btn = document.getElementById('submit-btn');
-    const msg = document.getElementById('validation-msg');
-    if (!btn || !msg) return;
-
-    let errors = [];
-
-    if (priceState.design === 0) errors.push('請選擇造型');
-
-    // 任我做邏輯檢查：如果還在思考，則不擋關鍵字
-    if (bookingDetails.design.name === '任我做') {
-        const k1 = document.getElementById('keyword1')?.value?.trim() || '';
-        if (!isThinking) {
-            const k2 = document.getElementById('keyword2')?.value?.trim() || '';
-            if (!k1) errors.push('任我做至少需填寫一個關鍵字');
-            else if (!k2) errors.push('請填寫關鍵字 2，或點「還在思考」');
-        }
-    }
-
-    const needRemovalBtn = document.getElementById('need-removal-yes');
-    if (needRemovalBtn && needRemovalBtn.classList.contains('active')) {
-        const hasRemovalSelected = Array.from(document.querySelectorAll('button[data-group="removal"]'))
-            .some(btn => btn.classList.contains('active'));
-        if (!hasRemovalSelected) errors.push('請選擇卸甲方式');
-    }
-
-    if (!selectedDate) errors.push('請選擇預約日期');
-    if (!selectedTime) errors.push('請確認並預約時間');
-    if (!termCheck) errors.push('請同意規範');
-
-    if (errors.length > 0) {
-        msg.innerText = errors[0];
-        btn.classList.add('opacity-50');
-        btn.disabled = true;
-    } else {
-        msg.innerText = '';
-        btn.classList.remove('opacity-50');
-        btn.disabled = false;
-    }
-};
-
-// ===== 3. 計數器功能 =====
-window.updateExtensionCount = function(delta) { extensionCount = Math.max(0, Math.min(10, extensionCount + delta)); document.getElementById('ext-count').innerText = extensionCount; window.updateUI(); };
-window.updateRepairCount = function(delta) { repairCount = Math.max(0, Math.min(10, repairCount + delta)); document.getElementById('repair-count').innerText = repairCount; window.updateUI(); };
-window.updateUnlimitedJumpCount = function(delta) { unlimitedJumpCount = Math.max(0, Math.min(10, unlimitedJumpCount + delta)); document.getElementById('unlimited-jump-count').innerText = unlimitedJumpCount; window.updateUI(); };
-window.updateBigDiamondCount = function(delta) { bigDiamondCount = Math.max(0, Math.min(10, bigDiamondCount + delta)); document.getElementById('big-diamond-count').innerText = bigDiamondCount; window.updateUI(); };
-window.updateNailPolishRemovalCount = function(delta) { nailPolishRemovalCount = Math.max(0, Math.min(10, nailPolishRemovalCount + delta)); document.getElementById('nail-polish-removal-count').innerText = nailPolishRemovalCount; window.updateUI(); };
-
-// ===== 4. 選項選擇功能 =====
-window.toggleDesignRule = function(ruleId, btnElement) {
-    const ruleBox = document.getElementById(ruleId);
-    if (!ruleBox) return;
-    document.querySelectorAll('.rule-box').forEach(box => { if (box.id !== ruleId) box.classList.add('hidden'); });
-    if (btnElement.classList.contains('active')) ruleBox.classList.remove('hidden');
-    else ruleBox.classList.add('hidden');
-};
-
-window.selectSingleOption = function(el, price, group, name) {
-    document.querySelectorAll(`button[data-group="${group}"]`).forEach(b => b.classList.remove('active'));
-    el.classList.add('active');
-    if (group === 'design') {
-        isThinking = false; // 切換造型時重置思考狀態
-        const thinkingBtn = document.getElementById('thinking-btn');
-        if (thinkingBtn) { thinkingBtn.textContent = '💭 還在思考'; thinkingBtn.classList.remove('bg-yellow-600', 'text-white'); }
-        document.getElementById('keyword2-wrap')?.classList.remove('hidden');
-        document.getElementById('thinking-hint')?.classList.add('hidden');
-        document.getElementById('keyword1').placeholder = "輸入關鍵字 1";
-    }
-    priceState[group] = price;
-    if (group === 'design') bookingDetails.design = { name: name || '', price: price, keywords: [] };
-    else if (group === 'removal') bookingDetails.removal = { name: name || '', price: price };
-    window.updateUI();
-};
-
-window.toggleRemovalNeed = function(need, el) {
-    document.querySelectorAll(`button[data-group="removal-need"]`).forEach(b => b.classList.remove('active'));
-    el.classList.add('active');
-    const options = document.getElementById('removal-options');
-    const extras = document.getElementById('removal-extras');
-    if (need) { options.classList.remove('hidden'); extras.classList.remove('hidden'); }
-    else {
-        options.classList.add('hidden'); extras.classList.add('hidden');
-        priceState.removal = 0;
-        bookingDetails.removal = { name: '無須卸甲', price: 0 };
-        window.updateUI();
-    }
-    window.validate();
-};
-
-window.toggleService = function(el, price, name) {
-    if (el.classList.contains('active')) {
-        el.classList.remove('active');
-        priceState.extras -= price;
-        bookingDetails.extras = bookingDetails.extras.filter(e => e.name !== name);
-    } else {
-        el.classList.add('active');
-        priceState.extras += price;
-        bookingDetails.extras.push({ name: name || '加購項目', price: price });
-    }
-    window.updateUI();
-};
-
-// ===== 5. 任我做「還在思考」切換 =====
-
-window.toggleThinking = function() {
-    isThinking = !isThinking;
-    const btn    = document.getElementById('thinking-btn');
-    const k1     = document.getElementById('keyword1');
-    const k2wrap = document.getElementById('keyword2-wrap');
-    const hint   = document.getElementById('thinking-hint');
-
-    if (isThinking) {
-        btn.textContent = '✏️ 自己填';
-        btn.classList.add('bg-yellow-600', 'text-white');
-        k2wrap.classList.add('hidden');
-        hint.classList.remove('hidden');
-        k1.placeholder = '給我一個方向就好～';
-    } else {
-        btn.textContent = '💭 還在思考';
-        btn.classList.remove('bg-yellow-600', 'text-white');
-        k2wrap.classList.remove('hidden');
-        hint.classList.add('hidden');
-        k1.placeholder = '輸入關鍵字 1';
-    }
-    window.validate();
-};
-
-// ===== 6. 日曆渲染 (修正顏色與文字) =====
-
-window.renderCalendar = function() {
-    const grid = document.getElementById('calendar-grid');
-    if (!grid) return;
-    grid.innerHTML = '';
-    window.calculateBookingRange();
-    
-    // 更新標題
-    document.getElementById('calendar-title').innerText = `${MONTH_NAMES[currentMonth]} ${currentYear}`;
-
-    const first = new Date(currentYear, currentMonth, 1).getDay();
-    for (let i = 0; i < first; i++) grid.appendChild(document.createElement('div'));
-
-    calendarData.forEach(item => {
-        const div = document.createElement('div');
-        div.innerText = item.date;
-        const dateCheck = window.isDateBookable(currentYear, currentMonth, item.date);
-        let className = 'calendar-day';
-
-        // 判斷邏輯順序：1.過期 2.公休 3.未開放 4.可預約
-        if (dateCheck.reason === 'past') {
-            className += ' past'; // 顯示灰色
-        } else if (dateCheck.reason === 'closed' || item.status === 'booked') {
-            className += ' booked'; // 顯示紅色
-            const lbl = document.createElement('span');
-            lbl.innerText = '公休';
-            lbl.className = 'holiday-label';
-            div.appendChild(lbl);
-        } else if (dateCheck.reason === 'not-open') {
-            className += ' past';
-        } else if (dateCheck.bookable && item.status === 'available') {
-            className += ' available'; // 顯示外框
-            div.onclick = () => window.selectDate(div, item.date, item.bookedSlots);
-        }
-        div.className = className;
-        grid.appendChild(div);
-    });
-
-    // 更新目前開放日期區間文字
-    const rangeText = document.getElementById('booking-range-text');
-    if (rangeText && bookingOpenRanges.ranges?.length > 0) {
-        rangeText.innerText = bookingOpenRanges.ranges.map(r => `${r.start.getMonth()+1}/${r.start.getDate()}~${r.end.getMonth()+1}/${r.end.getDate()}`).join('、');
-        document.getElementById('booking-range-info')?.classList.remove('hidden');
-    }
-};
-
-window.selectDate = function(el, date, slots) {
-    document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
-    el.classList.add('selected');
-    selectedDate = `${currentMonth + 1}/${date}`;
-    selectedTime = null;
-    currentDateBookedTimes = slots.map(s => typeof s === 'string' ? s : s.time);
-    window.renderTimeSelector();
-    window.validate();
-};
-
-// ===== 7. 時間與提交功能 =====
-
-window.confirmTime = function() {
-    selectedTime = window.formatTime(currentTimeHour, currentTimeMinute);
-    const confirmBtn = document.getElementById('confirm-time-btn');
-    confirmBtn.innerHTML = `✓ 已確認 (${selectedTime})`;
-    confirmBtn.classList.add('bg-green-600');
-    setTimeout(() => {
-        confirmBtn.innerHTML = '✓ 確認此時間';
-        confirmBtn.classList.remove('bg-green-600');
-    }, 2000);
-    window.validate();
-};
-
-window.checkAndSubmit = async function() {
-    if (!userProfile) { alert("❌ 請先使用 LINE 登入"); window.showLoginScreen(); return; }
-    if (!isFriend) { alert("❌ 請先加入 LINE 官方帳號"); return; }
-    if (window.calculateTotal() <= 0) { alert("❌ 未選擇服務"); return; }
-    if (!selectedDate || !selectedTime) { alert("❌ 未選擇日期或時間"); return; }
-    if (!document.getElementById('term-check').checked) { alert("❌ 請同意規範"); return; }
-    await window.finalSubmit();
-};
-
-window.finalSubmit = async function() {
-    const btn = document.getElementById('submit-btn');
-    btn.disabled = true;
-    btn.innerText = "處理中...";
-    try {
-        const dateId = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(selectedDate.split('/')[1]).padStart(2,'0')}`;
-        const { data } = await supabaseClient.from('calendar_slots').select('*').eq('date_id', dateId).maybeSingle();
-        let booked = data ? (data.booked_slots || []) : [];
+    <!-- 登入畫面 -->
+    <div id="login-overlay" class="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center p-8">
+        <h1 class="text-2xl font-bold tracking-widest text-gray-800 mb-2">NAIL COLLECTOR</h1>
+        <p class="text-gray-400 text-sm mb-12">收藏家預約系統</p>
         
-        let details = { design: {...bookingDetails.design}, removal: {...bookingDetails.removal}, extras: [...bookingDetails.extras] };
-        if (details.design.name === '任我做') {
-            details.design.keywords = [document.getElementById('keyword1').value, isThinking ? '由美甲師發揮' : document.getElementById('keyword2').value];
-        }
+        <div id="auto-login-hint" class="w-full max-w-xs mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200 hidden">
+            <div class="flex items-center gap-2 text-blue-800 text-sm">
+                <i class="fas fa-info-circle"></i>
+                <span>正在自動登入...</span>
+            </div>
+        </div>
+        
+        <div class="w-full max-w-xs flex flex-col items-center gap-4 fade-in">
+            <button id="btn-line-login" onclick="loginWithLine()" class="w-full bg-[#06C755] text-white py-4 rounded-custom font-bold flex items-center justify-center gap-3 shadow-md hover:bg-[#05b54d] transition">
+                <i class="fab fa-line text-xl"></i> 使用 LINE 登入預約
+            </button>
+            <div class="mt-8"></div>
+            <a href="./admin.html" class="text-xs text-gray-400 border-b border-gray-200 pb-1 hover:text-gray-600 transition">
+                管理員後台登入
+            </a>
+        </div>
+        
+        <p class="text-[10px] text-gray-300 mt-12 text-center absolute bottom-10">System by Nail Collector</p>
+    </div>
 
-        booked.push({
-            time: selectedTime,
-            user: userProfile.displayName,
-            userId: userProfile.userId,
-            status: 'pending',
-            bookingDetails: details,
-            totalPrice: window.calculateTotal(),
-            createdAt: new Date().toISOString()
-        });
+    <!-- 主應用程式 -->
+    <main id="main-app" class="max-w-md mx-auto p-4 hidden">
+        <!-- 頂部標題 -->
+        <header class="flex items-center justify-between py-6 mb-4">
+            <div>
+                <p class="text-[10px] text-gray-400 uppercase tracking-widest">歡迎回來，</p>
+                <h2 id="user-name" class="text-lg font-bold text-gray-800">收藏家 Guest</h2>
+                <p id="user-status" class="text-[10px] text-gray-500 mt-1"></p>
+            </div>
+            <button onclick="logout()" class="text-xs text-gray-400 underline hover:text-gray-600 transition">登出</button>
+        </header>
 
-        await supabaseClient.from('calendar_slots').upsert({ date_id: dateId, booked_slots: booked, status: 'available' });
-        alert("✅ 預約申請已送出！請等待審核。");
-        window.resetBookingForm();
-    } catch (e) { alert("錯誤：" + e.message); }
-    btn.disabled = false;
-    btn.innerText = "送出預約";
-};
+        <!-- 好友提醒 -->
+        <div id="friend-warning" class="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 rounded-lg hidden">
+            <div class="flex items-start gap-3">
+                <i class="fab fa-line text-green-600 text-2xl mt-0.5"></i>
+                <div class="flex-1">
+                    <p class="text-sm font-bold text-green-800 mb-1">📱 請先加入 LINE 官方帳號</p>
+                    <p class="text-xs text-green-700 mb-3">為確保能即時收到預約通知，請先加入我們為好友！</p>
+                    <button id="add-friend-btn" onclick="addFriend()" class="text-xs bg-green-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-700 transition shadow-sm">
+                        <i class="fab fa-line mr-1"></i> 立即加入官方帳號
+                    </button>
+                    <button onclick="recheckFriendship()" class="ml-2 text-xs text-green-600 underline hover:text-green-700 transition">
+                        我已加入，重新檢查
+                    </button>
+                </div>
+            </div>
+        </div>
 
-// ===== 8. LINE 登入與好友檢查 =====
+        <!-- LINE 登入警告 -->
+        <div id="line-login-warning" class="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg hidden">
+            <div class="flex items-start gap-3">
+                <i class="fas fa-exclamation-triangle text-yellow-600 text-lg mt-0.5"></i>
+                <div class="flex-1">
+                    <p class="text-sm font-bold text-yellow-800 mb-1">尚未使用 LINE 登入</p>
+                    <p class="text-xs text-yellow-700 mb-3">您目前無法送出預約，請先使用 LINE 帳號登入。</p>
+                    <button onclick="showLoginScreen()" class="text-xs bg-yellow-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-yellow-700 transition">
+                        <i class="fab fa-line mr-1"></i> 前往 LINE 登入
+                    </button>
+                </div>
+            </div>
+        </div>
 
-window.loginWithLine = async function() {
-    if (!CONFIG.LIFF_ID || CONFIG.LIFF_ID === 'YOUR_LIFF_ID_HERE') { alert("請設定 LIFF ID"); return; }
-    try {
-        if (!liffInitialized) { await liff.init({ liffId: CONFIG.LIFF_ID }); liffInitialized = true; }
-        if (!liff.isLoggedIn()) liff.login({ redirectUri: window.location.href });
-        else {
-            userProfile = await liff.getProfile();
-            await window.checkFriendship();
-            document.getElementById('login-overlay').classList.add('hidden');
-            document.getElementById('main-app').classList.remove('hidden');
-            window.updateUserStatus();
-            await window.fetchCalendarData();
-            window.renderCalendar();
-        }
-    } catch (err) { alert("LINE 登入錯誤：" + err.message); }
-};
+        <!-- 01 / Design 造型 -->
+        <section class="mb-10">
+            <h2 class="text-xs font-bold text-gray-400 mb-4 tracking-tighter uppercase flex items-center">
+                <span class="w-4 h-[1px] bg-gray-300 mr-2"></span> 01 / Design 造型
+            </h2>
+            <div class="grid grid-cols-2 gap-2 mb-2">
+                <button onclick="selectSingleOption(this, 1000, 'design', '透明')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">透明 $1000</button>
+                <button onclick="selectSingleOption(this, 1200, 'design', '單色')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">單色 $1200</button>
+                <button onclick="selectSingleOption(this, 1300, 'design', '貓眼')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">貓眼 $1300</button>
+                <button onclick="selectSingleOption(this, 1400, 'design', '漸層')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">漸層 $1400</button>
+                <button onclick="selectSingleOption(this, 1400, 'design', '鏡面')" class="btn-toggle p-4 text-sm rounded-custom" data-group="design">鏡面 $1400</button>
+            </div>
+            <button onclick="selectSingleOption(this, 1550, 'design', '五指造型'); toggleDesignRule('rule-5', this)" class="btn-toggle w-full mb-2 p-4 text-sm rounded-custom flex justify-between" data-group="design">
+                <span>五指造型</span><span>$1550 up</span>
+            </button>
+            <div id="rule-5" class="hidden rule-box mb-2">4-6指造型 + 單色</div>
+            
+            <button onclick="selectSingleOption(this, 1650, 'design', '十指造型'); toggleDesignRule('rule-10', this)" class="btn-toggle w-full mb-2 p-4 text-sm rounded-custom flex justify-between" data-group="design">
+                <span>十指造型</span><span>$1650 up</span>
+            </button>
+            <div id="rule-10" class="hidden rule-box mb-2">10指皆造型</div>
+            
+            <button onclick="selectSingleOption(this, 1450, 'design', '任我做'); toggleDesignRule('rule-any', this)" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between" data-group="design">
+                <span>✨ 任我做</span><span>$1450</span>
+            </button>
 
-window.checkFriendship = async function() {
-    if (!liffInitialized || !liff.isLoggedIn()) { isFriend = true; return true; }
-    try {
-        const friendship = await liff.getFriendship();
-        isFriend = friendship.friendFlag;
-        return isFriend;
-    } catch (e) { isFriend = true; return true; }
-};
+            <!-- ✅ 修正後的任我做區塊 -->
+            <div id="rule-any" class="hidden rule-box bg-gray-800 text-gray-100">
+                <p class="text-xs mb-3">給我2個關鍵字任我發揮</p>
+                <div class="space-y-2">
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs text-gray-400">關鍵字 1</span>
+                            <button type="button" onclick="toggleThinking()" id="thinking-btn"
+                                class="text-xs px-2 py-0.5 rounded border border-gray-500 text-gray-300 hover:bg-gray-600 transition">
+                                💭 還在思考
+                            </button>
+                        </div>
+                        <input id="keyword1" type="text" placeholder="輸入關鍵字 1" maxlength="10"
+                            oninput="validate()"
+                            class="w-full bg-gray-700 text-white px-3 py-2 rounded text-sm outline-none border border-gray-600 focus:border-gray-400">
+                    </div>
+                    <div id="keyword2-wrap">
+                        <span class="text-xs text-gray-400 block mb-1">關鍵字 2</span>
+                        <input id="keyword2" type="text" placeholder="輸入關鍵字 2" maxlength="10"
+                            oninput="validate()"
+                            class="w-full bg-gray-700 text-white px-3 py-2 rounded text-sm outline-none border border-gray-600 focus:border-gray-400">
+                    </div>
+                    <div id="thinking-hint" class="hidden text-xs text-yellow-300 text-center py-1">
+                        💭 給我一個方向，其餘讓我發揮！
+                    </div>
+                </div>
+            </div>
+        </section>
 
-// 輔助函數保持原樣...
-window.formatTime = (h, m) => `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-window.timeToMinutes = (s) => { const [h,m] = s.split(':').map(Number); return h*60+m; };
-window.minutesToTime = (m) => ({ hour: Math.floor(m/60), minute: m%60 });
-window.checkTimeOverlap = (s1, e1, s2, e2) => s1 < e2 && s2 < e1;
-window.showLoading = (s) => document.getElementById('global-loading').style.display = s ? 'flex' : 'none';
-window.updateUserStatus = function() {
-    const s = document.getElementById('user-status'), n = document.getElementById('user-name');
-    if(n && userProfile) n.innerText = userProfile.displayName;
-    if(s) { s.innerText = isFriend ? '✓ LINE 已連結' : '⚠️ 請加入好友'; s.className = isFriend ? 'text-green-600' : 'text-orange-500'; }
-};
+        <!-- 02 / Removal 卸甲 -->
+        <section class="mb-10">
+            <h2 class="text-xs font-bold text-gray-400 mb-4 tracking-tighter uppercase flex items-center">
+                <span class="w-4 h-[1px] bg-gray-300 mr-2"></span> 02 / Removal 卸甲
+            </h2>
+            <div class="mb-3">
+                <label class="block text-sm text-gray-600 mb-2">是否需要卸甲？</label>
+                <div class="grid grid-cols-2 gap-2 mb-3">
+                    <button onclick="toggleRemovalNeed(true, this)" id="need-removal-yes" class="btn-toggle p-3 text-sm rounded-custom active" data-group="removal-need">需要卸甲</button>
+                    <button onclick="toggleRemovalNeed(false, this)" id="need-removal-no" class="btn-toggle p-3 text-sm rounded-custom" data-group="removal-need">不需要</button>
+                </div>
+            </div>
+            
+            <div id="removal-options" class="space-y-2 mb-3">
+                <label class="block text-xs text-gray-500 mb-2">選擇卸甲方式：</label>
+                <button onclick="selectSingleOption(this, 100, 'removal', '本店4周內卸甲半價')" class="btn-toggle w-full p-3 text-sm rounded-custom text-left flex justify-between" data-group="removal">
+                    <span>本店4周內卸甲半價 🎉</span><span>$100</span>
+                </button>
+                <button onclick="selectSingleOption(this, 200, 'removal', '本店卸甲續作')" class="btn-toggle w-full p-3 text-sm rounded-custom text-left flex justify-between" data-group="removal">
+                    <span>本店卸甲續作</span><span>$200</span>
+                </button>
+                <button onclick="selectSingleOption(this, 400, 'removal', '他店卸甲續作')" class="btn-toggle w-full p-3 text-sm rounded-custom text-left flex justify-between" data-group="removal">
+                    <span>他店卸甲續作</span><span>$400</span>
+                </button>
+                <button onclick="selectSingleOption(this, 500, 'removal', '純卸甲')" class="btn-toggle w-full p-3 text-sm rounded-custom text-left flex justify-between" data-group="removal">
+                    <span>純卸甲</span><span>$500</span>
+                </button>
+            </div>
+            
+            <div id="removal-extras" class="bg-gray-50 p-4 rounded-custom space-y-3">
+                <p class="text-xs text-gray-500 mb-2">額外項目：</p>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold">大鑽/凹凸 ($50/指)</span>
+                    <div class="flex items-center gap-3">
+                        <button onclick="updateBigDiamondCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button>
+                        <span id="big-diamond-count" class="text-sm font-bold w-4 text-center">0</span>
+                        <button onclick="updateBigDiamondCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold">卸指甲油 ($50/指)</span>
+                    <div class="flex items-center gap-3">
+                        <button onclick="updateNailPolishRemovalCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button>
+                        <span id="nail-polish-removal-count" class="text-sm font-bold w-4 text-center">0</span>
+                        <button onclick="updateNailPolishRemovalCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-console.log('✅ customer.js 修改完成');
+        <!-- 03 / Care 保養 / 其他 -->
+        <section class="mb-10">
+            <h2 class="text-xs font-bold text-gray-400 mb-4 tracking-tighter uppercase flex items-center">
+                <span class="w-4 h-[1px] bg-gray-300 mr-2"></span> 03 / Care 保養 / 其他
+            </h2>
+            <button onclick="toggleService(this, 400, '基礎保養')" class="btn-toggle w-full p-4 text-sm rounded-custom flex justify-between mb-3">
+                <span>基礎保養</span><span>$400</span>
+            </button>
+            <div class="bg-gray-50 p-4 rounded-custom space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold">無限跳純色 ($100/次)</span>
+                    <div class="flex items-center gap-3">
+                        <button onclick="updateUnlimitedJumpCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button>
+                        <span id="unlimited-jump-count" class="text-sm font-bold w-4 text-center">0</span>
+                        <button onclick="updateUnlimitedJumpCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold">延甲 ($150/指)</span>
+                    <div class="flex items-center gap-3">
+                        <button onclick="updateExtensionCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button>
+                        <span id="ext-count" class="text-sm font-bold w-4 text-center">0</span>
+                        <button onclick="updateExtensionCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold">補甲 ($50/指)</span>
+                    <div class="flex items-center gap-3">
+                        <button onclick="updateRepairCount(-1)" class="counter-btn"><i class="fas fa-minus"></i></button>
+                        <span id="repair-count" class="text-sm font-bold w-4 text-center">0</span>
+                        <button onclick="updateRepairCount(1)" class="counter-btn"><i class="fas fa-plus"></i></button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 04 / Schedule 時間 -->
+        <section class="mb-10">
+            <h2 class="text-xs font-bold text-gray-400 mb-4 tracking-tighter uppercase flex items-center">
+                <span class="w-4 h-[1px] bg-gray-300 mr-2"></span> 04 / Schedule 時間
+            </h2>
+            <div class="bg-white p-6 rounded-custom shadow-sm border border-gray-100">
+                <!-- 月份導航 -->
+                <div class="flex justify-between items-center mb-3">
+                    <button onclick="changeCustomerMonth(-1)" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400">
+                        <i class="fas fa-chevron-left text-xs"></i>
+                    </button>
+                    <h3 id="calendar-title" class="text-xl font-bold text-gray-800"></h3>
+                    <button onclick="changeCustomerMonth(1)" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400">
+                        <i class="fas fa-chevron-right text-xs"></i>
+                    </button>
+                </div>
+
+                <!-- 月曆 / 時段 切換 -->
+                <div class="flex justify-center gap-2 mb-4">
+                    <button onclick="setCalendarView('month')" id="view-month-btn"
+                        class="text-xs px-4 py-1.5 rounded-full bg-gray-800 text-white font-bold transition">
+                        📅 月曆
+                    </button>
+                    <button onclick="setCalendarView('grid')" id="view-grid-btn"
+                        class="text-xs px-4 py-1.5 rounded-full bg-gray-100 text-gray-500 font-bold transition">
+                        ○× 時段
+                    </button>
+                </div>
+
+                <!-- 月曆 View -->
+                <div id="calendar-month-view">
+                    <div id="booking-range-info" class="mb-3 p-2 bg-gray-50 rounded-lg text-[10px] text-gray-500 hidden">
+                        📅 可預約：<span id="booking-range-text" class="font-bold text-gray-700"></span>
+                    </div>
+                    <div class="grid grid-cols-7 gap-2 mb-2 text-center text-xs text-gray-400 font-bold">
+                        <div class="text-red-400">日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div class="text-blue-400">六</div>
+                    </div>
+                    <div id="calendar-grid" class="grid grid-cols-7 gap-2 mb-4"></div>
+                </div>
+
+                <!-- ○/× 時段 View -->
+                <div id="calendar-grid-view" class="hidden overflow-x-auto">
+                    <p class="text-[10px] text-gray-400 text-center mb-3">
+                        空心圓 = 可預約 &nbsp;|&nbsp; × = 不可預約 &nbsp;｜&nbsp; 點圓直接選取
+                    </p>
+                    <table id="time-avail-grid" class="avail-table mx-auto"></table>
+                    <div id="grid-selected-info" class="hidden grid-selected-info"></div>
+                </div>
+
+                <!-- 時間選擇器（月曆模式用） -->
+                <div id="time-slots-container" class="hidden pt-4 border-t border-gray-100 fade-in">
+                    <p class="text-center text-xs text-gray-400 mb-3">選擇預約時間 (營業時間 10:00-19:00，每次服務約 2.5 小時)</p>
+                    
+                    <div class="mb-4">
+                        <p class="text-xs text-gray-500 mb-2 text-center">快速選擇</p>
+                        <div id="quick-time-slots" class="grid grid-cols-3 gap-2"></div>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-xs text-gray-500 mb-3 text-center">精確調整 (±10分鐘)</p>
+                        <div class="flex items-center justify-center gap-4">
+                            <button onclick="adjustTime(-10)" class="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition">
+                                <i class="fas fa-minus text-gray-700"></i>
+                            </button>
+                            <div class="text-center">
+                                <div id="selected-time-display" class="text-3xl font-bold text-gray-800">10:00</div>
+                                <div id="service-end-time" class="text-xs text-gray-500 mt-1">服務至 12:30</div>
+                            </div>
+                            <button onclick="adjustTime(10)" class="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition">
+                                <i class="fas fa-plus text-gray-700"></i>
+                            </button>
+                        </div>
+                        <div class="mt-4 flex justify-center">
+                            <button onclick="confirmTime()" id="confirm-time-btn" class="bg-gray-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-gray-700 transition">
+                                ✓ 確認此時間
+                            </button>
+                        </div>
+                        <div id="time-conflict-warning" class="hidden mt-3 p-3 bg-blue-50 border border-blue-300 rounded text-xs text-blue-700 text-center">
+                            ⏰ 建議選擇時間
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 規範與同意 -->
+        <section class="bg-gray-50 rounded-custom mb-24 text-xs text-gray-600 overflow-hidden">
+            <div class="p-4">
+                <p class="mb-3 leading-relaxed">首次預約需匯款 <span class="font-bold text-black">$500</span> 保留。</p>
+            </div>
+            <div class="bg-white border-t border-gray-200 p-4">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="term-check" onchange="validate()" class="accent-gray-800 w-4 h-4 flex-shrink-0">
+                    <span class="leading-relaxed">我已閱讀並同意規範</span>
+                </label>
+            </div>
+        </section>
+
+        <!-- 底部固定按鈕 -->
+        <footer class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur border-t border-gray-100 p-4 z-40">
+            <div class="max-w-md mx-auto flex items-center justify-between">
+                <div>
+                    <p class="text-[10px] text-gray-400 uppercase">Total</p>
+                    <p class="text-xl font-bold text-gray-800">$<span id="price-display">0</span></p>
+                    <p id="validation-msg" class="text-[9px] text-red-500 font-bold"></p>
+                </div>
+                <button id="submit-btn" onclick="checkAndSubmit()" class="bg-gray-900 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition opacity-50 flex items-center gap-2">
+                    <span>送出預約</span>
+                </button>
+            </div>
+        </footer>
+    </main>
+
+    <script src="./js/config.js"></script>
+    <script src="./js/common.js"></script>
+    <script src="./js/customer.js"></script>
+</body>
+</html>
