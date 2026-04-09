@@ -256,16 +256,28 @@
                     </button>
                 </div>
 
-                <!-- 月曆 View -->
-                <div id="calendar-month-view">
-                    <div id="booking-range-info" class="mb-3 p-2 bg-gray-50 rounded-lg text-[10px] text-gray-500 hidden">
-                        📅 可預約：<span id="booking-range-text" class="font-bold text-gray-700"></span>
-                    </div>
-                    <div class="grid grid-cols-7 gap-2 mb-2 text-center text-xs text-gray-400 font-bold">
-                        <div class="text-red-400">日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div class="text-blue-400">六</div>
-                    </div>
-                    <div id="calendar-grid" class="grid grid-cols-7 gap-2 mb-4"></div>
-                </div>
+               <div id="calendar-month-view">
+    <div id="booking-range-info" class="mb-3 p-2 bg-gray-50 rounded-lg text-[10px] text-gray-500 hidden">
+        📅 目前開放日期：<span id="booking-range-text" class="font-bold text-gray-700"></span>
+    </div>
+
+    <div class="flex justify-center gap-4 mb-4 text-[10px] text-gray-400">
+        <div class="flex items-center gap-1.5">
+            <span class="w-3 h-3 rounded border border-gray-800"></span> 可選取
+        </div>
+        <div class="flex items-center gap-1.5">
+            <span class="w-3 h-3 bg-red-100 rounded"></span> 公休
+        </div>
+        <div class="flex items-center gap-1.5">
+            <span class="w-3 h-3 bg-gray-100 rounded text-gray-400 flex items-center justify-center">×</span> 已過期
+        </div>
+    </div>
+
+    <div class="grid grid-cols-7 gap-2 mb-2 text-center text-xs text-gray-400 font-bold">
+        <div class="text-red-400">日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div class="text-blue-400">六</div>
+    </div>
+    <div id="calendar-grid" class="grid grid-cols-7 gap-2 mb-4"></div>
+</div>
 
                 <!-- ○/× 時段 View -->
                 <div id="calendar-grid-view" class="hidden overflow-x-auto">
