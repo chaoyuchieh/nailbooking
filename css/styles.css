@@ -1,4 +1,7 @@
 /* ========== 全域設定 ========== */
+.calendar-day.available { border: 1.5px solid #1f2937; font-weight: 700; background: white; }
+.calendar-day.booked { background-color: #fee2e2 !important; color: #ef4444 !important; }
+.calendar-day.booked::after { content: "公休"; font-size: 8px; margin-top: 2px; font-weight: bold; }
 * {
     box-sizing: border-box;
 }
