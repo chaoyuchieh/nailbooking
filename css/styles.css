@@ -1,7 +1,4 @@
 /* ========== 全域設定 ========== */
-.calendar-day.available { border: 1.5px solid #1f2937; font-weight: 700; background: white; }
-.calendar-day.booked { background-color: #fee2e2 !important; color: #ef4444 !important; }
-.calendar-day.booked::after { content: "公休"; font-size: 8px; margin-top: 2px; font-weight: bold; }
 * {
     box-sizing: border-box;
 }
@@ -80,48 +77,53 @@ body {
     border-radius: 8px;
 }
 
-/* 修改日曆格子的基本外觀 */
+/* 客戶端日曆格子 */
 .calendar-day {
     aspect-ratio: 1;
     display: flex;
-    flex-direction: column; /* 讓日期與「公休」字垂直排列 */
     align-items: center;
     justify-content: center;
-    border-radius: 10px;
-    font-size: 14px;
-    transition: all 0.2s ease;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 16px;
+    background: #f8f9fa;
+    color: #212529;
+}
+
+.calendar-day:hover {
+    background: #e9ecef;
+}
+
+/* ✅ 選中狀態 - 黑色 */
+.calendar-day.selected {
+    background: #212529 !important;
+    color: white !important;
+}
+
+/* ✅ 已過期 / 公休 - 灰色 */
+.calendar-day.booked {
+    background: #adb5bd !important;
+    color: white !important;
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+/* ✅ 手動關閉 - 淡紅色（與公休明顯區分） */
+.calendar-day.closed {
+    background: #f8d7da !important;
+    color: #842029 !important;
     cursor: pointer;
 }
 
-/* 1. 可選取的日期：加上深色外框 */
-.calendar-day.available {
-    border: 1.5px solid #1f2937; /* gray-800 */
-    background-color: #ffffff;
-    color: #1f2937;
-    font-weight: bold;
-}
-
-/* 2. 公休的日期：淡紅色底 + 公休字眼 */
-.calendar-day.booked {
-    background-color: #fee2e2 !important; /* red-100 */
-    color: #ef4444 !important; /* red-500 */
+/* ✅ 尚未開放預約 - 極淺灰色 */
+.calendar-day.not-open {
+    background: #f8f9fa;
+    color: #dee2e6;
     cursor: not-allowed;
 }
 
-/* 自動在公休格子下方加入字眼 */
-.calendar-day.booked::after {
-    content: "公休";
-    font-size: 8px;
-    margin-top: 1px;
-    font-weight: normal;
-}
-
-/* 3. 選中後的狀態：變全黑 */
-.calendar-day.selected {
-    background-color: #1f2937 !important;
-    color: #ffffff !important;
-    border-color: #1f2937 !important;
-}
 /* ========== 管理後台專用樣式 ========== */
 
 .calendar-container {
@@ -355,37 +357,4 @@ body {
         font-size: 9px !important;
         padding: 2px 4px;
     }
-}
-
-/* 1. 可預約：增加深色外框 */
-.calendar-day.available {
-    border: 1.5px solid #1f2937 !important;
-    background-color: #ffffff !important;
-    color: #1f2937 !important;
-    font-weight: bold;
-}
-
-/* 2. 公休：紅色背景 */
-.calendar-day.booked {
-    background-color: #fee2e2 !important;
-    color: #ef4444 !important;
-    cursor: not-allowed;
-    border: none !important;
-}
-
-/* 3. 已過期/未開放：灰色背景 */
-.calendar-day.past {
-    background-color: #f3f4f6 !important;
-    color: #d1d5db !important;
-    cursor: not-allowed;
-    border: none !important;
-}
-
-/* 公休小字樣式 */
-.holiday-label {
-    font-size: 9px;
-    display: block;
-    line-height: 1;
-    margin-top: 2px;
-    font-weight: normal;
 }
