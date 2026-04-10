@@ -348,10 +348,11 @@ window.renderCalendar = function() {
         const dateCheck = window.isDateBookable(currentYear, currentMonth, item.date);
         let className = 'calendar-day';
         let clickable = false;
+
         if (dateCheck.reason === 'closed') {
             className += ' closed';
             div.title = '此日期已關閉';
-            div.onclick = () => alert('🚫 此日期已關閉，無法預約\n\n如有需要請聯繫我們');
+            div.onclick = () => window.showToast('🚫 此日期為休假日，無法預約\n\n如有需要請聯繫我們');
         } else if (dateCheck.reason === 'not-open') {
             className += ' not-open';
             div.title = '尚未開放預約';
@@ -362,8 +363,25 @@ window.renderCalendar = function() {
             className += ' booked';
             div.title = '本日公休';
         } else if (dateCheck.bookable && item.status === 'available') {
-            clickable = true;
-            div.title = '點擊預約';
+            // 判斷是否滿檔
+            const dow = new Date(currentYear, currentMonth, item.date).getDay();
+            const isWeekend = dow === 0 || dow === 6;
+            const allSlots = isWeekend
+                ? ['11:00', '13:30', '16:00', '18:30']
+                : ['12:00', '15:00', '18:00'];
+            const bookedOrBlocked = (item.bookedSlots || []).map(s =>
+                typeof s === 'string' ? s : s.time
+            );
+            const isFull = allSlots.every(slot => bookedOrBlocked.includes(slot));
+
+            if (isFull) {
+                className += ' booked';
+                div.title = '本日時段已額滿';
+            } else {
+                className += ' bookable';
+                clickable = true;
+                div.title = '點擊預約';
+            }
         }
         div.className = className;
         if(clickable) div.onclick = () => window.selectDate(div, item.date, item.bookedSlots);
