@@ -123,7 +123,17 @@ body {
     color: #dee2e6;
     cursor: not-allowed;
 }
+/* ✅ 可預約 - 白底 + 深色外框 */
+.calendar-day.bookable {
+    background: #ffffff;
+    color: #212529;
+    border: 2px solid #212529;
+    cursor: pointer;
+}
 
+.calendar-day.bookable:hover {
+    background: #f0f0f0;
+}
 /* ========== 管理後台專用樣式 ========== */
 
 .calendar-container {
