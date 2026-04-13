@@ -110,10 +110,9 @@ body {
     opacity: 0.8;
 }
 
-/* ✅ 手動關閉 - 淡紅色（與公休明顯區分） */
 .calendar-day.closed {
-    background: #f8d7da !important;
-    color: #842029 !important;
+    background: #adb5bd !important;
+    color: white !important;
     cursor: pointer;
 }
 
