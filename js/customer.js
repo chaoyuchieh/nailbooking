@@ -464,8 +464,8 @@ window.renderTimeSelector = function() {
     });
 
     document.getElementById('selected-time-display').innerText = '';
-    window.updateServiceEndTime();
-    window.checkTimeConflict();
+    selectedTime = window.formatTime(currentTimeHour, currentTimeMinute);
+    window.validate();
 };
 
 window.quickSelectTime = function(hour, minute, e) {
