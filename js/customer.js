@@ -473,10 +473,17 @@ window.quickSelectTime = function(hour, minute, e) {
     currentTimeMinute = minute;
     document.querySelectorAll('#quick-time-slots button').forEach(btn => btn.classList.remove('active'));
     (e?.target || event?.target)?.classList.add('active');
+
+    const timeStr = window.formatTime(currentTimeHour, currentTimeMinute);
+
+    // ✅ 點按鈕就直接確認 selectedTime，不再需要按確認鈕
+    selectedTime = timeStr;
+
     const timeDisplay = document.getElementById('selected-time-display');
-    timeDisplay.innerText = window.formatTime(currentTimeHour, currentTimeMinute);
+    timeDisplay.innerText = timeStr;
     window.updateServiceEndTime();
     window.checkTimeConflict();
+    window.validate(); // ✅ 立即更新送出按鈕狀態
     timeDisplay.classList.add('scale-110');
     setTimeout(() => timeDisplay.classList.remove('scale-110'), 200);
 };
