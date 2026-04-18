@@ -35,6 +35,23 @@ function dayTimeOptions(dateStr, selected = '') {
     return opts;
 }
 
+// === 改時間專用選單（10:00～20:30，每30分鐘）===
+function rescheduleTimeOptions(selected = '') {
+    let opts = '<option value="">選擇新時間</option>';
+    for (let h = 10; h <= 20; h++) {
+        for (let m of [0, 30]) {
+            if (h === 20 && m === 30) {
+                const v = '20:30';
+                opts += `<option value="${v}" ${selected === v ? 'selected' : ''}>${v}</option>`;
+                break;
+            }
+            const v = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+            opts += `<option value="${v}" ${selected === v ? 'selected' : ''}>${v}</option>`;
+        }
+    }
+    return opts;
+}
+
 // === 登入相關 ===
 window.doAdminLogin = function() {
     const adminId = document.getElementById('admin-id')?.value?.trim();
@@ -52,7 +69,6 @@ window.doAdminLogin = function() {
         alert('❌ 帳號或密碼錯誤');
     }
 };
-
 
 window.adminLogout = function() {
     sessionStorage.setItem('manualLogout', 'true');
@@ -172,7 +188,6 @@ window.renderAdminCalendar = function() {
 
             html += `<div class="booking-info">`;
 
-            // Real bookings
             sorted.forEach(booking => {
                 const time = typeof booking === 'string' ? booking : booking.time;
                 const user = typeof booking === 'object' && booking.user ? booking.user : 'Admin';
@@ -188,7 +203,6 @@ window.renderAdminCalendar = function() {
                 html += `<div class="booking-tag ${statusClass}" title="👤 ${user}\n⏰ ${time}\n📊 ${status}">${displayText}</div>`;
             });
 
-            // Blocked slots
             [...blockedBookings]
                 .sort((a, b) => a.time.localeCompare(b.time))
                 .forEach(b => {
@@ -241,7 +255,6 @@ window.selectAdminDate = function(index) {
                 return ta.localeCompare(tb);
             });
 
-            // Find original index in bookedSlots for each real booking
             sorted.forEach((booking) => {
                 const bookingIndex = (item.bookedSlots || []).indexOf(booking);
                 const time = typeof booking === 'string' ? booking : booking.time;
@@ -271,6 +284,27 @@ window.selectAdminDate = function(index) {
                     }
                 }
 
+                // 改時間 UI（僅 confirmed 狀態顯示）
+                const rescheduleHtml = status === 'confirmed' ? `
+                    <div id="reschedule-panel-${bookingIndex}" class="hidden mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p class="text-xs text-yellow-700 font-bold mb-2">✏️ 選擇新時間</p>
+                        <select id="reschedule-time-${bookingIndex}"
+                                class="w-full border border-yellow-300 rounded px-2 py-1 text-xs outline-none focus:border-yellow-500 bg-white mb-2">
+                            ${rescheduleTimeOptions(time)}
+                        </select>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="confirmReschedule('${dateStr}', ${bookingIndex}, '${userId}', '${userName}', ${totalPrice})"
+                                    class="bg-yellow-500 text-white px-3 py-2 rounded text-xs font-bold hover:bg-yellow-600 transition">
+                                ✓ 確認修改
+                            </button>
+                            <button onclick="document.getElementById('reschedule-panel-${bookingIndex}').classList.add('hidden')"
+                                    class="bg-gray-100 text-gray-600 px-3 py-2 rounded text-xs font-bold hover:bg-gray-200 transition">
+                                取消
+                            </button>
+                        </div>
+                    </div>
+                ` : '';
+
                 const row = document.createElement('div');
                 row.className = 'bg-white border-2 rounded-lg overflow-hidden mb-3 shadow-sm';
                 row.innerHTML = `
@@ -299,7 +333,39 @@ window.selectAdminDate = function(index) {
                             <button onclick="cancelBooking('${dateStr}', ${bookingIndex}, '${userId}')"
                                     class="w-full bg-red-100 text-red-600 px-3 py-2 rounded text-xs font-bold hover:bg-red-200 transition mt-2">✗ 取消預約</button>
                         ` : status === 'confirmed' ? `
-                            <div class="text-center text-xs text-green-600 font-bold py-2">✓ 預約已確認</div>
+                            <button onclick="toggleReschedulePanel(${bookingIndex})"
+                                    class="w-full bg-yellow-100 text-yellow-700 px-3 py-2 rounded text-xs font-bold hover:bg-yellow-200 transition mb-2">
+                                ✏️ 修改時間
+                            </button>
+                            ${rescheduleHtml}
+                            <button onclick="toggleNextBookingPanel(${bookingIndex})"
+                                    class="w-full bg-blue-100 text-blue-700 px-3 py-2 rounded text-xs font-bold hover:bg-blue-200 transition mb-2">
+                                📅 預約下次
+                            </button>
+                            <div id="next-booking-panel-${bookingIndex}" class="hidden mt-1 mb-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                <p class="text-xs text-blue-700 font-bold mb-2">📅 新增下次預約</p>
+                                <div class="flex flex-col gap-2 mb-2">
+                                    <input id="next-booking-name-${bookingIndex}" type="text" value="${userName}"
+                                           class="border border-blue-200 rounded px-2 py-1 text-xs outline-none focus:border-blue-400 bg-white"
+                                           placeholder="顧客姓名">
+                                    <input id="next-booking-date-${bookingIndex}" type="date"
+                                           class="border border-blue-200 rounded px-2 py-1 text-xs outline-none focus:border-blue-400 bg-white">
+                                    <select id="next-booking-time-${bookingIndex}"
+                                            class="border border-blue-200 rounded px-2 py-1 text-xs outline-none focus:border-blue-400 bg-white">
+                                        ${rescheduleTimeOptions()}
+                                    </select>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button onclick="confirmNextBooking(${bookingIndex}, document.getElementById('next-booking-name-${bookingIndex}').value, '${userId}')"
+                                            class="bg-blue-600 text-white px-3 py-2 rounded text-xs font-bold hover:bg-blue-700 transition">
+                                        ✓ 確認新增
+                                    </button>
+                                    <button onclick="toggleNextBookingPanel(${bookingIndex})"
+                                            class="bg-gray-100 text-gray-600 px-3 py-2 rounded text-xs font-bold hover:bg-gray-200 transition">
+                                        取消
+                                    </button>
+                                </div>
+                            </div>
                             <button onclick="cancelBooking('${dateStr}', ${bookingIndex}, '${userId}')"
                                     class="w-full bg-red-100 text-red-600 px-3 py-2 rounded text-xs font-bold hover:bg-red-200 transition mt-2">取消此預約</button>
                         ` : `
@@ -345,8 +411,7 @@ window.selectAdminDate = function(index) {
         });
 
         // ===== 手動新增預約 =====
-
-       const addForm = document.createElement('div');
+        const addForm = document.createElement('div');
         addForm.className = 'mt-3 p-3 bg-gray-50 border border-dashed border-gray-300 rounded-lg';
         addForm.innerHTML = `
             <p class="text-xs text-gray-500 mb-2 font-bold">＋ 手動新增預約</p>
@@ -368,6 +433,182 @@ window.selectAdminDate = function(index) {
             </button>
         `;
         listContainer.appendChild(addForm);
+    }
+};
+
+// === 預約下次面板開關 ===
+window.toggleNextBookingPanel = function(bookingIndex) {
+    const panel = document.getElementById(`next-booking-panel-${bookingIndex}`);
+    if (panel) panel.classList.toggle('hidden');
+};
+
+// === 確認預約下次 ===
+window.confirmNextBooking = async function(bookingIndex, userName, userId) {
+    const dateStr = document.getElementById(`next-booking-date-${bookingIndex}`)?.value;
+    const newTime = document.getElementById(`next-booking-time-${bookingIndex}`)?.value;
+    if (!dateStr) { alert('請選擇日期'); return; }
+    if (!newTime) { alert('請選擇時間'); return; }
+
+    // === 衝突檢查（從 Supabase 取目標日期最新資料）===
+    const { data, error: fetchErr } = await supabaseClient
+        .from('calendar_slots').select('*').eq('date_id', dateStr).maybeSingle();
+    if (fetchErr) { alert('❌ 查詢失敗：' + fetchErr.message); return; }
+
+    const existingSlots = data?.booked_slots || [];
+    const SERVICE_DURATION = CONFIG.SERVICE_DURATION_MINUTES;
+    const newTimeMinutes = window.timeToMinutes(newTime);
+    const newTimeEnd = newTimeMinutes + SERVICE_DURATION;
+
+    for (const slot of existingSlots) {
+        const slotTime = typeof slot === 'string' ? slot : slot.time;
+        const slotStatus = typeof slot === 'object' ? slot.status : 'confirmed';
+        if (slotStatus === 'blocked') {
+            if (slotTime === newTime) { alert(`❌ ${newTime} 已被封鎖，請選擇其他時間`); return; }
+        } else {
+            const slotStart = window.timeToMinutes(slotTime);
+            const slotEnd = slotStart + SERVICE_DURATION;
+            if (window.checkTimeOverlap(newTimeMinutes, newTimeEnd, slotStart, slotEnd)) {
+                alert(`❌ ${newTime} 與 ${slotTime} 的預約時段衝突，請選擇其他時間`); return;
+            }
+        }
+    }
+
+    // === 詢問是否發通知 ===
+    const sendNotify = confirm(`預約下次確認：\n👤 ${userName}\n📅 ${dateStr}\n⏰ ${newTime}\n\n點「確定」同時發送 LINE 通知給顧客\n點「取消」只新增預約不發通知`);
+
+    window.showLoading(true);
+    try {
+        let bookedSlots = [...existingSlots];
+        bookedSlots.push({
+            time: newTime,
+            user: userName,
+            userId: userId || '',
+            status: 'confirmed',
+            bookingDetails: null,
+            totalPrice: 0,
+            createdAt: new Date().toISOString()
+        });
+
+        const { error: saveErr } = await supabaseClient
+            .from('calendar_slots')
+            .upsert({ date_id: dateStr, booked_slots: bookedSlots, status: 'available' });
+        if (saveErr) throw saveErr;
+
+        if (sendNotify && userId && userId.trim() !== '') {
+            await sendLineMessage(userId,
+`【下次預約已建立】📅
+
+您好 ${userName}，
+管理員已為您建立下次預約！
+
+📅 預約日期：${dateStr}
+⏰ 預約時間：${newTime}
+
+期待您的到來！
+如有疑問請聯繫我們`
+            );
+        }
+
+        alert(`✅ 已新增 ${dateStr} ${newTime} ${userName} 的預約${sendNotify ? '，並發送通知' : ''}`);
+        await window.fetchAdminCalendarData();
+        window.selectAdminDate(adminSelectedIndex);
+    } catch (e) {
+        alert('❌ 新增失敗：' + e.message);
+    } finally {
+        window.showLoading(false);
+    }
+};
+
+// === 改時間面板開關 ===
+window.toggleReschedulePanel = function(bookingIndex) {
+    const panel = document.getElementById(`reschedule-panel-${bookingIndex}`);
+    if (panel) panel.classList.toggle('hidden');
+};
+
+// === 確認改時間 ===
+window.confirmReschedule = async function(dateStr, bookingIndex, userId, userName, totalPrice) {
+    const newTime = document.getElementById(`reschedule-time-${bookingIndex}`)?.value;
+    if (!newTime) { alert('請選擇新時間'); return; }
+
+    // 取得目前此日期的所有 slots
+    const parts = dateStr.split('-');
+    const day = parseInt(parts[2]);
+    const dayIndex = day - 1;
+    const bookedSlots = calendarData[dayIndex]?.bookedSlots || [];
+    const currentBooking = bookedSlots[bookingIndex];
+    const currentTime = currentBooking?.time;
+
+    if (newTime === currentTime) { alert('新時間與目前時間相同，無需修改'); return; }
+
+    // === 衝突檢查 ===
+    const SERVICE_DURATION = CONFIG.SERVICE_DURATION_MINUTES; // 150分鐘
+    const newTimeMinutes = window.timeToMinutes(newTime);
+    const newTimeEnd = newTimeMinutes + SERVICE_DURATION;
+
+    for (let i = 0; i < bookedSlots.length; i++) {
+        if (i === bookingIndex) continue; // 跳過自己
+        const slot = bookedSlots[i];
+        const slotTime = typeof slot === 'string' ? slot : slot.time;
+        const slotStatus = typeof slot === 'object' ? slot.status : 'confirmed';
+
+        if (slotStatus === 'blocked') {
+            // 封鎖格：完全相同時間才衝突
+            if (slotTime === newTime) {
+                alert(`❌ ${newTime} 已被封鎖，請選擇其他時間`);
+                return;
+            }
+        } else {
+            // 真實預約：2.5小時 overlap 檢查
+            const slotStart = window.timeToMinutes(slotTime);
+            const slotEnd = slotStart + SERVICE_DURATION;
+            if (window.checkTimeOverlap(newTimeMinutes, newTimeEnd, slotStart, slotEnd)) {
+                alert(`❌ ${newTime} 與 ${slotTime} 的預約時段衝突，請選擇其他時間`);
+                return;
+            }
+        }
+    }
+
+    if (!confirm(`確定將 ${userName} 的預約時間從 ${currentTime} 改為 ${newTime}？\n\n修改後將自動發送 LINE 通知給顧客。`)) return;
+
+    window.showLoading(true);
+    try {
+        // 更新 Supabase
+        const { data, error: fetchErr } = await supabaseClient
+            .from('calendar_slots').select('*').eq('date_id', dateStr).maybeSingle();
+        if (fetchErr) throw fetchErr;
+        if (!data) throw new Error('找不到該日期的資料');
+
+        let slots = data.booked_slots || [];
+        if (!slots[bookingIndex]) throw new Error('找不到該預約');
+        slots[bookingIndex].time = newTime;
+
+        const { error: updateErr } = await supabaseClient
+            .from('calendar_slots').update({ booked_slots: slots }).eq('date_id', dateStr);
+        if (updateErr) throw updateErr;
+
+        // 發 LINE 通知（有 userId 才發）
+        if (userId && userId.trim() !== '') {
+            await sendLineMessage(userId,
+`【預約時間已更新】✏️
+
+您好 ${userName}，
+您的預約時間已由管理員調整：
+
+📅 預約日期：${dateStr}
+⏰ 新時間：${newTime}
+💰 預估金額：$${totalPrice}
+
+如有疑問請聯繫我們`
+            );
+        }
+
+        alert(`✅ 已將預約時間改為 ${newTime}`);
+        await window.fetchAdminCalendarData();
+        window.selectAdminDate(adminSelectedIndex);
+    } catch (e) {
+        alert('❌ 修改失敗：' + e.message);
+    } finally {
+        window.showLoading(false);
     }
 };
 
@@ -491,7 +732,6 @@ window.rejectBooking = async function(dateStr, bookingIndex, userId) {
     try {
         const booking = getBookingByDateAndIndex(dateStr, bookingIndex);
         await removeBooking(dateStr, bookingIndex);
-        // If user exists, we send message to user. Otherwise, we do not send message
         if (userId && userId.trim() !== '') {
             await sendLineMessage(userId, `【預約未通過】\n\n您好 ${booking.user}，\n很抱歉，您的預約無法受理\n\n📅 預約日期：${dateStr}\n⏰ 預約時間：${booking.time}\n\n如有疑問請聯繫我們`);
         }
@@ -528,7 +768,6 @@ window.cancelBooking = async function(dateStr, bookingIndex, userId) {
     try {
         const booking = getBookingByDateAndIndex(dateStr, bookingIndex);
         await removeBooking(dateStr, bookingIndex);
-        // If user exists, we send message to user. Otherwise, we do not send message
         if (userId && userId.trim() !== '') {
             await sendLineMessage(userId, `【預約已取消】\n\n您好 ${booking.user}，\n您的預約已被取消\n\n📅 預約日期：${dateStr}\n⏰ 預約時間：${booking.time}\n\n如需重新預約請聯繫我們`);
         }
