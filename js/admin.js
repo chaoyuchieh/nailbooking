@@ -284,21 +284,27 @@ window.selectAdminDate = function(index) {
                     }
                 }
 
-                // 改時間 UI（僅 confirmed 狀態顯示）
-                const rescheduleHtml = status === 'confirmed' ? `
+                // 改時間 UI（confirmed 和 pending 狀態顯示）
+                const rescheduleHtml = (status === 'confirmed' || status === 'pending') ? `
                     <div id="reschedule-panel-${bookingIndex}" class="hidden mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                         <p class="text-xs text-yellow-700 font-bold mb-2">✏️ 選擇新時間</p>
                         <select id="reschedule-time-${bookingIndex}"
                                 class="w-full border border-yellow-300 rounded px-2 py-1 text-xs outline-none focus:border-yellow-500 bg-white mb-2">
                             ${rescheduleTimeOptions(time)}
                         </select>
-                        <div class="grid grid-cols-2 gap-2">
-                            <button onclick="confirmReschedule('${dateStr}', ${bookingIndex}, '${userId}', '${userName}', ${totalPrice})"
-                                    class="bg-yellow-500 text-white px-3 py-2 rounded text-xs font-bold hover:bg-yellow-600 transition">
-                                ✓ 確認修改
-                            </button>
+                        <div class="flex flex-col gap-2">
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="confirmReschedule('${dateStr}', ${bookingIndex}, '${userId}', '${userName}', ${totalPrice}, true)"
+                                        class="bg-yellow-500 text-white px-3 py-2 rounded text-xs font-bold hover:bg-yellow-600 transition">
+                                    ✓ 修改並通知
+                                </button>
+                                <button onclick="confirmReschedule('${dateStr}', ${bookingIndex}, '${userId}', '${userName}', ${totalPrice}, false)"
+                                        class="bg-gray-200 text-gray-700 px-3 py-2 rounded text-xs font-bold hover:bg-gray-300 transition">
+                                    只修改時間
+                                </button>
+                            </div>
                             <button onclick="document.getElementById('reschedule-panel-${bookingIndex}').classList.add('hidden')"
-                                    class="bg-gray-100 text-gray-600 px-3 py-2 rounded text-xs font-bold hover:bg-gray-200 transition">
+                                    class="w-full bg-white border border-gray-200 text-gray-400 px-3 py-2 rounded text-xs font-bold hover:bg-gray-50 transition">
                                 取消
                             </button>
                         </div>
@@ -325,6 +331,11 @@ window.selectAdminDate = function(index) {
                                 <button onclick="approveBookingDirectly('${dateStr}', ${bookingIndex}, '${userId}')"
                                         class="bg-green-600 text-white px-3 py-2 rounded text-xs font-bold hover:bg-green-700 transition">✓ 直接確認</button>
                             </div>
+                            <button onclick="toggleReschedulePanel(${bookingIndex})"
+                                    class="w-full bg-yellow-100 text-yellow-700 px-3 py-2 rounded text-xs font-bold hover:bg-yellow-200 transition mb-2">
+                                ✏️ 修改時間
+                            </button>
+                            ${rescheduleHtml}
                             <button onclick="rejectBooking('${dateStr}', ${bookingIndex}, '${userId}')"
                                     class="w-full bg-red-100 text-red-600 px-3 py-2 rounded text-xs font-bold hover:bg-red-200 transition">✗ 拒絕預約</button>
                         ` : status === 'pending_payment' ? `
@@ -526,7 +537,7 @@ window.toggleReschedulePanel = function(bookingIndex) {
 };
 
 // === 確認改時間 ===
-window.confirmReschedule = async function(dateStr, bookingIndex, userId, userName, totalPrice) {
+window.confirmReschedule = async function(dateStr, bookingIndex, userId, userName, totalPrice, sendNotify) {
     const newTime = document.getElementById(`reschedule-time-${bookingIndex}`)?.value;
     if (!newTime) { alert('請選擇新時間'); return; }
 
@@ -568,7 +579,7 @@ window.confirmReschedule = async function(dateStr, bookingIndex, userId, userNam
         }
     }
 
-    if (!confirm(`確定將 ${userName} 的預約時間從 ${currentTime} 改為 ${newTime}？\n\n修改後將自動發送 LINE 通知給顧客。`)) return;
+    if (!confirm(`確定將 ${userName} 的預約時間從 ${currentTime} 改為 ${newTime}？`)) return;
 
     window.showLoading(true);
     try {
@@ -586,8 +597,8 @@ window.confirmReschedule = async function(dateStr, bookingIndex, userId, userNam
             .from('calendar_slots').update({ booked_slots: slots }).eq('date_id', dateStr);
         if (updateErr) throw updateErr;
 
-        // 發 LINE 通知（有 userId 才發）
-        if (userId && userId.trim() !== '') {
+        // 發 LINE 通知（選擇發送且有 userId 才發）
+        if (sendNotify && userId && userId.trim() !== '') {
             await sendLineMessage(userId,
 `【預約時間已更新】✏️
 
@@ -596,13 +607,13 @@ window.confirmReschedule = async function(dateStr, bookingIndex, userId, userNam
 
 📅 預約日期：${dateStr}
 ⏰ 新時間：${newTime}
-💰 預估金額：$${totalPrice}
+💰 預估金額：${totalPrice}
 
 如有疑問請聯繫我們`
             );
         }
 
-        alert(`✅ 已將預約時間改為 ${newTime}`);
+        alert(`✅ 已將預約時間改為 ${newTime}${sendNotify ? '，並發送通知' : ''}`);
         await window.fetchAdminCalendarData();
         window.selectAdminDate(adminSelectedIndex);
     } catch (e) {
