@@ -7,7 +7,6 @@ if (typeof supabaseClient === 'undefined') console.warn('⚠️ supabaseClient �
 
 // === 管理後台專用變數 ===
 let adminYear = new Date().getFullYear();
-let adminMonth = new Date().getMonth();
 let adminSelectedIndex = null;
 
 // === 時間選項生成器 ===
@@ -53,28 +52,53 @@ function rescheduleTimeOptions(selected = '') {
 }
 
 // === 登入相關 ===
-window.doAdminLogin = function() {
+window.doAdminLogin = async function() {
     const adminId = document.getElementById('admin-id')?.value?.trim();
     const adminPwd = document.getElementById('admin-pwd')?.value?.trim();
     if (!adminId || !adminPwd) { alert('請輸入帳號和密碼'); return; }
-    if (adminId === '4555yuyu@gmail.com' && adminPwd === 'Ly6r4sNR') {
+
+    window.showLoading(true);
+    try {
+        const res = await fetch('/api/admin-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: adminId, password: adminPwd })
+        });
+
+        if (!res.ok) {
+            alert('❌ 帳號或密碼錯誤');
+            return;
+        }
+
+        const data = await res.json();
+
+        // 儲存 token 和過期時間
+        sessionStorage.setItem('adminToken', data.token);
+        sessionStorage.setItem('adminTokenExpiry', data.expiresAt);
         sessionStorage.removeItem('manualLogout');
+
         document.getElementById('login-overlay').classList.add('hidden');
         const adminPanel = document.getElementById('admin-panel');
         adminPanel.classList.remove('hidden');
         adminPanel.style.display = 'flex';
         window.initAdminYearSelector();
         window.fetchAdminCalendarData();
-    } else {
-        alert('❌ 帳號或密碼錯誤');
+
+    } catch (e) {
+        alert('❌ 登入失敗，請稍後再試');
+        console.error(e);
+    } finally {
+        window.showLoading(false);
     }
 };
 
-window.adminLogout = function() {
-    sessionStorage.setItem('manualLogout', 'true');
-    location.reload();
+// === 檢查 token 是否有效 ===
+window.isAdminLoggedIn = function() {
+    const token = sessionStorage.getItem('adminToken');
+    const expiry = sessionStorage.getItem('adminTokenExpiry');
+    if (!token || !expiry) return false;
+    return Date.now() < parseInt(expiry);
 };
-
 // === 年份/月份選擇器 ===
 window.initAdminYearSelector = function() {
     const yearSelect = document.getElementById('admin-year-selector');
