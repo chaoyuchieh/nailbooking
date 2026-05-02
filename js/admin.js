@@ -924,3 +924,185 @@ async function sendLineMessage(userId, message) {
 }
 
 console.log('✅ admin.js 載入完成');
+// ===== Face ID / WebAuthn =====
+
+// 頁面載入時自動偵測是否可以用 Face ID
+window.addEventListener('DOMContentLoaded', async () => {
+    if (sessionStorage.getItem('manualLogout')) return;
+    const hasFaceId = localStorage.getItem('webauthn_registered');
+    if (hasFaceId && window.PublicKeyCredential) {
+        // 顯示 Face ID 按鈕
+        const btn = document.getElementById('face-id-btn');
+        if (btn) btn.classList.remove('hidden');
+        // 自動觸發 Face ID
+        await window.loginWithFaceId();
+    }
+});
+
+// Face ID 登入
+window.loginWithFaceId = async function() {
+    try {
+        window.showLoading(true);
+
+        // 1. 向後端取得 challenge
+        const challengeRes = await fetch('/api/webauthn-verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'challenge' })
+        });
+
+        if (!challengeRes.ok) {
+            // 後端說沒有綁定的 credential，移除本地標記
+            localStorage.removeItem('webauthn_registered');
+            document.getElementById('face-id-btn')?.classList.add('hidden');
+            return;
+        }
+
+        const { challenge, rpId, credentialId } = await challengeRes.json();
+
+        // 2. 呼叫瀏覽器 Face ID
+        const assertion = await navigator.credentials.get({
+            publicKey: {
+                challenge: hexToBuffer(challenge),
+                rpId,
+                allowCredentials: [{
+                    type: 'public-key',
+                    id: base64ToBuffer(credentialId)
+                }],
+                userVerification: 'required',
+                timeout: 60000
+            }
+        });
+
+        // 3. 傳給後端驗證
+        const verifyRes = await fetch('/api/webauthn-verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'verify',
+                credential: {
+                    id: assertion.id,
+                    response: {
+                        clientDataJSON: bufferToBase64(assertion.response.clientDataJSON),
+                        authenticatorData: bufferToBase64(assertion.response.authenticatorData),
+                        signature: bufferToBase64(assertion.response.signature)
+                    }
+                }
+            })
+        });
+
+        if (!verifyRes.ok) {
+            alert('❌ Face ID 驗證失敗');
+            return;
+        }
+
+        const data = await verifyRes.json();
+
+        // 4. 登入成功，跟帳密登入一樣的處理
+        sessionStorage.setItem('adminToken', data.token);
+        sessionStorage.setItem('adminTokenExpiry', data.expiresAt);
+        sessionStorage.removeItem('manualLogout');
+
+        document.getElementById('login-overlay').classList.add('hidden');
+        const adminPanel = document.getElementById('admin-panel');
+        adminPanel.classList.remove('hidden');
+        adminPanel.style.display = 'flex';
+        window.initAdminYearSelector();
+        window.fetchAdminCalendarData();
+
+    } catch (e) {
+        if (e.name !== 'NotAllowedError') {
+            console.error('Face ID error:', e);
+        }
+        // 使用者取消或失敗，不顯示錯誤，讓他用帳密登入
+    } finally {
+        window.showLoading(false);
+    }
+};
+
+// 帳密登入成功後，詢問是否綁定 Face ID
+window.promptFaceIdRegistration = async function() {
+    if (!window.PublicKeyCredential) return; // 不支援就跳過
+    if (localStorage.getItem('webauthn_registered')) return; // 已綁定過
+
+    const want = confirm('要啟用 Face ID 登入嗎？\n\n下次進入後台時可以直接用 Face ID，不用輸入帳密。');
+    if (!want) return;
+
+    try {
+        window.showLoading(true);
+        const token = sessionStorage.getItem('adminToken');
+        const expiresAt = sessionStorage.getItem('adminTokenExpiry');
+
+        // 1. 取得 challenge
+        const challengeRes = await fetch('/api/webauthn-register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'challenge', token, expiresAt })
+        });
+        if (!challengeRes.ok) throw new Error('取得 challenge 失敗');
+        const { challenge, rp, user } = await challengeRes.json();
+
+        // 2. 呼叫瀏覽器 Face ID 綁定
+        const credential = await navigator.credentials.create({
+            publicKey: {
+                challenge: hexToBuffer(challenge),
+                rp,
+                user: {
+                    id: new TextEncoder().encode(user.id),
+                    name: user.name,
+                    displayName: user.displayName
+                },
+                pubKeyCredParams: [
+                    { type: 'public-key', alg: -7 },   // ES256
+                    { type: 'public-key', alg: -257 }  // RS256
+                ],
+                authenticatorSelection: {
+                    authenticatorAttachment: 'platform', // 只用裝置內建（Face ID / Touch ID）
+                    userVerification: 'required'
+                },
+                timeout: 60000
+            }
+        });
+
+        // 3. 傳給後端儲存
+        const verifyRes = await fetch('/api/webauthn-register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'verify',
+                credential: {
+                    id: credential.id,
+                    response: {
+                        clientDataJSON: bufferToBase64(credential.response.clientDataJSON),
+                        attestationObject: bufferToBase64(credential.response.attestationObject)
+                    }
+                }
+            })
+        });
+        if (!verifyRes.ok) throw new Error('綁定失敗');
+
+        // 4. 本地記錄已綁定
+        localStorage.setItem('webauthn_registered', '1');
+        alert('✅ Face ID 綁定成功！\n\n下次進入後台會自動用 Face ID 登入。');
+
+    } catch (e) {
+        if (e.name !== 'NotAllowedError') {
+            alert('❌ Face ID 綁定失敗：' + e.message);
+        }
+    } finally {
+        window.showLoading(false);
+    }
+};
+
+// ── 工具函數 ──
+function hexToBuffer(hex) {
+    const arr = new Uint8Array(hex.match(/.{2}/g).map(b => parseInt(b, 16)));
+    return arr.buffer;
+}
+function base64ToBuffer(base64) {
+    const bin = atob(base64.replace(/-/g, '+').replace(/_/g, '/'));
+    return Uint8Array.from(bin, c => c.charCodeAt(0)).buffer;
+}
+function bufferToBase64(buffer) {
+    return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+}
