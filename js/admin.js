@@ -786,7 +786,7 @@ window.confirmPayment = async function(dateStr, bookingIndex, userId) {
     try {
         await updateBookingStatus(dateStr, bookingIndex, 'confirmed');
         const booking = getBookingByDateAndIndex(dateStr, bookingIndex);
-        await sendLineMessage(userId, `【付款確認成功】✅\n\n您好 ${booking.user}，\n我們已確認收到您的訂金！\n\n📅 預約日期：${dateStr}\n⏰ 預約時間：${booking.time}\n💰 預估金額：$${booking.totalPrice}\n\n預約已完成確認`);
+        await sendLineMessage(userId, `【付款確認成功】✅\n\n您好 ${booking.user}，\n我們已確認收到您的訂金！\n\n📅 預約日期：${dateStr}\n⏰ 預約時間：${booking.time}\n💰 預估金額：$${booking.totalPrice}\n\n預約已完成確認\n\n期待您的到來！\n工作室地址：\n台北市忠孝東路四段97號2樓17b室\n（頂好名店城2樓）\n如果迷路跟我說喔！`);
         alert('✅ 付款已確認');
         await window.fetchAdminCalendarData();
         window.selectAdminDate(adminSelectedIndex);
