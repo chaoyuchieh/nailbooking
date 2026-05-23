@@ -9,6 +9,25 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link href="./css/styles.css" rel="stylesheet">
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="NC Admin">
+    <link rel="apple-touch-icon" href="/icons/icon-512.png">
+    <meta name="theme-color" content="#1f2937">
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(() => console.log('✅ SW registered'))
+            .catch(e => console.warn('SW register failed:', e));
+        });
+      }
+    </script>
 </head>
 <body class="bg-gray-50">
     <!-- Loading 指示器 -->
@@ -25,6 +44,13 @@
             
             <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
                 <h2 class="text-gray-800 font-bold mb-4 text-center">後台登入</h2>
+
+                <!-- Face ID 按鈕（預設隱藏，有綁定才顯示） -->
+                <button id="face-id-btn" onclick="loginWithFaceId()"
+                        class="hidden w-full bg-gray-800 text-white py-3 rounded-lg font-bold shadow-md hover:bg-gray-700 transition mb-3 flex items-center justify-center gap-2">
+                    <span style="font-size:20px">󰏖</span> Face ID 登入
+                </button>
+
                 <input id="admin-id" type="text" placeholder="帳號" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-sm outline-none mb-3 focus:border-gray-400">
                 <input id="admin-pwd" type="password" placeholder="密碼" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-sm outline-none mb-4 focus:border-gray-400">
                 <button onclick="window.doAdminLogin()" class="w-full bg-gray-800 text-white py-3 rounded-lg font-bold shadow-md hover:bg-gray-700 transition">
@@ -86,11 +112,7 @@
                             <span id="stats-toggle-text">詳細 ▼</span>
                         </button>
                     </div>
-                    
-                    <!-- 簡要統計 -->
                     <div id="today-booking-stats" class="space-y-2"></div>
-                    
-                    <!-- 詳細資訊 -->
                     <div id="stats-detail" class="hidden pt-3 mt-3 border-t border-gray-100 space-y-2 fade-in">
                         <div id="current-open-range" class="text-xs text-gray-700 bg-blue-50 p-3 rounded-lg">
                             <div class="flex items-center gap-2 mb-1">
@@ -102,25 +124,22 @@
                     </div>
                 </div>
 
-               <!-- 在 admin.html 找到這一段，改成： -->
-
-<!-- 日曆 -->
-<div class="bg-white p-3 rounded-xl shadow-sm mb-4 border border-gray-100">
-    <p class="text-xs text-gray-500 mb-2 text-center">
-        <i class="fas fa-hand-pointer mr-1"></i>點擊日期進行管理
-    </p>
-    <div class="grid grid-cols-7 gap-0 mb-2 text-center">
-        <div class="text-[10px] text-red-400 font-bold">日</div>
-        <div class="text-[10px] text-gray-400">一</div>
-        <div class="text-[10px] text-gray-400">二</div>
-        <div class="text-[10px] text-gray-400">三</div>
-        <div class="text-[10px] text-gray-400">四</div>
-        <div class="text-[10px] text-gray-400">五</div>
-        <div class="text-[10px] text-blue-400 font-bold">六</div>
-    </div>
-    <!-- 移除 class="grid grid-cols-7 gap-1"，讓 CSS 控制 -->
-    <div id="admin-calendar-grid"></div>
-</div>
+                <!-- 日曆 -->
+                <div class="bg-white p-3 rounded-xl shadow-sm mb-4 border border-gray-100">
+                    <p class="text-xs text-gray-500 mb-2 text-center">
+                        <i class="fas fa-hand-pointer mr-1"></i>點擊日期進行管理
+                    </p>
+                    <div class="grid grid-cols-7 gap-0 mb-2 text-center">
+                        <div class="text-[10px] text-red-400 font-bold">日</div>
+                        <div class="text-[10px] text-gray-400">一</div>
+                        <div class="text-[10px] text-gray-400">二</div>
+                        <div class="text-[10px] text-gray-400">三</div>
+                        <div class="text-[10px] text-gray-400">四</div>
+                        <div class="text-[10px] text-gray-400">五</div>
+                        <div class="text-[10px] text-blue-400 font-bold">六</div>
+                    </div>
+                    <div id="admin-calendar-grid"></div>
+                </div>
 
                 <!-- 日期編輯區 -->
                 <div id="admin-edit-area" class="hidden fade-in">
@@ -164,29 +183,5 @@
     <script src="./js/config.js"></script>
     <script src="./js/common.js"></script>
     <script src="./js/admin.js"></script>
-    <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-    <h2 class="text-gray-800 font-bold mb-4 text-center">後台登入</h2>
-
-    <!-- Face ID 按鈕（預設隱藏，有綁定才顯示） -->
-    <button id="face-id-btn" onclick="loginWithFaceId()"
-            class="hidden w-full bg-gray-800 text-white py-3 rounded-lg font-bold shadow-md hover:bg-gray-700 transition mb-3 flex items-center justify-center gap-2">
-        <span style="font-size:20px">󰏖</span> Face ID 登入
-    </button>
-
-    <input id="admin-id" type="text" placeholder="帳號"
-           class="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-sm outline-none mb-3 focus:border-gray-400">
-    <input id="admin-pwd" type="password" placeholder="密碼"
-           class="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-sm outline-none mb-4 focus:border-gray-400">
-    <button onclick="window.doAdminLogin()"
-            class="w-full bg-gray-800 text-white py-3 rounded-lg font-bold shadow-md hover:bg-gray-700 transition">
-        <i class="fas fa-sign-in-alt mr-2"></i>登入系統
-    </button>
-
-    <div class="mt-6 pt-4 border-t border-gray-200 text-center">
-        <a href="./index.html" class="text-xs text-gray-500 hover:text-gray-700">
-            <i class="fas fa-arrow-left mr-1"></i>返回顧客頁面
-        </a>
-    </div>
-</div>
 </body>
 </html>
