@@ -7,6 +7,7 @@ if (typeof supabaseClient === 'undefined') console.warn('⚠️ supabaseClient �
 
 // === 管理後台專用變數 ===
 let adminYear = new Date().getFullYear();
+let adminMonth = new Date().getMonth();  
 let adminSelectedIndex = null;
 
 // === 時間選項生成器 ===
